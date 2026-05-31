@@ -5,7 +5,12 @@
 // Al integrar con el backend Java, reemplazar por fetch() reales.
 // ============================================================
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
+const envApiBaseUrl =
+  typeof globalThis !== "undefined"
+    ? (globalThis as { __API_BASE_URL__?: string }).__API_BASE_URL__
+    : undefined;
+
+const API_BASE_URL = envApiBaseUrl || "/api";
 
 // ============================================================
 // TIPOS DE DATOS - Basados en el esquema MySQL
