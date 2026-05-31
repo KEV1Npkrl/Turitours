@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contacto - Tarapoto Tours</title>
+    <meta name="description" content="Contacta con Tarapoto Tours. Resolvemos dudas sobre tours, reservas y experiencias en la selva peruana.">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container header-content">
+            <a href="index.html" class="logo">
+                <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l4.9 3.2-2.1 2.1-2.1-.4c-.4-.1-.8.1-1 .4l-.8.8 3.6 1.4 1.4 3.6.8-.8c.3-.3.5-.7.4-1l-.4-2.1 2.1-2.1 3.2 4.9c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.6.5-1.1z"/>
+                </svg>
+                <span>Tarapoto Tours</span>
+            </a>
+            <nav class="nav-desktop">
+                <a href="index.html" class="nav-link">Inicio</a>
+                <a href="tours.html" class="nav-link">Tours</a>
+                <a href="destinos.html" class="nav-link">Destinos</a>
+                <a href="nosotros.html" class="nav-link">Nosotros</a>
+                <a href="contacto.html" class="nav-link active">Contacto</a>
+            </nav>
+            <div class="header-actions">
+                <a href="login.html" class="btn btn-outline">Iniciar Sesion</a>
+                <a href="registro.html" class="btn btn-primary">Registrarse</a>
+            </div>
+            <button class="menu-toggle" id="menuToggle" aria-label="Abrir menu">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="mobile-menu" id="mobileMenu">
+            <nav class="mobile-nav">
+                <a href="index.html" class="mobile-nav-link">Inicio</a>
+                <a href="tours.html" class="mobile-nav-link">Tours</a>
+                <a href="destinos.html" class="mobile-nav-link">Destinos</a>
+                <a href="nosotros.html" class="mobile-nav-link">Nosotros</a>
+                <a href="contacto.html" class="mobile-nav-link active">Contacto</a>
+                <div class="mobile-auth">
+                    <a href="login.html" class="btn btn-outline btn-block">Iniciar Sesion</a>
+                    <a href="registro.html" class="btn btn-primary btn-block">Registrarse</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <section class="contact-header">
+        <div class="container">
+            <nav class="breadcrumb about-breadcrumb">
+                <a href="index.html">Inicio</a>
+                <span>/</span>
+                <span>Contacto</span>
+            </nav>
+            <h1 class="contact-title">Contacto</h1>
+            <p class="contact-intro">Estamos aqui para ayudarte a planear tu proxima aventura en Tarapoto. Escríbenos por formulario o por WhatsApp y te respondemos lo antes posible.</p>
+        </div>
+    </section>
+
+    <main>
+        <section class="section contact-section">
+            <div class="container contact-layout">
+                <div class="contact-form-panel">
+                    <h2 class="contact-panel-title">Envianos un mensaje</h2>
+                    <p class="contact-panel-lead">Completa el formulario y nuestro equipo se pondra en contacto contigo en un plazo maximo de 24 horas.</p>
+
+                    <form id="contactForm" class="contact-form" novalidate>
+                        <div class="contact-form-row">
+                            <div class="form-group">
+                                <label for="nombre">Nombre completo</label>
+                                <input type="text" id="nombre" name="nombre" placeholder="Tu nombre" required autocomplete="name">
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Correo electronico</label>
+                                <input type="email" id="email" name="email" placeholder="tu@email.com" required autocomplete="email">
+                            </div>
+                        </div>
+
+                        <div class="contact-form-row">
+                            <div class="form-group">
+                                <label for="telefono">Telefono / WhatsApp</label>
+                                <input type="tel" id="telefono" name="telefono" placeholder="+51 999 000 000" autocomplete="tel">
+                            </div>
+                            <div class="form-group">
+                                <label for="asunto">Asunto</label>
+                                <select id="asunto" name="asunto" required>
+                                    <option value="">Selecciona un tema</option>
+                                    <option value="reserva">Consulta sobre una reserva</option>
+                                    <option value="tour">Informacion de un tour</option>
+                                    <option value="grupo">Viaje grupal o corporativo</option>
+                                    <option value="operador">Quiero ser operador aliado</option>
+                                    <option value="otro">Otro</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="mensaje">Mensaje</label>
+                            <textarea id="mensaje" name="mensaje" rows="5" placeholder="Cuentanos en que podemos ayudarte..." required></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg">Enviar mensaje</button>
+                    </form>
+                </div>
+
+                <aside class="contact-info-panel">
+                    <h2 class="contact-panel-title">Datos de contacto</h2>
+
+                    <ul class="contact-info-list">
+                        <li>
+                            <span class="contact-info-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            </span>
+                            <div>
+                                <strong>Oficina</strong>
+                                <p>Jr. San Martin 456, Tarapoto<br>San Martin, Peru</p>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="contact-info-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                            </span>
+                            <div>
+                                <strong>Telefono</strong>
+                                <p><a href="tel:+51942123456">+51 942 123 456</a></p>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="contact-info-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                            </span>
+                            <div>
+                                <strong>Correo</strong>
+                                <p><a href="mailto:info@tarapototours.com">info@tarapototours.com</a></p>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="contact-info-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            </span>
+                            <div>
+                                <strong>Horario de atencion</strong>
+                                <p>Lunes a sabado: 8:00 - 20:00<br>Domingo: 9:00 - 14:00</p>
+                            </div>
+                        </li>
+                    </ul>
+
+                    <a href="https://wa.me/51942123456?text=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20tours%20en%20Tarapoto" class="btn btn-primary btn-block contact-whatsapp" target="_blank" rel="noopener noreferrer">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+                        Escribir por WhatsApp
+                    </a>
+
+                    <div class="contact-map">
+                        <iframe
+                            title="Ubicacion de Tarapoto Tours en Tarapoto"
+                            src="https://www.openstreetmap.org/export/embed.html?bbox=-76.386%2C-6.502%2C-76.346%2C-6.472&amp;layer=mapnik&amp;marker=-6.487%2C-76.366"
+                            loading="lazy"
+                            referrerpolicy="no-referrer-when-downgrade">
+                        </iframe>
+                    </div>
+                </aside>
+            </div>
+        </section>
+
+        <section class="section section-alt contact-faq">
+            <div class="container">
+                <h2 class="contact-faq-title">Preguntas frecuentes</h2>
+                <div class="contact-faq-grid">
+                    <article>
+                        <h3>¿Cuanto tardan en responder?</h3>
+                        <p>Respondemos consultas por formulario y correo en un plazo maximo de 24 horas habiles. Por WhatsApp solemos atender en minutos durante horario de oficina.</p>
+                    </article>
+                    <article>
+                        <h3>¿Puedo modificar una reserva?</h3>
+                        <p>Si, escribenos con tu numero de reserva y te ayudamos a reprogramar fechas o cambiar el tour, sujeto a disponibilidad del operador.</p>
+                    </article>
+                    <article>
+                        <h3>¿Atienden reservas para grupos?</h3>
+                        <p>Si. Para grupos de 8 o mas personas ofrecemos cotizaciones personalizadas con descuentos y rutas a medida.</p>
+                    </article>
+                    <article>
+                        <h3>¿Como me uno como operador?</h3>
+                        <p>Selecciona "Quiero ser operador aliado" en el formulario y cuentanos sobre tu experiencia. Evaluamos cada solicitud en campo antes de publicar.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="index.html" class="logo">
+                        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l4.9 3.2-2.1 2.1-2.1-.4c-.4-.1-.8.1-1 .4l-.8.8 3.6 1.4 1.4 3.6.8-.8c.3-.3.5-.7.4-1l-.4-2.1 2.1-2.1 3.2 4.9c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.6.5-1.1z"/>
+                        </svg>
+                        <span>Tarapoto Tours</span>
+                    </a>
+                    <p class="footer-description">Tu plataforma de confianza para explorar la selva peruana.</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Explorar</h4>
+                    <ul>
+                        <li><a href="tours.html">Tours</a></li>
+                        <li><a href="destinos.html">Destinos</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Empresa</h4>
+                    <ul>
+                        <li><a href="nosotros.html">Nosotros</a></li>
+                        <li><a href="contacto.html">Contacto</a></li>
+                    </ul>
+                </div>
+                <div class="footer-contact">
+                    <h4>Contacto</h4>
+                    <ul>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            Jr. San Martin 456, Tarapoto
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                            +51 942 123 456
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                            info@tarapototours.com
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Tarapoto Tours. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/app.js"></script>
+    <script src="js/contacto.js"></script>
+</body>
+</html>
