@@ -5,8 +5,8 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Inicializar componentes según la página actual
     initMobileMenu();
+    initAuthHeader();
     initHomePage();
 });
 
@@ -36,6 +36,40 @@ function initMobileMenu() {
                 mobileMenu.classList.remove('open');
             }
         });
+    }
+}
+
+/**
+ * Header dinamico cuando hay sesion de turista
+ */
+async function initAuthHeader() {
+    if (typeof API === 'undefined') return;
+
+    const headerActions = document.querySelector('.header-actions');
+    const mobileAuth = document.querySelector('.mobile-auth');
+    if (!headerActions || !API.isAuthenticated()) return;
+
+    try {
+        const user = await API.getUsuarioActual();
+        const label = user ? user.nombre.split(' ')[0] : 'Cuenta';
+
+        headerActions.innerHTML = `
+            <a href="mis-reservas.html" class="btn btn-outline">Mis reservas</a>
+            <button type="button" class="btn btn-primary" id="logoutBtn" title="Cerrar sesion">${label}</button>
+        `;
+
+        if (mobileAuth) {
+            mobileAuth.innerHTML = `
+                <a href="mis-reservas.html" class="btn btn-outline btn-block">Mis reservas</a>
+                <button type="button" class="btn btn-primary btn-block" id="logoutBtnMobile">Cerrar sesion</button>
+            `;
+        }
+
+        const logout = () => API.logout();
+        document.getElementById('logoutBtn')?.addEventListener('click', logout);
+        document.getElementById('logoutBtnMobile')?.addEventListener('click', logout);
+    } catch (error) {
+        console.error('Error cargando sesion:', error);
     }
 }
 
@@ -89,7 +123,7 @@ function renderCategorias(categorias, container) {
     };
     
     container.innerHTML = categorias.map(cat => `
-        <a href="tours.html?categoria=${cat.id_categoria}" class="category-card">
+        <a href="tours.html?categoria=${cat.id}" class="category-card">
             <div class="category-icon">
                 ${iconos[cat.icono] || iconos.nature}
             </div>
@@ -240,3 +274,4 @@ window.formatPrecio = formatPrecio;
 window.formatFecha = formatFecha;
 window.mostrarAlerta = mostrarAlerta;
 window.mostrarLoading = mostrarLoading;
+window.initAuthHeader = initAuthHeader;

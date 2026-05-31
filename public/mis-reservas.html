@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Destinos - Tarapoto Tours</title>
-    <meta name="description" content="Explora los destinos turísticos más populares de Tarapoto y San Martín.">
+    <title>Mis Reservas - Tarapoto Tours</title>
+    <meta name="description" content="Consulta el estado de tus reservas y descarga tu voucher con codigo QR.">
     <link rel="stylesheet" href="css/styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,15 +22,15 @@
             <nav class="nav-desktop">
                 <a href="index.html" class="nav-link">Inicio</a>
                 <a href="tours.html" class="nav-link">Tours</a>
-                <a href="destinos.html" class="nav-link active">Destinos</a>
+                <a href="destinos.html" class="nav-link">Destinos</a>
                 <a href="nosotros.html" class="nav-link">Nosotros</a>
                 <a href="contacto.html" class="nav-link">Contacto</a>
             </nav>
             <div class="header-actions">
-                <a href="login.html" class="btn btn-outline">Iniciar Sesión</a>
+                <a href="login.html" class="btn btn-outline">Iniciar Sesion</a>
                 <a href="registro.html" class="btn btn-primary">Registrarse</a>
             </div>
-            <button class="menu-toggle" id="menuToggle" aria-label="Abrir menú">
+            <button class="menu-toggle" id="menuToggle" aria-label="Abrir menu">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="3" y1="12" x2="21" y2="12"></line>
                     <line x1="3" y1="6" x2="21" y2="6"></line>
@@ -42,57 +42,44 @@
             <nav class="mobile-nav">
                 <a href="index.html" class="mobile-nav-link">Inicio</a>
                 <a href="tours.html" class="mobile-nav-link">Tours</a>
-                <a href="destinos.html" class="mobile-nav-link active">Destinos</a>
+                <a href="destinos.html" class="mobile-nav-link">Destinos</a>
                 <a href="nosotros.html" class="mobile-nav-link">Nosotros</a>
                 <a href="contacto.html" class="mobile-nav-link">Contacto</a>
                 <div class="mobile-auth">
-                    <a href="login.html" class="btn btn-outline btn-block">Iniciar Sesión</a>
+                    <a href="login.html" class="btn btn-outline btn-block">Iniciar Sesion</a>
                     <a href="registro.html" class="btn btn-primary btn-block">Registrarse</a>
                 </div>
             </nav>
         </div>
     </header>
 
-    <section class="page-header">
+    <section class="contact-header">
         <div class="container">
-            <nav class="breadcrumb">
+            <nav class="breadcrumb about-breadcrumb">
                 <a href="index.html">Inicio</a>
                 <span>/</span>
-                <span>Destinos</span>
+                <span>Mis reservas</span>
             </nav>
-            <h1 class="page-title">Destinos turísticos</h1>
-            <p style="margin-top: 0.75rem; max-width: 720px; opacity: 0.92;">Explora los lugares más visitados de Tarapoto y San Martín con el mismo estilo visual del sitio actual.</p>
+            <h1 class="contact-title">Mis reservas</h1>
+            <p class="contact-intro" id="reservasWelcome">Consulta el estado de tus tours, descarga tu voucher y gestiona cambios de fecha.</p>
         </div>
     </section>
 
-    <section class="filters-section">
+    <main class="section reservas-section">
         <div class="container">
-            <div class="destinos-toolbar">
-                <input id="searchDestinos" class="destinos-search" type="search" placeholder="Buscar destino..." aria-label="Buscar destino">
-                <select id="sortDestinos" class="filter-select" aria-label="Ordenar destinos">
-                    <option value="relevancia">Relevancia</option>
-                    <option value="nombre_asc">Nombre: A-Z</option>
-                    <option value="nombre_desc">Nombre: Z-A</option>
-                    <option value="tours_desc">Más tours</option>
-                    <option value="tours_asc">Menos tours</option>
-                </select>
-                <a href="tours.html" class="btn btn-outline">Ver tours</a>
+            <div id="reservasContent">
+                <div class="loading-container"><div class="spinner"></div></div>
             </div>
         </div>
-    </section>
+    </main>
 
-    <section class="section">
-        <div class="container">
-            <div class="results-info">
-                <p class="results-count">Mostrando <strong id="destinosCount">0</strong> destinos</p>
-            </div>
-            <div class="destinos-grid" id="destinosGrid">
-                <div class="loading-container">
-                    <div class="spinner"></div>
-                </div>
-            </div>
+    <div class="reserva-modal" id="reservaModal" hidden>
+        <div class="reserva-modal-backdrop" data-close-modal></div>
+        <div class="reserva-modal-panel" role="dialog" aria-labelledby="modalTitle" aria-modal="true">
+            <button type="button" class="reserva-modal-close" data-close-modal aria-label="Cerrar">&times;</button>
+            <div id="voucherContent"></div>
         </div>
-    </section>
+    </div>
 
     <footer class="footer">
         <div class="container">
@@ -114,23 +101,17 @@
                     </ul>
                 </div>
                 <div class="footer-links">
-                    <h4>Empresa</h4>
+                    <h4>Cuenta</h4>
                     <ul>
-                        <li><a href="nosotros.html">Nosotros</a></li>
-                        <li><a href="contacto.html">Contacto</a></li>
+                        <li><a href="mis-reservas.html">Mis reservas</a></li>
+                        <li><a href="login.html">Iniciar sesion</a></li>
                     </ul>
                 </div>
                 <div class="footer-contact">
                     <h4>Contacto</h4>
                     <ul>
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                            +51 942 123 456
-                        </li>
-                        <li>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                            info@tarapototours.com
-                        </li>
+                        <li>+51 942 123 456</li>
+                        <li>info@tarapototours.com</li>
                     </ul>
                 </div>
             </div>
@@ -144,6 +125,6 @@
     <script src="js/schema.js"></script>
     <script src="js/api.js"></script>
     <script src="js/app.js"></script>
-    <script src="js/destinos.js"></script>
+    <script src="js/mis-reservas.js"></script>
 </body>
 </html>

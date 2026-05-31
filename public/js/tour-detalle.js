@@ -71,11 +71,11 @@ function renderTourDetalle(tour, container) {
                 <!-- Galería -->
                 <div class="tour-gallery">
                     <div class="gallery-main">
-                        <img src="${tour.imagenes[0]}" alt="${tour.nombre}" id="mainImage">
+                        <img src="${tour.imagen_principal}" alt="${tour.nombre}" id="mainImage">
                     </div>
                     ${tour.imagenes.slice(1, 3).map((img, i) => `
-                        <div class="gallery-thumb" onclick="changeMainImage('${img}')">
-                            <img src="${img}" alt="${tour.nombre} - Imagen ${i + 2}">
+                        <div class="gallery-thumb" onclick="changeMainImage('${img.url}')">
+                            <img src="${img.url}" alt="${tour.nombre} - Imagen ${i + 2}">
                         </div>
                     `).join('')}
                 </div>
@@ -128,7 +128,7 @@ function renderTourDetalle(tour, container) {
                 <div class="tour-itinerary">
                     <h3>Itinerario</h3>
                     <div class="itinerary-list">
-                        ${tour.itinerario.map((item, index) => `
+                        ${(tour.itinerario_detalle || []).map((item, index) => `
                             <div class="itinerary-item">
                                 <div class="itinerary-number">${index + 1}</div>
                                 <div class="itinerary-content">
@@ -176,11 +176,22 @@ function renderTourDetalle(tour, container) {
             <aside>
                 <div class="booking-card">
                     <div class="booking-price">
-                        <span class="booking-price-label">Precio por persona</span>
-                        <div class="booking-price-value">S/ ${tour.precio.toFixed(2)} <span>/ persona</span></div>
+                        <span class="booking-price-label">Precio por persona (nacional)</span>
+                        <div class="booking-price-value">S/ ${tour.precio_nacional.toFixed(2)} <span>/ persona</span></div>
+                        <p style="font-size:0.8125rem;color:var(--muted-foreground);margin-top:0.35rem;">
+                            Extranjero: S/ ${tour.precio_extranjero.toFixed(2)}
+                        </p>
                     </div>
                     
                     <form class="booking-form" id="bookingForm">
+                        <div class="form-group">
+                            <label for="tipoTurista">Tipo de turista</label>
+                            <select id="tipoTurista" name="tipo_turista" required>
+                                <option value="nacional">Nacional</option>
+                                <option value="extranjero">Extranjero</option>
+                            </select>
+                        </div>
+                        
                         <div class="form-group">
                             <label for="bookingDate">Fecha del tour</label>
                             <input type="date" id="bookingDate" name="fecha" required min="${getTomorrowDate()}">
@@ -197,7 +208,7 @@ function renderTourDetalle(tour, container) {
                         
                         <div class="booking-total">
                             <span class="booking-total-label">Total</span>
-                            <span class="booking-total-value" id="bookingTotal">S/ ${tour.precio.toFixed(2)}</span>
+                            <span class="booking-total-value" id="bookingTotal">S/ ${tour.precio_nacional.toFixed(2)}</span>
                         </div>
                         
                         <button type="submit" class="btn btn-primary btn-lg btn-block">
@@ -217,33 +228,41 @@ function renderTourDetalle(tour, container) {
 function setupBookingForm() {
     const form = document.getElementById('bookingForm');
     const personasSelect = document.getElementById('bookingPersonas');
+    const tipoTuristaSelect = document.getElementById('tipoTurista');
     const totalElement = document.getElementById('bookingTotal');
     
     if (!form || !currentTour) return;
-    
-    // Actualizar total cuando cambia el número de personas
-    personasSelect.addEventListener('change', function() {
-        const personas = parseInt(this.value);
-        const total = currentTour.precio * personas;
+
+    function getPrecioUnitario() {
+        return tipoTuristaSelect && tipoTuristaSelect.value === 'extranjero'
+            ? currentTour.precio_extranjero
+            : currentTour.precio_nacional;
+    }
+
+    function updateTotal() {
+        const personas = parseInt(personasSelect.value, 10);
+        const total = getPrecioUnitario() * personas;
         totalElement.textContent = `S/ ${total.toFixed(2)}`;
-    });
+    }
     
-    // Manejar envío del formulario
+    personasSelect.addEventListener('change', updateTotal);
+    if (tipoTuristaSelect) tipoTuristaSelect.addEventListener('change', updateTotal);
+    
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
         
         const formData = new FormData(form);
         const fecha = formData.get('fecha');
-        const personas = parseInt(formData.get('personas'));
+        const personas = parseInt(formData.get('personas'), 10);
+        const tipoTurista = formData.get('tipo_turista') || 'nacional';
         
-        // Verificar si el usuario está autenticado
         if (!API.isAuthenticated()) {
-            if (confirm('Necesitas iniciar sesión para hacer una reserva. ¿Deseas ir a la página de login?')) {
-                // Guardar datos de reserva pendiente
+            if (confirm('Necesitas iniciar sesion para hacer una reserva. ¿Deseas ir a la pagina de login?')) {
                 localStorage.setItem('pendingBooking', JSON.stringify({
-                    tourId: currentTour.id_tour,
+                    tourId: currentTour.id,
                     fecha,
-                    personas
+                    personas,
+                    tipo_turista: tipoTurista
                 }));
                 window.location.href = 'login.html';
             }
@@ -251,21 +270,24 @@ function setupBookingForm() {
         }
         
         try {
-            const reserva = await API.crearReserva({
-                id_tour: currentTour.id_tour,
-                fecha_reserva: fecha,
+            const precioUnitario = tipoTurista === 'extranjero'
+                ? currentTour.precio_extranjero
+                : currentTour.precio_nacional;
+
+            const resultado = await API.crearReserva({
+                tour_id: currentTour.id,
+                fecha_servicio: fecha,
                 num_personas: personas,
-                monto_total: currentTour.precio * personas
+                tipo_turista: tipoTurista,
+                precio_unitario: precioUnitario
             });
             
-            mostrarAlerta('¡Reserva creada exitosamente! Te contactaremos pronto.', 'success');
-            
-            // Opcional: redirigir a página de confirmación
-            // window.location.href = `reserva-confirmada.html?id=${reserva.id_reserva}`;
+            mostrarAlerta('Reserva creada correctamente.', 'success');
+            window.location.href = 'mis-reservas.html?id=' + resultado.reserva.id;
             
         } catch (error) {
             console.error('Error creando reserva:', error);
-            mostrarAlerta('Error al crear la reserva. Por favor, intenta de nuevo.', 'error');
+            mostrarAlerta(error.message || 'Error al crear la reserva. Por favor, intenta de nuevo.', 'error');
         }
     });
 }

@@ -43,9 +43,9 @@ async function loadCategorias() {
         
         categorias.forEach(cat => {
             const option = document.createElement('option');
-            option.value = cat.id_categoria;
+            option.value = cat.id;
             option.textContent = cat.nombre;
-            if (cat.id_categoria.toString() === currentFilters.categoria) {
+            if (cat.id.toString() === currentFilters.categoria) {
                 option.selected = true;
             }
             filterCategoria.appendChild(option);
