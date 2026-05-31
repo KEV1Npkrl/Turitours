@@ -134,9 +134,11 @@ function renderReservaCard(reserva) {
                     ${reserva.saldo_pendiente > 0 ? `<li><strong>Saldo pendiente:</strong> ${formatPrecio(reserva.saldo_pendiente)}</li>` : ''}
                     <li><strong>Codigo:</strong> ${reserva.codigo_qr || '—'}</li>
                 </ul>
+                ${renderSolicitudCambio(reserva)}
                 <div class="reserva-card-actions">
                     <button type="button" class="btn btn-primary btn-sm" data-action="voucher" data-id="${reserva.id}">Ver voucher</button>
-                    ${canReprogramar(reserva) ? `<button type="button" class="btn btn-outline btn-sm" data-action="reprogramar" data-id="${reserva.id}">Cambiar fecha</button>` : ''}
+                    ${canSolicitarCambio(reserva) ? `<button type="button" class="btn btn-outline btn-sm" data-action="reprogramar" data-id="${reserva.id}">Solicitar cambio</button>` : ''}
+                    ${canResenar(reserva) ? `<button type="button" class="btn btn-outline btn-sm" data-action="resena" data-id="${reserva.id}">Dejar reseña</button>` : ''}
                     ${canCancelar(reserva) ? `<button type="button" class="btn btn-outline btn-sm reserva-btn-danger" data-action="cancelar" data-id="${reserva.id}">Anular</button>` : ''}
                 </div>
             </div>
@@ -144,8 +146,23 @@ function renderReservaCard(reserva) {
     `;
 }
 
-function canReprogramar(reserva) {
+function renderSolicitudCambio(reserva) {
+    if (!reserva.solicitud_cambio || reserva.solicitud_cambio.estado !== 'pendiente') return '';
+    return '<p class="reserva-solicitud-pendiente">Solicitud de cambio pendiente a ' +
+        formatFecha(reserva.solicitud_cambio.fecha_nueva) + '. La agencia la revisara pronto.</p>';
+}
+
+function canSolicitarCambio(reserva) {
+    if (reserva.solicitud_cambio && reserva.solicitud_cambio.estado === 'pendiente') return false;
     return reserva.estado === 'pendiente' || reserva.estado === 'confirmada' || reserva.estado === 'reprogramada';
+}
+
+function canResenar(reserva) {
+    return reserva.estado === 'completada' && !reserva.tiene_resena;
+}
+
+function canReprogramar(reserva) {
+    return canSolicitarCambio(reserva);
 }
 
 function canCancelar(reserva) {
@@ -160,7 +177,8 @@ function bindReservaActions(container) {
 
             if (action === 'voucher') openVoucher(id);
             if (action === 'cancelar') await handleCancelar(id);
-            if (action === 'reprogramar') await handleReprogramar(id);
+            if (action === 'reprogramar') await handleSolicitarCambio(id);
+            if (action === 'resena') openResenaForm(id);
         });
     });
 }
@@ -231,11 +249,11 @@ async function handleCancelar(reservaId) {
     }
 }
 
-async function handleReprogramar(reservaId) {
+async function handleSolicitarCambio(reservaId) {
     const reserva = reservasCache.find(function(r) { return r.id === reservaId; });
     if (!reserva) return;
 
-    const fechaNueva = prompt('Nueva fecha (AAAA-MM-DD):', reserva.fecha_servicio);
+    const fechaNueva = prompt('Nueva fecha solicitada (AAAA-MM-DD):', reserva.fecha_servicio);
     if (!fechaNueva) return;
 
     if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaNueva)) {
@@ -243,13 +261,86 @@ async function handleReprogramar(reservaId) {
         return;
     }
 
+    const motivo = prompt('Motivo del cambio (opcional):') || undefined;
+
     try {
-        await API.reprogramarReserva(reservaId, fechaNueva);
-        mostrarAlerta('Fecha actualizada correctamente', 'success');
+        await API.solicitarReprogramacion(reservaId, fechaNueva, motivo);
+        mostrarAlerta('Solicitud enviada. Te avisaremos cuando sea aprobada.', 'success');
         await loadReservas();
     } catch (error) {
-        mostrarAlerta(error.message || 'No se pudo reprogramar', 'error');
+        mostrarAlerta(error.message || 'No se pudo enviar la solicitud', 'error');
     }
+}
+
+function openResenaForm(reservaId) {
+    const reserva = reservasCache.find(function(r) { return r.id === reservaId; });
+    if (!reserva) return;
+
+    const tour = reserva.tour;
+    const modal = document.getElementById('resenaModal');
+    if (!modal) return;
+
+    document.getElementById('resenaFormContent').innerHTML = `
+        <h2 id="resenaModalTitle">Tu reseña</h2>
+        <p class="resena-tour-name">${tour ? tour.nombre : 'Tour'} — ${formatFecha(reserva.fecha_servicio)}</p>
+        <form id="resenaForm" class="resena-form">
+            <div class="form-group">
+                <label for="resenaCalificacion">Calificacion (1-5)</label>
+                <select id="resenaCalificacion" class="form-input" required>
+                    <option value="">Selecciona</option>
+                    <option value="5">5 — Excelente</option>
+                    <option value="4">4 — Muy bueno</option>
+                    <option value="3">3 — Bueno</option>
+                    <option value="2">2 — Regular</option>
+                    <option value="1">1 — Malo</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="resenaComentario">Comentario</label>
+                <textarea id="resenaComentario" class="form-input" rows="4" maxlength="500" required placeholder="Cuentanos tu experiencia"></textarea>
+            </div>
+            <div class="resena-form-actions">
+                <button type="button" class="btn btn-outline" data-close-resena>Cancelar</button>
+                <button type="submit" class="btn btn-primary">Publicar reseña</button>
+            </div>
+        </form>
+    `;
+
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+
+    modal.querySelector('[data-close-resena]').addEventListener('click', closeResenaModal);
+    modal.querySelectorAll('[data-close-resena-backdrop]').forEach(function(el) {
+        el.addEventListener('click', closeResenaModal);
+    });
+
+    document.getElementById('resenaForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const cal = document.getElementById('resenaCalificacion').value;
+        const com = document.getElementById('resenaComentario').value.trim();
+        if (!cal || !com) return;
+
+        try {
+            await API.publicarResena(reservaId, cal, com);
+            mostrarAlerta('Gracias por tu reseña', 'success');
+            closeResenaModal();
+            await loadReservas();
+        } catch (error) {
+            mostrarAlerta(error.message || 'No se pudo publicar la reseña', 'error');
+        }
+    });
+}
+
+function closeResenaModal() {
+    const modal = document.getElementById('resenaModal');
+    if (modal) {
+        modal.hidden = true;
+        document.body.style.overflow = '';
+    }
+}
+
+async function handleReprogramar(reservaId) {
+    await handleSolicitarCambio(reservaId);
 }
 
 function formatHora(hora) {

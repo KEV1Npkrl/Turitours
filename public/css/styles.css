@@ -2665,14 +2665,28 @@ input, select, textarea {
     border-radius: var(--radius-lg);
     overflow: hidden;
     border: 1px solid var(--border);
-    aspect-ratio: 4 / 3;
 }
 
 .contact-map iframe {
     width: 100%;
-    height: 100%;
+    aspect-ratio: 4 / 3;
     border: 0;
     display: block;
+}
+
+.contact-map-link {
+    display: block;
+    padding: 0.65rem 1rem;
+    font-size: 0.8125rem;
+    text-align: center;
+    color: var(--primary);
+    background: #f9fafb;
+    border-top: 1px solid var(--border);
+    text-decoration: none;
+}
+
+.contact-map-link:hover {
+    text-decoration: underline;
 }
 
 .contact-faq-title {
@@ -3232,3 +3246,303 @@ input, select, textarea {
     text-align: center;
     padding: 2rem;
 }
+
+/* --- Modelo Cliente: filtros, cupos, cotizador, pago, reseñas, notificaciones --- */
+
+.filter-input {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: white;
+    min-height: 40px;
+    font-size: 0.875rem;
+}
+
+.filter-input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.filter-group-check {
+    align-self: center;
+}
+
+.filter-check {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.filter-check input {
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--primary);
+}
+
+.tour-cupos-badge {
+    position: absolute;
+    bottom: 0.75rem;
+    left: 0.75rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: var(--shadow-sm);
+}
+
+.tour-cupos-badge.cupos-ok { color: #15803d; }
+.tour-cupos-badge.cupos-low { color: #b45309; }
+
+.header-notif {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--radius);
+    color: var(--foreground);
+    border: 1px solid var(--border);
+    background: white;
+}
+
+.header-notif:hover {
+    background: var(--muted);
+}
+
+.header-notif-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 1.125rem;
+    height: 1.125rem;
+    padding: 0 0.25rem;
+    border-radius: 999px;
+    background: var(--primary);
+    color: white;
+    font-size: 0.625rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cupos-badge {
+    display: inline-block;
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--radius);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    background: var(--muted);
+    color: var(--muted-foreground);
+    margin-bottom: 0.75rem;
+}
+
+.cupos-badge.cupos-ok {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.cupos-badge.cupos-low {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.cupon-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.cupon-row .form-input {
+    flex: 1;
+}
+
+.cotizador-breakdown {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+}
+
+.cotizador-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.875rem;
+    padding: 0.25rem 0;
+}
+
+.cotizador-row.cotizador-total {
+    font-weight: 700;
+    font-size: 1rem;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px dashed var(--border);
+}
+
+.cotizador-row.cotizador-desc {
+    color: #15803d;
+}
+
+.payment-modal .payment-panel {
+    max-width: 28rem;
+}
+
+.payment-timer-wrap {
+    text-align: center;
+    font-size: 0.9375rem;
+    margin-bottom: 1rem;
+}
+
+.payment-timer-wrap strong {
+    color: var(--primary);
+    font-size: 1.125rem;
+}
+
+.payment-summary {
+    background: var(--muted);
+    border-radius: var(--radius);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+}
+
+.payment-summary p {
+    margin: 0.25rem 0;
+}
+
+.payment-hint {
+    font-size: 0.8125rem;
+    color: var(--muted-foreground);
+    margin-bottom: 1rem;
+}
+
+.payment-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.reviews-section {
+    margin-top: 2.5rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+}
+
+.reviews-list {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.review-item {
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: white;
+}
+
+.review-stars {
+    color: #f59e0b;
+    letter-spacing: 0.05em;
+    font-size: 0.875rem;
+}
+
+.review-author {
+    font-weight: 600;
+    font-size: 0.875rem;
+    margin: 0.35rem 0;
+}
+
+.reserva-solicitud-pendiente {
+    font-size: 0.8125rem;
+    color: #b45309;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: var(--radius);
+    padding: 0.5rem 0.75rem;
+    margin: 0.75rem 0 0;
+}
+
+.resena-panel {
+    max-width: 28rem;
+}
+
+.resena-tour-name {
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+    margin-bottom: 1rem;
+}
+
+.resena-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.notif-section {
+    padding-top: 0;
+}
+
+.notif-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 1rem;
+}
+
+.notif-item {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.notif-item-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+}
+
+.notif-tipo {
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.notif-item h3 {
+    font-size: 1rem;
+    margin-bottom: 0.35rem;
+}
+
+.notif-item p {
+    font-size: 0.875rem;
+    color: var(--foreground);
+    margin-bottom: 0.5rem;
+}
+
+.notif-to {
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+}
+
+.notif-empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--muted-foreground);
+}
+
+.notif-confirmacion_reserva { border-left: 4px solid #22c55e; }
+.notif-recordatorio_24h { border-left: 4px solid #3b82f6; }
+.notif-anulacion { border-left: 4px solid #ef4444; }
+.notif-comunicado { border-left: 4px solid #8b5cf6; }

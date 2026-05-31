@@ -55,14 +55,16 @@ Los endpoints previstos estan documentados al inicio de `api.js`.
 
 | Modulo informe | Estado frontend |
 |---|---|
-| RF-C01 Catalogo publico | Parcial (filtros + mock) |
-| RF-C02 Detalle tour | Parcial (precio nacional/extranjero, itinerario) |
-| RF-C03 Cotizador | Parcial (tipo turista en reserva) |
-| RF-C04 Reserva + concurrencia | Mock (validacion cupos en JS) |
-| RF-C05 Registro/login turista | Mock funcional |
-| RF-C06 Mis reservas | Implementado (lista, voucher QR, anular, reprogramar mock) |
-| RF-C07 Notificaciones email | Pendiente |
-| RF-C08 Resenas | Solo lectura desde mock |
+| RF-C01 Catalogo publico | **Completo mock** — filtros categoria/precio/orden, fecha, solo con cupo, badge cupos |
+| RF-C02 Detalle tour | **Completo mock** — itinerario, precios temporada, cupos en tiempo real |
+| RF-C03 Cotizador | **Completo mock** — tipo turista, cupon, desglose subtotal/descuento/total |
+| RF-C04 Reserva + concurrencia | **Completo mock** — bloqueo temporal, pattern, pago simulado adelanto/completo |
+| RF-C05 Registro/login turista | **Completo mock** — registro con validacion, perfil editable, sesion |
+| RF-C06 Mis reservas | **Completo mock** — lista, voucher QR, anular, solicitar cambio de fecha |
+| RF-C07 Notificaciones | **Completo mock** — confirmacion al reservar + bandeja `notificaciones.html` |
+| RF-C08 Resenas | **Completo mock** — lectura en detalle + publicar desde reserva completada |
+
+**Flujo demo sugerido:** login `kevin@example.com` → tours con filtro de fecha → reservar con cupon `TARAPOTO10` → ver notificaciones → dejar reseña en reserva completada (id demo 3).
 
 Modelo Negocio y SuperAdmin: pendientes (otro frontend / panel).
 

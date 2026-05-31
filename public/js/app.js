@@ -51,12 +51,21 @@ async function initAuthHeader() {
 
     try {
         const user = await API.getUsuarioActual();
+        const notifs = await API.getNotificacionesTurista();
+        const notifCount = notifs.length;
         const label = user ? user.nombre.split(' ')[0] : 'Cuenta';
         const initials = user
             ? (user.nombre.charAt(0) + (user.apellidos ? user.apellidos.charAt(0) : '')).toUpperCase()
             : '?';
 
         headerActions.innerHTML = `
+            <a href="notificaciones.html" class="header-notif" title="Notificaciones">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" aria-hidden="true">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+                ${notifCount ? `<span class="header-notif-badge">${notifCount}</span>` : ''}
+            </a>
             <a href="mis-reservas.html" class="btn btn-outline">Mis reservas</a>
             <a href="mi-perfil.html" class="header-profile" title="Ver mi perfil">
                 <span class="header-profile-avatar" aria-hidden="true">${initials}</span>
@@ -67,6 +76,7 @@ async function initAuthHeader() {
 
         if (mobileAuth) {
             mobileAuth.innerHTML = `
+                <a href="notificaciones.html" class="btn btn-outline btn-block">Notificaciones${notifCount ? ' (' + notifCount + ')' : ''}</a>
                 <a href="mi-perfil.html" class="header-profile header-profile-mobile btn-block">
                     <span class="header-profile-avatar" aria-hidden="true">${initials}</span>
                     <span class="header-profile-name">Mi perfil (${label})</span>
@@ -163,15 +173,18 @@ function renderDestinos(destinos, container) {
 /**
  * Renderizar tours
  */
-function renderTours(tours, container, limite = 4) {
+function renderTours(tours, container, limite = 4, options = {}) {
     const toursToShow = limite ? tours.slice(0, limite) : tours;
-    
+    const showCupos = options.showCupos && options.fecha;
+    const fechaParam = options.fecha ? '&fecha=' + encodeURIComponent(options.fecha) : '';
+
     container.innerHTML = toursToShow.map(tour => `
         <article class="tour-card">
-            <a href="tour-detalle.html?id=${tour.id_tour}">
+            <a href="tour-detalle.html?id=${tour.id_tour}${fechaParam}">
                 <div class="tour-image">
                     <img src="${tour.imagen_principal}" alt="${tour.nombre}" loading="lazy">
                     ${tour.destacado ? '<span class="tour-badge">Destacado</span>' : ''}
+                    ${showCupos ? `<span class="tour-cupos-badge ${tour.cupos_disponibles > 0 ? 'cupos-ok' : 'cupos-low'}">${tour.cupos_disponibles} cupo${tour.cupos_disponibles === 1 ? '' : 's'}</span>` : ''}
                     <button class="tour-favorite" onclick="event.preventDefault(); toggleFavorito(${tour.id_tour})">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>

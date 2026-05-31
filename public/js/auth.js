@@ -32,7 +32,6 @@ function initLoginPage() {
 
             const pending = localStorage.getItem('pendingBooking');
             if (pending) {
-                localStorage.removeItem('pendingBooking');
                 const data = JSON.parse(pending);
                 window.location.href = 'tour-detalle.html?id=' + data.tourId;
                 return;

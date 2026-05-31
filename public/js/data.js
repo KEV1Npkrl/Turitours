@@ -134,8 +134,14 @@ const MOCK_DB = {
         {
             id: 1, agencia_id: 1, tour_id: 2,
             nombre: 'Temporada alta',
-            fecha_inicio: '2025-07-01', fecha_fin: '2025-08-31',
+            fecha_inicio: '2026-06-01', fecha_fin: '2026-08-31',
             precio_nacional: 95.00, precio_extranjero: 135.00
+        },
+        {
+            id: 2, agencia_id: 1, tour_id: 1,
+            nombre: 'Temporada alta',
+            fecha_inicio: '2026-07-01', fecha_fin: '2026-08-31',
+            precio_nacional: 52.00, precio_extranjero: 75.00
         }
     ],
 
@@ -164,14 +170,34 @@ const MOCK_DB = {
             fecha_servicio: '2026-06-20', hora_recojo: '07:00:00', lugar_recojo: 'Hotel Monte Azul, Tarapoto',
             num_personas: 2, precio_unitario: 85.00, descuento: 0, total: 170.00, saldo_pendiente: 0,
             moneda: 'PEN', canal: 'web', estado: 'confirmada', motivo_anulacion: null,
-            codigo_qr: 'QR-TPT-DEMO001', created_at: '2026-05-10T10:00:00'
+            codigo_qr: 'QR-TPT-DEMO001', created_at: '2026-05-10T10:00:00', solicitud_cambio: null
         },
         {
             id: 2, agencia_id: 1, tour_id: 1, turista_id: 1, vendedor_id: null, cupon_id: null,
             fecha_servicio: '2026-07-15', hora_recojo: '08:00:00', lugar_recojo: 'Plaza de Armas, Tarapoto',
             num_personas: 3, precio_unitario: 45.00, descuento: 0, total: 135.00, saldo_pendiente: 67.50,
             moneda: 'PEN', canal: 'web', estado: 'pendiente', motivo_anulacion: null,
-            codigo_qr: 'QR-TPT-DEMO002', created_at: '2026-05-28T14:30:00'
+            codigo_qr: 'QR-TPT-DEMO002', created_at: '2026-05-28T14:30:00', solicitud_cambio: null
+        },
+        {
+            id: 3, agencia_id: 1, tour_id: 3, turista_id: 1, vendedor_id: null, cupon_id: null,
+            fecha_servicio: '2026-03-10', hora_recojo: '06:00:00', lugar_recojo: 'Hotel en Tarapoto',
+            num_personas: 2, precio_unitario: 35.00, descuento: 0, total: 70.00, saldo_pendiente: 0,
+            moneda: 'PEN', canal: 'web', estado: 'completada', motivo_anulacion: null,
+            codigo_qr: 'QR-TPT-DEMO003', created_at: '2026-02-01T09:00:00', solicitud_cambio: null
+        }
+    ],
+
+    bloqueos_cupo: [],
+
+    notificaciones: [
+        {
+            id: 1, agencia_id: 1, turista_id: 1, usuario_id: null,
+            tipo: 'confirmacion_reserva', destinatario: 'kevin@example.com',
+            asunto: 'Reserva confirmada — Laguna Azul',
+            cuerpo: 'Tu reserva QR-TPT-DEMO001 para el 20/06/2026 ha sido confirmada.',
+            enviado: 1, enviado_at: '2026-05-10T10:05:00', error: null,
+            created_at: '2026-05-10T10:05:00'
         }
     ],
 
@@ -181,7 +207,7 @@ const MOCK_DB = {
         {
             id: 1, agencia_id: 1, codigo: 'TARAPOTO10', descripcion: '10% de descuento',
             tipo: 'porcentaje', valor: 10.00,
-            fecha_inicio: '2025-01-01', fecha_fin: '2025-12-31',
+            fecha_inicio: '2025-01-01', fecha_fin: '2027-12-31',
             usos_max: 100, usos_actuales: 5, activo: 1
         }
     ]
@@ -190,7 +216,7 @@ const MOCK_DB = {
 // Compatibilidad: alias legacy usado por scripts antiguos
 const MOCK_DATA = MOCK_DB;
 
-const MOCK_DB_VERSION = 2;
+const MOCK_DB_VERSION = 3;
 
 function getMockDb() {
     const storedVersion = localStorage.getItem('turismo_tarapoto_mock_version');

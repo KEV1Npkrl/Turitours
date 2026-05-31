@@ -75,7 +75,7 @@ const Schema = (function() {
         }).length;
     }
 
-    function getCupoDisponible(tourId, fecha, db) {
+    function getCupoDisponible(tourId, fecha, db, excludeBloqueoId) {
         const tour = db.tours.find(function(t) { return t.id === tourId; });
         if (!tour) return 0;
         const ocupados = db.reservas
@@ -85,7 +85,13 @@ const Schema = (function() {
                     r.estado !== 'anulada';
             })
             .reduce(function(acc, r) { return acc + r.num_personas; }, 0);
-        return Math.max(0, tour.cupo_maximo - ocupados);
+        const now = Date.now();
+        const bloqueados = (db.bloqueos_cupo || []).filter(function(b) {
+            if (b.tour_id !== tourId || b.fecha_servicio !== fecha) return false;
+            if (excludeBloqueoId && b.id === excludeBloqueoId) return false;
+            return new Date(b.expira_at).getTime() > now;
+        }).reduce(function(acc, b) { return acc + b.num_personas; }, 0);
+        return Math.max(0, tour.cupo_maximo - ocupados - bloqueados);
     }
 
     function getPrecioTour(tour, fecha, db) {
@@ -179,8 +185,12 @@ const Schema = (function() {
 
     function enrichReserva(reserva, db) {
         const tour = db.tours.find(function(t) { return t.id === reserva.tour_id; });
+        const tieneResena = (db.resenas || []).some(function(r) {
+            return r.reserva_id === reserva.id && r.turista_id === reserva.turista_id;
+        });
         return Object.assign({}, reserva, {
-            tour: tour ? enrichTour(tour, db) : null
+            tour: tour ? enrichTour(tour, db) : null,
+            tiene_resena: tieneResena
         });
     }
 

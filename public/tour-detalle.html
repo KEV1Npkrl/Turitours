@@ -68,6 +68,21 @@
         </div>
     </main>
 
+    <div class="reserva-modal payment-modal" id="paymentModal" hidden>
+        <div class="reserva-modal-backdrop" data-close-payment></div>
+        <div class="reserva-modal-panel payment-panel" role="dialog" aria-labelledby="paymentTitle" aria-modal="true">
+            <button type="button" class="reserva-modal-close" data-close-payment aria-label="Cerrar">&times;</button>
+            <h2 id="paymentTitle">Pago seguro (simulado)</h2>
+            <p class="payment-timer-wrap">Tiempo restante: <strong id="paymentTimer">10:00</strong></p>
+            <div class="payment-summary" id="paymentSummary"></div>
+            <p class="payment-hint">Selecciona como deseas pagar. En produccion esto se conectara a una pasarela real.</p>
+            <div class="payment-actions">
+                <button type="button" class="btn btn-primary btn-block" id="btnPagoAdelanto">Pagar adelanto 50%</button>
+                <button type="button" class="btn btn-outline btn-block" id="btnPagoCompleto">Pagar total</button>
+            </div>
+        </div>
+    </div>
+
     <footer class="footer">
         <div class="container">
             <div class="footer-grid">

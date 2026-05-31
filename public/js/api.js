@@ -159,7 +159,12 @@ const API = (function() {
                 );
             }
 
-            let enriched = tours.map((t) => Schema.enrichTour(t, state));
+            const fechaFiltro = filtros.fecha || null;
+            let enriched = tours.map((t) => Schema.enrichTour(t, state, { fecha: fechaFiltro }));
+
+            if (fechaFiltro && filtros.solo_disponibles) {
+                enriched = enriched.filter((t) => t.cupos_disponibles > 0);
+            }
 
             if (filtros.ordenar) {
                 switch (filtros.ordenar) {
@@ -216,15 +221,16 @@ const API = (function() {
         return getTours({ categoria: categoriaId });
     }
 
-    async function getDisponibilidad(tourId, fecha) {
+    async function getDisponibilidad(tourId, fecha, excludeBloqueoId) {
         if (USE_MOCK) {
             await mockDelay(150);
             const state = db();
-            const cupos = Schema.getCupoDisponible(parseInt(tourId, 10), fecha, state);
-            const tour = state.tours.find((t) => t.id === parseInt(tourId, 10));
+            const tid = parseInt(tourId, 10);
+            const cupos = Schema.getCupoDisponible(tid, fecha, state, excludeBloqueoId);
+            const tour = state.tours.find((t) => t.id === tid);
             const precios = tour ? Schema.getPrecioTour(tour, fecha, state) : null;
             return {
-                tour_id: parseInt(tourId, 10),
+                tour_id: tid,
                 fecha_servicio: fecha,
                 cupos_disponibles: cupos,
                 cupo_maximo: tour ? tour.cupo_maximo : 0,
@@ -232,6 +238,132 @@ const API = (function() {
             };
         }
         return request(`/public/tours/${tourId}/disponibilidad?fecha=${fecha}`);
+    }
+
+    function getBloqueoMinutos(state) {
+        const min = state.parametros_globales && state.parametros_globales.reserva_bloqueo_min;
+        return parseInt(min, 10) || 10;
+    }
+
+    function crearNotificacion(state, datos) {
+        if (!state.notificaciones) state.notificaciones = [];
+        const notif = {
+            id: state.notificaciones.length
+                ? Math.max(...state.notificaciones.map((n) => n.id)) + 1
+                : 1,
+            agencia_id: AGENCIA_ID,
+            turista_id: datos.turista_id || null,
+            usuario_id: null,
+            tipo: datos.tipo,
+            destinatario: datos.destinatario,
+            asunto: datos.asunto,
+            cuerpo: datos.cuerpo,
+            enviado: 1,
+            enviado_at: new Date().toISOString(),
+            error: null,
+            created_at: new Date().toISOString()
+        };
+        state.notificaciones.push(notif);
+        return notif;
+    }
+
+    async function validarCupon(codigo, subtotal) {
+        if (USE_MOCK) {
+            await mockDelay(200);
+            if (!codigo || !codigo.trim()) {
+                throw new Error('Ingresa un codigo de cupon');
+            }
+            const state = db();
+            const hoy = new Date().toISOString().slice(0, 10);
+            const cupon = state.cupones.find((c) =>
+                c.agencia_id === AGENCIA_ID &&
+                c.codigo.toUpperCase() === codigo.trim().toUpperCase() &&
+                c.activo === 1
+            );
+            if (!cupon) throw new Error('Cupon no valido');
+            if (cupon.fecha_inicio && hoy < cupon.fecha_inicio) {
+                throw new Error('Este cupon aun no esta vigente');
+            }
+            if (cupon.fecha_fin && hoy > cupon.fecha_fin) {
+                throw new Error('Este cupon ha expirado');
+            }
+            if (cupon.usos_max && cupon.usos_actuales >= cupon.usos_max) {
+                throw new Error('Este cupon ya no tiene usos disponibles');
+            }
+            const descuento = cupon.tipo === 'porcentaje'
+                ? subtotal * (cupon.valor / 100)
+                : cupon.valor;
+            return {
+                valido: true,
+                cupon_id: cupon.id,
+                codigo: cupon.codigo,
+                descuento: Math.min(descuento, subtotal),
+                descripcion: cupon.descripcion
+            };
+        }
+        return request('/public/cupones/validar', {
+            method: 'POST',
+            body: JSON.stringify({ codigo, subtotal })
+        });
+    }
+
+    async function bloquearCupo(datos) {
+        if (USE_MOCK) {
+            await mockDelay(200);
+            const state = db();
+            const tourId = parseInt(datos.tour_id, 10);
+            const fecha = datos.fecha_servicio;
+            const personas = parseInt(datos.num_personas, 10);
+            const turistaId = getTuristaSessionId();
+            if (!turistaId) throw new Error('Debes iniciar sesion');
+
+            const cupos = Schema.getCupoDisponible(tourId, fecha, state);
+            if (personas > cupos) {
+                throw new Error('No hay cupos suficientes para bloquear');
+            }
+
+            if (!state.bloqueos_cupo) state.bloqueos_cupo = [];
+            const minutos = getBloqueoMinutos(state);
+            const expira = new Date(Date.now() + minutos * 60 * 1000);
+
+            const bloqueo = {
+                id: state.bloqueos_cupo.length
+                    ? Math.max(...state.bloqueos_cupo.map((b) => b.id)) + 1
+                    : 1,
+                agencia_id: AGENCIA_ID,
+                tour_id: tourId,
+                turista_id: turistaId,
+                fecha_servicio: fecha,
+                num_personas: personas,
+                expira_at: expira.toISOString(),
+                created_at: new Date().toISOString()
+            };
+            state.bloqueos_cupo.push(bloqueo);
+            persist(state);
+
+            return {
+                bloqueo_id: bloqueo.id,
+                expira_at: bloqueo.expira_at,
+                minutos_bloqueo: minutos
+            };
+        }
+        return request('/public/reservas/bloquear-cupo', {
+            method: 'POST',
+            body: JSON.stringify(datos)
+        });
+    }
+
+    async function liberarBloqueo(bloqueoId) {
+        if (USE_MOCK) {
+            const state = db();
+            if (!state.bloqueos_cupo) return { success: true };
+            state.bloqueos_cupo = state.bloqueos_cupo.filter(
+                (b) => b.id !== parseInt(bloqueoId, 10)
+            );
+            persist(state);
+            return { success: true };
+        }
+        return request(`/public/reservas/bloqueos/${bloqueoId}`, { method: 'DELETE' });
     }
 
     // --- Reservas (tabla: reservas) ---
@@ -246,14 +378,29 @@ const API = (function() {
 
             const fecha = datos.fecha_servicio || datos.fecha_reserva;
             const personas = parseInt(datos.num_personas, 10);
-            const cupos = Schema.getCupoDisponible(tour.id, fecha, state);
+            const turistaId = datos.turista_id || getTuristaSessionId();
+            if (!turistaId) throw new Error('Debes iniciar sesion para reservar');
 
+            let excludeBloqueoId = null;
+            if (datos.bloqueo_id) {
+                const bloqueo = (state.bloqueos_cupo || []).find(
+                    (b) => b.id === parseInt(datos.bloqueo_id, 10)
+                );
+                if (!bloqueo) throw new Error('El bloqueo de cupo expiro. Intenta de nuevo.');
+                if (new Date(bloqueo.expira_at).getTime() <= Date.now()) {
+                    throw new Error('El tiempo de reserva expiro. Selecciona de nuevo.');
+                }
+                if (bloqueo.turista_id !== turistaId || bloqueo.tour_id !== tour.id ||
+                    bloqueo.fecha_servicio !== fecha || bloqueo.num_personas !== personas) {
+                    throw new Error('Datos de reserva no coinciden con el bloqueo');
+                }
+                excludeBloqueoId = bloqueo.id;
+            }
+
+            const cupos = Schema.getCupoDisponible(tour.id, fecha, state, excludeBloqueoId);
             if (personas > cupos) {
                 throw new Error('No hay cupos suficientes para la fecha seleccionada');
             }
-
-            const turistaId = datos.turista_id || getTuristaSessionId();
-            if (!turistaId) throw new Error('Debes iniciar sesion para reservar');
 
             const tipoTurista = datos.tipo_turista || 'nacional';
             const precios = Schema.getPrecioTour(tour, fecha, state);
@@ -261,23 +408,25 @@ const API = (function() {
                 ? precios.precio_extranjero
                 : precios.precio_nacional;
 
-            let descuento = 0;
+            let descuento = parseFloat(datos.descuento) || 0;
+            let cuponId = datos.cupon_id || null;
             if (datos.codigo_cupon) {
-                const cupon = state.cupones.find((c) =>
-                    c.agencia_id === AGENCIA_ID &&
-                    c.codigo.toUpperCase() === datos.codigo_cupon.toUpperCase() &&
-                    c.activo === 1
-                );
-                if (cupon) {
-                    const subtotal = precioUnitario * personas;
-                    descuento = cupon.tipo === 'porcentaje'
-                        ? subtotal * (cupon.valor / 100)
-                        : cupon.valor;
-                }
+                const subtotal = precioUnitario * personas;
+                const cuponCheck = await validarCupon(datos.codigo_cupon, subtotal);
+                descuento = cuponCheck.descuento;
+                cuponId = cuponCheck.cupon_id;
+                const cupon = state.cupones.find((c) => c.id === cuponId);
+                if (cupon) cupon.usos_actuales += 1;
             }
 
             const total = Math.max(0, (precioUnitario * personas) - descuento);
-            const adelanto = datos.monto_adelanto || 0;
+            const tipoPago = datos.tipo_pago || 'adelanto';
+            let adelanto = parseFloat(datos.monto_adelanto) || 0;
+            if (tipoPago === 'completo') {
+                adelanto = total;
+            } else if (!adelanto && tipoPago === 'adelanto') {
+                adelanto = Math.round(total * 0.5 * 100) / 100;
+            }
             const saldo = Math.max(0, total - adelanto);
 
             const nuevaReserva = {
@@ -286,7 +435,7 @@ const API = (function() {
                 tour_id: tour.id,
                 turista_id: turistaId,
                 vendedor_id: null,
-                cupon_id: null,
+                cupon_id: cuponId,
                 fecha_servicio: fecha,
                 hora_recojo: datos.hora_recojo || '08:00:00',
                 lugar_recojo: datos.lugar_recojo || null,
@@ -300,10 +449,40 @@ const API = (function() {
                 estado: adelanto >= total ? 'confirmada' : 'pendiente',
                 motivo_anulacion: null,
                 codigo_qr: Schema.generarCodigoQr(),
-                created_at: new Date().toISOString()
+                created_at: new Date().toISOString(),
+                solicitud_cambio: null
             };
 
             state.reservas.push(nuevaReserva);
+
+            if (state.bloqueos_cupo && datos.bloqueo_id) {
+                state.bloqueos_cupo = state.bloqueos_cupo.filter(
+                    (b) => b.id !== parseInt(datos.bloqueo_id, 10)
+                );
+            }
+
+            const turista = state.turistas.find((t) => t.id === turistaId);
+            const email = turista && turista.email ? turista.email : 'turista@example.com';
+            crearNotificacion(state, {
+                turista_id: turistaId,
+                tipo: 'confirmacion_reserva',
+                destinatario: email,
+                asunto: 'Confirmacion de reserva — ' + tour.nombre,
+                cuerpo: 'Tu reserva ' + nuevaReserva.codigo_qr + ' para el ' + fecha +
+                    ' fue registrada. Personas: ' + personas + '. Total: S/ ' + total.toFixed(2) +
+                    (saldo > 0 ? '. Saldo pendiente: S/ ' + saldo.toFixed(2) : '.')
+            });
+            crearNotificacion(state, {
+                turista_id: turistaId,
+                tipo: 'recordatorio_24h',
+                destinatario: email,
+                asunto: 'Recordatorio — ' + tour.nombre + ' (24h antes)',
+                cuerpo: 'Recordatorio programado para tu tour el ' + fecha + '. Recojo: ' +
+                    (nuevaReserva.lugar_recojo || 'Por confirmar') + ' a las ' +
+                    (nuevaReserva.hora_recojo || '08:00').substring(0, 5) + '. Codigo: ' +
+                    nuevaReserva.codigo_qr
+            });
+
             persist(state);
 
             return {
@@ -342,12 +521,71 @@ const API = (function() {
             }
             reserva.estado = 'anulada';
             reserva.motivo_anulacion = motivo || 'Cancelada por el turista';
+            const turista = state.turistas.find((t) => t.id === reserva.turista_id);
+            if (turista && turista.email) {
+                crearNotificacion(state, {
+                    turista_id: reserva.turista_id,
+                    tipo: 'anulacion',
+                    destinatario: turista.email,
+                    asunto: 'Reserva anulada — ' + reserva.codigo_qr,
+                    cuerpo: 'Tu reserva ha sido anulada. Motivo: ' + reserva.motivo_anulacion
+                });
+            }
             persist(state);
             return { success: true, reserva: Schema.enrichReserva(reserva, state) };
         }
         return request(`/public/reservas/${reservaId}/cancelar`, {
             method: 'PUT',
             body: JSON.stringify({ motivo })
+        });
+    }
+
+    async function solicitarReprogramacion(reservaId, fechaNueva, motivo) {
+        if (USE_MOCK) {
+            await mockDelay(400);
+            const state = db();
+            const reserva = state.reservas.find((r) => r.id === parseInt(reservaId, 10));
+            if (!reserva) throw new Error('Reserva no encontrada');
+            if (reserva.turista_id !== getTuristaSessionId()) {
+                throw new Error('No tienes acceso a esta reserva');
+            }
+            if (reserva.estado === 'anulada' || reserva.estado === 'completada') {
+                throw new Error('Esta reserva no puede modificarse');
+            }
+            if (reserva.solicitud_cambio && reserva.solicitud_cambio.estado === 'pendiente') {
+                throw new Error('Ya tienes una solicitud de cambio pendiente');
+            }
+
+            const cupos = Schema.getCupoDisponible(reserva.tour_id, fechaNueva, state);
+            if (reserva.num_personas > cupos) {
+                throw new Error('No hay cupos suficientes para la fecha solicitada');
+            }
+
+            reserva.solicitud_cambio = {
+                fecha_nueva: fechaNueva,
+                motivo: motivo || 'Solicitud del turista',
+                estado: 'pendiente',
+                created_at: new Date().toISOString()
+            };
+
+            const turista = state.turistas.find((t) => t.id === reserva.turista_id);
+            if (turista && turista.email) {
+                crearNotificacion(state, {
+                    turista_id: reserva.turista_id,
+                    tipo: 'comunicado',
+                    destinatario: turista.email,
+                    asunto: 'Solicitud de cambio de fecha recibida',
+                    cuerpo: 'Recibimos tu solicitud para cambiar al ' + fechaNueva +
+                        '. La agencia la revisara pronto. Reserva: ' + reserva.codigo_qr
+                });
+            }
+
+            persist(state);
+            return { success: true, reserva: Schema.enrichReserva(reserva, state) };
+        }
+        return request(`/public/reservas/${reservaId}/solicitar-reprogramacion`, {
+            method: 'POST',
+            body: JSON.stringify({ fecha_servicio: fechaNueva, motivo })
         });
     }
 
@@ -405,6 +643,79 @@ const API = (function() {
             return Schema.enrichReserva(reserva, state);
         }
         return request(`/public/reservas/${reservaId}`);
+    }
+
+    async function getResenasTour(tourId) {
+        if (USE_MOCK) {
+            await mockDelay(150);
+            const state = db();
+            const tid = parseInt(tourId, 10);
+            return state.resenas
+                .filter((r) => r.tour_id === tid && r.visible === 1)
+                .map((r) => {
+                    const turista = state.turistas.find((t) => t.id === r.turista_id);
+                    return Object.assign({}, r, {
+                        autor: turista ? turista.nombre : 'Turista'
+                    });
+                })
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        }
+        return request(`/public/tours/${tourId}/resenas`);
+    }
+
+    async function publicarResena(reservaId, calificacion, comentario) {
+        if (USE_MOCK) {
+            await mockDelay(400);
+            const state = db();
+            const turistaId = getTuristaSessionId();
+            if (!turistaId) throw new Error('Debes iniciar sesion');
+
+            const reserva = state.reservas.find((r) => r.id === parseInt(reservaId, 10));
+            if (!reserva || reserva.turista_id !== turistaId) {
+                throw new Error('Reserva no encontrada');
+            }
+            if (reserva.estado !== 'completada') {
+                throw new Error('Solo puedes reseñar tours completados');
+            }
+
+            const existente = state.resenas.find((r) => r.reserva_id === reserva.id);
+            if (existente) throw new Error('Ya publicaste una reseña para esta reserva');
+
+            const cal = parseInt(calificacion, 10);
+            if (cal < 1 || cal > 5) throw new Error('La calificacion debe ser entre 1 y 5');
+
+            const reseña = {
+                id: state.resenas.length ? Math.max(...state.resenas.map((r) => r.id)) + 1 : 1,
+                agencia_id: AGENCIA_ID,
+                tour_id: reserva.tour_id,
+                turista_id: turistaId,
+                reserva_id: reserva.id,
+                calificacion: cal,
+                comentario: (comentario || '').trim(),
+                visible: 1,
+                created_at: new Date().toISOString().slice(0, 10)
+            };
+            state.resenas.push(reseña);
+            persist(state);
+            return { success: true, resena: reseña };
+        }
+        return request('/public/resenas', {
+            method: 'POST',
+            body: JSON.stringify({ reserva_id: reservaId, calificacion, comentario })
+        });
+    }
+
+    async function getNotificacionesTurista() {
+        if (USE_MOCK) {
+            await mockDelay(150);
+            const turistaId = getTuristaSessionId();
+            if (!turistaId) return [];
+            const state = db();
+            return (state.notificaciones || [])
+                .filter((n) => n.turista_id === turistaId)
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        }
+        return request('/public/auth/notificaciones');
     }
 
     // --- Auth turista (tabla: turistas) ---
@@ -655,11 +966,18 @@ const API = (function() {
         getTourById,
         getToursByCategoria,
         getDisponibilidad,
+        validarCupon,
+        bloquearCupo,
+        liberarBloqueo,
         crearReserva,
         getReservasUsuario,
         getReservaById,
         cancelarReserva,
+        solicitarReprogramacion,
         reprogramarReserva,
+        getResenasTour,
+        publicarResena,
+        getNotificacionesTurista,
         login,
         registro,
         logout,
