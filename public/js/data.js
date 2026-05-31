@@ -10,7 +10,7 @@ const MOCK_DB = {
         nombre: 'Tarapoto Tours',
         ruc: '20123456789',
         ciudad: 'Tarapoto',
-        direccion: 'Jr. San Martin 456',
+        direccion: 'Jr. Miguel Grau 140',
         telefono: '+51 942 123 456',
         email: 'info@tarapototours.com',
         logo_url: null,
