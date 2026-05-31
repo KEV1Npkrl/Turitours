@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión - Tarapoto Tours</title>
+    <meta name="description" content="Accede a tu cuenta de Tarapoto Tours">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container header-content">
+            <a href="index.html" class="logo">
+                <span>Tarapoto Tours</span>
+            </a>
+            <nav class="nav-desktop">
+                <a href="index.html" class="nav-link">Inicio</a>
+                <a href="tours.html" class="nav-link">Tours</a>
+                <a href="destinos.html" class="nav-link">Destinos</a>
+                <a href="nosotros.html" class="nav-link">Nosotros</a>
+                <a href="contacto.html" class="nav-link">Contacto</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="section">
+        <div class="container" style="max-width: 520px;">
+            <div class="card" style="padding: 2rem;">
+                <h1 class="section-title" style="margin-bottom: 1rem;">Iniciar Sesión</h1>
+                <p class="text-muted-foreground" style="margin-bottom: 1.5rem;">Ingresa tus datos para acceder al sistema.</p>
+                <form>
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label for="email" class="filter-label">Correo</label>
+                        <input type="email" id="email" class="filter-select" placeholder="tu@email.com">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label for="password" class="filter-label">Contraseña</label>
+                        <input type="password" id="password" class="filter-select" placeholder="Tu contraseña">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Entrar</button>
+                </form>
+                <p style="margin-top: 1rem;">¿No tienes una cuenta? <a href="registro.html">Regístrate aquí</a></p>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

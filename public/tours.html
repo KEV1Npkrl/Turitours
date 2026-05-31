@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tours - Tarapoto Tours</title>
+    <meta name="description" content="Explora todos nuestros tours en Tarapoto y la selva peruana">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container header-content">
+            <a href="index.html" class="logo">
+                <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l4.9 3.2-2.1 2.1-2.1-.4c-.4-.1-.8.1-1 .4l-.8.8 3.6 1.4 1.4 3.6.8-.8c.3-.3.5-.7.4-1l-.4-2.1 2.1-2.1 3.2 4.9c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.6.5-1.1z"/>
+                </svg>
+                <span>Tarapoto Tours</span>
+            </a>
+            <nav class="nav-desktop">
+                <a href="index.html" class="nav-link">Inicio</a>
+                <a href="tours.html" class="nav-link active">Tours</a>
+                <a href="destinos.html" class="nav-link">Destinos</a>
+                <a href="nosotros.html" class="nav-link">Nosotros</a>
+                <a href="contacto.html" class="nav-link">Contacto</a>
+            </nav>
+            <div class="header-actions">
+                <a href="login.html" class="btn btn-outline">Iniciar Sesión</a>
+                <a href="registro.html" class="btn btn-primary">Registrarse</a>
+            </div>
+            <button class="menu-toggle" id="menuToggle" aria-label="Abrir menú">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="mobile-menu" id="mobileMenu">
+            <nav class="mobile-nav">
+                <a href="index.html" class="mobile-nav-link">Inicio</a>
+                <a href="tours.html" class="mobile-nav-link active">Tours</a>
+                <a href="destinos.html" class="mobile-nav-link">Destinos</a>
+                <a href="nosotros.html" class="mobile-nav-link">Nosotros</a>
+                <a href="contacto.html" class="mobile-nav-link">Contacto</a>
+                <div class="mobile-auth">
+                    <a href="login.html" class="btn btn-outline btn-block">Iniciar Sesión</a>
+                    <a href="registro.html" class="btn btn-primary btn-block">Registrarse</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <section class="page-header">
+        <div class="container">
+            <nav class="breadcrumb">
+                <a href="index.html">Inicio</a>
+                <span>/</span>
+                <span>Tours</span>
+            </nav>
+            <h1 class="page-title">Explora nuestros tours</h1>
+        </div>
+    </section>
+
+    <section class="filters-section">
+        <div class="container">
+            <div class="filters-container">
+                <div class="filter-group">
+                    <label class="filter-label" for="filterCategoria">Categoría:</label>
+                    <select id="filterCategoria" class="filter-select">
+                        <option value="">Todas</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label" for="filterPrecio">Precio:</label>
+                    <select id="filterPrecio" class="filter-select">
+                        <option value="">Todos</option>
+                        <option value="0-50">S/ 0 - S/ 50</option>
+                        <option value="50-100">S/ 50 - S/ 100</option>
+                        <option value="100-200">S/ 100 - S/ 200</option>
+                        <option value="200+">Más de S/ 200</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label" for="filterOrdenar">Ordenar:</label>
+                    <select id="filterOrdenar" class="filter-select">
+                        <option value="">Relevancia</option>
+                        <option value="precio_asc">Precio: menor a mayor</option>
+                        <option value="precio_desc">Precio: mayor a menor</option>
+                        <option value="rating">Mejor valorados</option>
+                        <option value="popularidad">Más populares</option>
+                    </select>
+                </div>
+                <div class="view-toggle">
+                    <button class="view-btn active" data-view="grid" aria-label="Vista en cuadrícula" type="button">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                        </svg>
+                    </button>
+                    <button class="view-btn" data-view="list" aria-label="Vista en lista" type="button">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="8" y1="6" x2="21" y2="6"></line>
+                            <line x1="8" y1="12" x2="21" y2="12"></line>
+                            <line x1="8" y1="18" x2="21" y2="18"></line>
+                            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="container">
+            <div class="results-info">
+                <p class="results-count">Mostrando <strong id="resultsCount">0</strong> tours</p>
+            </div>
+            <div class="tours-grid" id="toursGrid">
+                <div class="loading-container">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="index.html" class="logo">
+                        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l4.9 3.2-2.1 2.1-2.1-.4c-.4-.1-.8.1-1 .4l-.8.8 3.6 1.4 1.4 3.6.8-.8c.3-.3.5-.7.4-1l-.4-2.1 2.1-2.1 3.2 4.9c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.6.5-1.1z"/>
+                        </svg>
+                        <span>Tarapoto Tours</span>
+                    </a>
+                    <p class="footer-description">Tu plataforma de confianza para explorar la selva peruana.</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Explorar</h4>
+                    <ul>
+                        <li><a href="tours.html">Tours</a></li>
+                        <li><a href="destinos.html">Destinos</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Empresa</h4>
+                    <ul>
+                        <li><a href="nosotros.html">Nosotros</a></li>
+                        <li><a href="contacto.html">Contacto</a></li>
+                    </ul>
+                </div>
+                <div class="footer-contact">
+                    <h4>Contacto</h4>
+                    <ul>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                            +51 942 123 456
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                            info@tarapototours.com
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Tarapoto Tours. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/data.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/tours.js"></script>
+</body>
+</html>
