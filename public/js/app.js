@@ -52,14 +52,25 @@ async function initAuthHeader() {
     try {
         const user = await API.getUsuarioActual();
         const label = user ? user.nombre.split(' ')[0] : 'Cuenta';
+        const initials = user
+            ? (user.nombre.charAt(0) + (user.apellidos ? user.apellidos.charAt(0) : '')).toUpperCase()
+            : '?';
 
         headerActions.innerHTML = `
             <a href="mis-reservas.html" class="btn btn-outline">Mis reservas</a>
-            <button type="button" class="btn btn-primary" id="logoutBtn" title="Cerrar sesion">${label}</button>
+            <a href="mi-perfil.html" class="header-profile" title="Ver mi perfil">
+                <span class="header-profile-avatar" aria-hidden="true">${initials}</span>
+                <span class="header-profile-name">${label}</span>
+            </a>
+            <button type="button" class="btn btn-outline btn-sm" id="logoutBtn" title="Cerrar sesion">Salir</button>
         `;
 
         if (mobileAuth) {
             mobileAuth.innerHTML = `
+                <a href="mi-perfil.html" class="header-profile header-profile-mobile btn-block">
+                    <span class="header-profile-avatar" aria-hidden="true">${initials}</span>
+                    <span class="header-profile-name">Mi perfil (${label})</span>
+                </a>
                 <a href="mis-reservas.html" class="btn btn-outline btn-block">Mis reservas</a>
                 <button type="button" class="btn btn-primary btn-block" id="logoutBtnMobile">Cerrar sesion</button>
             `;

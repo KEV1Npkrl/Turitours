@@ -443,14 +443,45 @@ const API = (function() {
     }
 
     async function registro(datosUsuario) {
+        if (typeof TuristaValidacion !== 'undefined') {
+            const check = TuristaValidacion.validarRegistro({
+                tipo_doc: datosUsuario.tipo_doc,
+                documento: datosUsuario.documento,
+                nombre: datosUsuario.nombre,
+                apellidos: datosUsuario.apellidos,
+                email: datosUsuario.email || '',
+                celular: datosUsuario.celular || '',
+                password: datosUsuario.password,
+                confirmPassword: datosUsuario.password,
+                politica: true
+            });
+            if (!check.valido) {
+                const msg = Object.values(check.errores)[0];
+                throw new Error(msg);
+            }
+        }
+
+        const payload = {
+            tipo_doc: datosUsuario.tipo_doc || 'DNI',
+            documento: (datosUsuario.documento || '').trim(),
+            nombre: (datosUsuario.nombre || '').trim(),
+            apellidos: (datosUsuario.apellidos || datosUsuario.apellido || '').trim(),
+            email: datosUsuario.email ? String(datosUsuario.email).trim() : null,
+            celular: datosUsuario.celular ? String(datosUsuario.celular).trim() : null,
+            fecha_nacimiento: datosUsuario.fecha_nacimiento || null,
+            pais_id: datosUsuario.pais_id ? parseInt(datosUsuario.pais_id, 10) : null,
+            restricciones_medicas: datosUsuario.restricciones_medicas || null,
+            password: datosUsuario.password
+        };
+
         if (USE_MOCK) {
             await mockDelay(500);
             const state = db();
 
             const duplicado = state.turistas.find((t) =>
                 t.agencia_id === AGENCIA_ID &&
-                ((t.email && datosUsuario.email && t.email.toLowerCase() === datosUsuario.email.toLowerCase()) ||
-                 (t.tipo_doc === datosUsuario.tipo_doc && t.documento === datosUsuario.documento))
+                ((payload.email && t.email && t.email.toLowerCase() === payload.email.toLowerCase()) ||
+                 (t.tipo_doc === payload.tipo_doc && t.documento === payload.documento))
             );
 
             if (duplicado) {
@@ -460,19 +491,19 @@ const API = (function() {
             const nuevoTurista = {
                 id: state.turistas.length ? Math.max(...state.turistas.map((t) => t.id)) + 1 : 1,
                 agencia_id: AGENCIA_ID,
-                tipo_doc: datosUsuario.tipo_doc || 'DNI',
-                documento: datosUsuario.documento,
-                nombre: datosUsuario.nombre,
-                apellidos: datosUsuario.apellidos || datosUsuario.apellido || '',
-                email: datosUsuario.email,
-                celular: datosUsuario.celular || datosUsuario.telefono || null,
-                fecha_nacimiento: datosUsuario.fecha_nacimiento || null,
-                pais_id: datosUsuario.pais_id || 1,
-                restricciones_medicas: datosUsuario.restricciones_medicas || null,
+                tipo_doc: payload.tipo_doc,
+                documento: payload.documento,
+                nombre: payload.nombre,
+                apellidos: payload.apellidos,
+                email: payload.email,
+                celular: payload.celular,
+                fecha_nacimiento: payload.fecha_nacimiento,
+                pais_id: payload.pais_id,
+                restricciones_medicas: payload.restricciones_medicas,
                 notas_crm: null,
                 segmento: 'normal',
                 email_verificado: 0,
-                password: datosUsuario.password
+                password: payload.password
             };
 
             state.turistas.push(nuevoTurista);
@@ -487,7 +518,7 @@ const API = (function() {
 
         return request('/public/auth/registro', {
             method: 'POST',
-            body: JSON.stringify(datosUsuario)
+            body: JSON.stringify(payload)
         });
     }
 
@@ -515,6 +546,9 @@ const API = (function() {
     async function getPaises() {
         if (USE_MOCK) {
             await mockDelay(100);
+            if (typeof PAISES_CATALOGO !== 'undefined' && PAISES_CATALOGO.length) {
+                return PAISES_CATALOGO;
+            }
             return db().paises;
         }
         return request('/public/paises');
@@ -534,6 +568,80 @@ const API = (function() {
             return db().parametros_globales;
         }
         return request('/public/parametros');
+    }
+
+    async function actualizarPerfil(datos) {
+        if (typeof TuristaValidacion !== 'undefined') {
+            const check = TuristaValidacion.validarPerfil(datos);
+            if (!check.valido) {
+                throw new Error(Object.values(check.errores)[0]);
+            }
+        }
+
+        const turistaId = getTuristaSessionId();
+        if (!turistaId) throw new Error('Debes iniciar sesion');
+
+        const payload = {
+            nombre: (datos.nombre || '').trim(),
+            apellidos: (datos.apellidos || '').trim(),
+            email: datos.email ? String(datos.email).trim() : null,
+            celular: datos.celular ? String(datos.celular).trim() : null,
+            pais_id: datos.pais_id ? parseInt(datos.pais_id, 10) : null,
+            restricciones_medicas: datos.restricciones_medicas ? String(datos.restricciones_medicas).trim() : null,
+            fecha_nacimiento: datos.fecha_nacimiento || null,
+            password_actual: datos.password_actual || null,
+            password_nueva: datos.password_nueva || null
+        };
+
+        if (USE_MOCK) {
+            await mockDelay(400);
+            const state = db();
+            const index = state.turistas.findIndex((t) =>
+                t.id === turistaId && t.agencia_id === AGENCIA_ID
+            );
+            if (index === -1) throw new Error('Turista no encontrado');
+
+            const turista = state.turistas[index];
+
+            if (payload.email) {
+                const emailDuplicado = state.turistas.find((t) =>
+                    t.id !== turistaId &&
+                    t.agencia_id === AGENCIA_ID &&
+                    t.email &&
+                    t.email.toLowerCase() === payload.email.toLowerCase()
+                );
+                if (emailDuplicado) throw new Error('Ya existe otra cuenta con ese correo');
+            }
+
+            if (payload.password_nueva) {
+                if (turista.password !== payload.password_actual) {
+                    throw new Error('La contrasena actual no es correcta');
+                }
+                turista.password = payload.password_nueva;
+            }
+
+            turista.nombre = payload.nombre;
+            turista.apellidos = payload.apellidos;
+            turista.email = payload.email;
+            turista.celular = payload.celular;
+            turista.pais_id = payload.pais_id;
+            turista.restricciones_medicas = payload.restricciones_medicas;
+            turista.fecha_nacimiento = payload.fecha_nacimiento;
+
+            state.turistas[index] = turista;
+            persist(state);
+
+            return {
+                success: true,
+                message: 'Perfil actualizado',
+                turista: Schema.enrichTurista(turista, state)
+            };
+        }
+
+        return request('/public/auth/perfil', {
+            method: 'PUT',
+            body: JSON.stringify(payload)
+        });
     }
 
     return {
@@ -557,6 +665,7 @@ const API = (function() {
         logout,
         isAuthenticated,
         getUsuarioActual,
+        actualizarPerfil,
         getPaises,
         getAgenciaPublica,
         getParametrosGlobales

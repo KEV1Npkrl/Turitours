@@ -163,9 +163,16 @@ const Schema = (function() {
     }
 
     function enrichTurista(turista, db) {
-        const pais = db.paises.find(function(p) { return p.id === turista.pais_id; });
+        let pais = null;
+        if (typeof PAISES_CATALOGO !== 'undefined' && PAISES_CATALOGO.length) {
+            pais = PAISES_CATALOGO.find(function(p) { return p.id === turista.pais_id; });
+        }
+        if (!pais && db && db.paises) {
+            pais = db.paises.find(function(p) { return p.id === turista.pais_id; });
+        }
         return Object.assign({}, turista, {
             pais_nombre: pais ? pais.nombre : null,
+            pais_codigo_iso: pais ? pais.codigo_iso : null,
             nombre_completo: turista.nombre + ' ' + turista.apellidos
         });
     }
