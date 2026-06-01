@@ -625,10 +625,12 @@ const MOCK_DB = {
     turistas: [
         {
             id: 1, agencia_id: 1, tipo_doc: 'DNI', documento: '72345678',
-            nombre: 'Kevin', apellidos: 'Sanchez Asensio',
-            email: 'kevin@example.com', celular: '+51 999 888 777',
+                        nombre: 'Paula', apellidos: 'Liza',
+                        email: 'paula@example.com', celular: '+51 999 888 777',
             fecha_nacimiento: '2002-05-15', pais_id: 1,
             restricciones_medicas: null, notas_crm: null,
+                        ubicacion: 'Trujillo, Perú',
+                        foto: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTnzo5HJLLgvmhEPD4Jjitt-1zDV1L7xlh9ig&s',
             segmento: 'normal', email_verificado: 1,
             password: 'demo1234'
         }
@@ -688,7 +690,7 @@ const MOCK_DB = {
 // Compatibilidad: alias legacy usado por scripts antiguos
 const MOCK_DATA = MOCK_DB;
 
-const MOCK_DB_VERSION = 17;
+const MOCK_DB_VERSION = 18;
 
 function getMockDb() {
     const storedVersion = localStorage.getItem('turismo_tarapoto_mock_version');
