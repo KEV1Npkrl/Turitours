@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Agencia - Turi Tours</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .agencia-layout { display: flex; min-height: 100vh; background: #f3f4f6; }
+        .sidebar { width: 260px; background: #1e293b; color: white; display: flex; flex-direction: column; }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid #334155; }
+        .sidebar-nav { padding: 20px 0; flex-grow: 1; }
+        .sidebar-link { display: block; padding: 12px 20px; color: #cbd5e1; text-decoration: none; transition: 0.2s; }
+        .sidebar-link:hover, .sidebar-link.active { background: #334155; color: white; border-left: 4px solid var(--primary); }
+        .sidebar-footer { padding: 20px; border-top: 1px solid #334155; }
+        
+        .main-content { flex-grow: 1; display: flex; flex-direction: column; }
+        .topbar { background: white; padding: 15px 30px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+        .content-area { padding: 30px; overflow-y: auto; }
+        
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .stat-card h3 { color: #64748b; font-size: 14px; margin-bottom: 10px; }
+        .stat-card .value { font-size: 28px; font-weight: 700; color: #0f172a; }
+        
+        .recent-activity { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .table th, .table td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        .table th { color: #64748b; font-weight: 600; }
+        .badge-success { background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;}
+        .badge-warning { background: #fef08a; color: #854d0e; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;}
+    </style>
+</head>
+<body>
+    <div class="agencia-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="../assets/turitours_logo.webp" alt="Turi Tours" height="30" style="filter: brightness(0) invert(1);">
+                <p style="margin-top:5px; font-size:12px; color:#cbd5e1;">Portal Interno</p>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="index.html" class="sidebar-link active">Dashboard</a>
+                <a href="reservas.html" class="sidebar-link" id="navVentas">Reservas y Ventas</a>
+                <a href="caja.html" class="sidebar-link" id="navCaja">Caja y Tesorería</a>
+                <a href="operaciones.html" class="sidebar-link" id="navOp">Operaciones y Manifiestos</a>
+            </nav>
+            <div class="sidebar-footer">
+                <p style="font-size: 14px; margin-bottom: 10px;">Usuario: <strong id="userRoleName">Cargando...</strong></p>
+                <a href="#" id="btnLogout" style="color: #ef4444; text-decoration: none; font-size: 14px;">Cerrar Sesión</a>
+            </div>
+        </aside>
+        
+        <main class="main-content">
+            <header class="topbar">
+                <h2>Dashboard (Operaciones de Hoy)</h2>
+                <div class="date" id="currentDate"></div>
+            </header>
+            
+            <div class="content-area">
+                <div class="dashboard-grid">
+                    <div class="stat-card">
+                        <h3>Ventas de Hoy</h3>
+                        <div class="value" id="kpiVentas">S/ 0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Reservas Nuevas</h3>
+                        <div class="value" id="kpiReservas">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Pasajeros para Hoy</h3>
+                        <div class="value" id="kpiPasajeros">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Saldo Pendiente por Cobrar</h3>
+                        <div class="value" id="kpiSaldos" style="color:#ef4444;">S/ 0.00</div>
+                    </div>
+                </div>
+                
+                <div class="recent-activity">
+                    <h3>Últimas Reservas Ingresadas (Web e Internas)</h3>
+                    <table class="table" id="tablaReservas">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Fecha Reserva</th>
+                                <th>Tour</th>
+                                <th>Fecha Tour</th>
+                                <th>Pasajeros</th>
+                                <th>Estado</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="7">Cargando reservas...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/data.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/agencia.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (localStorage.getItem('agencia_auth') !== 'true') {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            const rol = localStorage.getItem('agencia_rol');
+            document.getElementById('userRoleName').textContent = rol.toUpperCase();
+            
+            document.getElementById('btnLogout').addEventListener('click', () => {
+                localStorage.removeItem('agencia_auth');
+                localStorage.removeItem('agencia_rol');
+                window.location.href = 'login.html';
+            });
+            
+            document.getElementById('currentDate').textContent = new Date().toLocaleDateString('es-PE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            
+            // Cargar datos simulados
+            const info = await API.getMockDashboardAgencia();
+            document.getElementById('kpiVentas').textContent = 'S/ ' + info.ventasHoy.toFixed(2);
+            document.getElementById('kpiReservas').textContent = info.reservasHoy;
+            document.getElementById('kpiPasajeros').textContent = info.pasajerosHoy;
+            document.getElementById('kpiSaldos').textContent = 'S/ ' + info.saldosPendientes.toFixed(2);
+            
+            const tbody = document.querySelector('#tablaReservas tbody');
+            tbody.innerHTML = '';
+            info.ultimasReservas.forEach(r => {
+                const tour = INITIAL_MOCK_DB.tours.find(t => t.id === r.tour_id);
+                const tr = document.createElement('tr');
+                const badgeClass = r.estado_pago === 'PAGADO' ? 'badge-success' : 'badge-warning';
+                tr.innerHTML = `
+                    <td>RES-${r.id}</td>
+                    <td>${new Date(r.creado_at).toLocaleDateString()}</td>
+                    <td>${tour ? tour.nombre : 'Tour ' + r.tour_id}</td>
+                    <td>${r.fecha_servicio}</td>
+                    <td>${r.num_personas}</td>
+                    <td><span class="${badgeClass}">${r.estado_pago}</span></td>
+                    <td>S/ ${r.monto_total.toFixed(2)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        });
+    </script>
+</body>
+</html>

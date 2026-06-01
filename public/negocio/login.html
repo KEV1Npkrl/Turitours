@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión — TuriTours Panel</title>
+    <meta name="description" content="Acceso al panel de gestión interna de TuriTours — Sistema de gestión turística de Tarapoto.">
+    <link rel="stylesheet" href="../css/admin.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="admin-body">
+
+    <div class="login-page">
+        <div class="login-card">
+            <div class="login-brand">
+                <div class="login-brand-icon" style="background:transparent; box-shadow:none;">
+                    <img src="../assets/turitours_logo.webp" alt="TuriTours Logo" style="width:100%;height:100%;object-fit:contain;">
+                </div>
+                <h1>TuriTours</h1>
+                <p>Panel de Gestión Interna</p>
+            </div>
+
+            <div class="login-error" id="loginError"></div>
+
+            <form id="loginForm" autocomplete="off">
+                <div class="a-form-group">
+                    <label class="a-form-label" for="loginEmail">Correo electrónico</label>
+                    <input type="email" id="loginEmail" class="a-form-input" placeholder="tu@agencia.com" required autofocus>
+                </div>
+
+                <div class="a-form-group">
+                    <label class="a-form-label" for="loginPassword">Contraseña</label>
+                    <input type="password" id="loginPassword" class="a-form-input" placeholder="••••••••" required>
+                </div>
+
+                <button type="submit" class="a-btn a-btn-primary a-btn-lg a-btn-block" id="loginBtn">
+                    Iniciar Sesión
+                </button>
+            </form>
+
+            <div class="login-footer">
+                <p style="margin-bottom: 0.75rem">
+                    <a href="#" id="forgotLink">¿Olvidaste tu contraseña?</a>
+                </p>
+                <p style="border-top: 1px solid var(--a-border); padding-top: 0.75rem; font-size: 0.6875rem; color: var(--a-text-muted);">
+                    <strong>Cuentas demo:</strong><br>
+                    admin@agencia.com / admin123<br>
+                    vendedor@agencia.com / venta123<br>
+                    guia@agencia.com / guia123
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/data.js"></script>
+    <script src="../js/schema.js"></script>
+    <script src="../js/admin-data.js"></script>
+    <script src="../js/admin-api.js"></script>
+
+    <script>
+        // Si ya esta autenticado, redirigir al dashboard
+        if (AdminAPI.isAdminAuth()) {
+            window.location.replace('index.html');
+        }
+
+        const form = document.getElementById('loginForm');
+        const errorEl = document.getElementById('loginError');
+        const btn = document.getElementById('loginBtn');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorEl.classList.remove('show');
+            btn.disabled = true;
+            btn.textContent = 'Ingresando...';
+
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                await AdminAPI.login(email, password);
+                window.location.href = 'index.html';
+            } catch (err) {
+                errorEl.textContent = err.message;
+                errorEl.classList.add('show');
+                btn.disabled = false;
+                btn.textContent = 'Iniciar Sesión';
+            }
+        });
+
+        document.getElementById('forgotLink').addEventListener('click', (e) => {
+            e.preventDefault();
+            alert('Funcion disponible cuando se implemente el backend Java. Por ahora usa las credenciales demo.');
+        });
+    </script>
+</body>
+</html>

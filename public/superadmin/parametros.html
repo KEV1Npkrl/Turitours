@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parámetros Globales - SuperAdmin</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --sa-sidebar: #1e293b; --sa-hover: #334155; --sa-accent: #3b82f6; }
+        body { background-color: #f1f5f9; display: flex; min-height: 100vh; margin: 0; }
+        .sa-sidebar { width: 260px; background-color: var(--sa-sidebar); color: white; display: flex; flex-direction: column; position: fixed; height: 100vh; z-index: 10; }
+        .sa-brand { padding: 1.5rem; font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sa-nav { padding: 1rem 0; flex: 1; }
+        .sa-nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.5rem; color: #cbd5e1; transition: all var(--transition); }
+        .sa-nav-item:hover, .sa-nav-item.active { background-color: var(--sa-hover); color: white; border-left: 4px solid var(--sa-accent); }
+        .sa-main { margin-left: 260px; flex: 1; display: flex; flex-direction: column; }
+        .sa-header { background-color: white; height: 4rem; display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+        .sa-user { display: flex; align-items: center; gap: 1rem; font-weight: 500; }
+        .btn-logout { color: var(--destructive); font-size: 0.875rem; font-weight: 500; display: flex; align-items: center; gap: 0.25rem; }
+        .sa-content { padding: 2rem; }
+        
+        .panel-card { background: white; border-radius: var(--radius-lg); padding: 1.5rem; box-shadow: var(--shadow-sm); margin-bottom: 2rem; }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+        .panel-title { font-size: 1.25rem; font-weight: 600; }
+        
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; }
+        .form-input { width: 100%; padding: 0.625rem; border: 1px solid var(--border); border-radius: var(--radius); outline: none; }
+        
+        .toast { position: fixed; bottom: 20px; right: 20px; background: #16a34a; color: white; padding: 1rem 2rem; border-radius: var(--radius); box-shadow: var(--shadow-lg); transition: opacity 0.3s; opacity: 0; pointer-events: none; }
+        .toast.show { opacity: 1; }
+    </style>
+</head>
+<body>
+    <aside class="sa-sidebar">
+        <div class="sa-brand">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            Tarapoto SaaS
+        </div>
+        <nav class="sa-nav">
+            <a href="index.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg> Dashboard Global</a>
+            <a href="agencias.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg> Agencias y Planes</a>
+            <a href="reportes.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg> Reportes Sectoriales</a>
+            <a href="auditoria.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg> Auditoría</a>
+            <a href="soporte.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg> Soporte Técnico</a>
+            <a href="maestros.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> Usuarios Maestros</a>
+            <a href="versiones.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg> Versiones y Despliegue</a>
+            <a href="parametros.html" class="sa-nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg> Parámetros Globales</a>
+        </nav>
+    </aside>
+
+    <main class="sa-main">
+        <header class="sa-header">
+            <h2 style="font-size: 1.25rem; font-weight: 600;">Configuración del Sistema</h2>
+            <div class="sa-user">
+                <span id="saUserName">SuperAdmin</span>
+                <button id="btnLogout" class="btn-logout">Salir</button>
+            </div>
+        </header>
+
+        <div class="sa-content">
+            <div class="panel-card">
+                <div class="panel-header">
+                    <h3 class="panel-title">Variables Económicas y Operativas</h3>
+                </div>
+                <form id="paramForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Tipo de Cambio USD a PEN</label>
+                            <input type="number" step="0.01" class="form-input" id="pTc" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">IGV / IVA (%)</label>
+                            <input type="number" step="1" class="form-input" id="pIva" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Tiempo Bloqueo Reserva (minutos)</label>
+                            <input type="number" step="1" class="form-input" id="pBloq" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Moneda por Defecto</label>
+                            <select id="pMoneda" class="form-select">
+                                <option value="PEN">Soles (PEN)</option>
+                                <option value="USD">Dólares (USD)</option>
+                                <option value="EUR">Euros (EUR)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="background-color: var(--sa-accent)">Guardar Cambios</button>
+                </form>
+            </div>
+
+            <div class="panel-card">
+                <div class="panel-header">
+                    <h3 class="panel-title">Categorías Estándar de Tours</h3>
+                </div>
+                <form id="catForm">
+                    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                        <input type="text" id="cNuevaCat" class="form-input" placeholder="Nueva categoría (ej. Gastronómico)" required>
+                        <button type="submit" class="btn btn-outline">+ Añadir Categoría</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table-sa">
+                            <thead>
+                                <tr><th>ID</th><th>Nombre</th><th>Acciones</th></tr>
+                            </thead>
+                            <tbody id="catTableBody">
+                                <!-- JS Populates -->
+                            </tbody>
+                        </table>
+                    </div>
+                </form>
+            </div>
+
+            <div class="panel-card">
+                <div class="panel-header">
+                    <h3 class="panel-title">Comunicados Masivos (Broadcast)</h3>
+                </div>
+                <form id="broadcastForm">
+                    <div class="form-group">
+                        <label class="form-label">Asunto del Comunicado</label>
+                        <input type="text" class="form-input" id="bAsunto" required placeholder="Ej: Mantenimiento Programado">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Mensaje para todas las Agencias</label>
+                        <textarea class="form-input" id="bMensaje" rows="4" required placeholder="Escribe tu mensaje..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Enviar Comunicado a Todos</button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast" class="toast">Guardado correctamente</div>
+
+    <script src="../js/data.js"></script>
+    <script>
+        const saUser = JSON.parse(localStorage.getItem('sa_user'));
+        if (!saUser) window.location.href = 'login.html';
+        document.getElementById('saUserName').textContent = saUser.nombre;
+        document.getElementById('btnLogout').addEventListener('click', () => {
+            localStorage.removeItem('sa_user'); window.location.href = 'login.html';
+        });
+
+        const db = getMockDb();
+        const p = db.parametros_globales;
+        
+        document.getElementById('pTc').value = p.tipo_cambio_usd;
+        document.getElementById('pIva').value = p.iva_porcentaje;
+        document.getElementById('pBloq').value = p.reserva_bloqueo_min;
+        if(document.getElementById('pMoneda')) document.getElementById('pMoneda').value = p.moneda_default || 'PEN';
+
+        function renderCategorias() {
+            const tbody = document.getElementById('catTableBody');
+            tbody.innerHTML = '';
+            // Usaremos la agencia_id = 1 como estandar temporalmente, o las filtraremos como globales si tuvieran agencia_id=null
+            const globales = db.categorias_tour.filter(c => c.agencia_id === null || c.agencia_id === 1);
+            globales.forEach(c => {
+                tbody.innerHTML += `<tr>
+                    <td>${c.id}</td>
+                    <td>${c.nombre}</td>
+                    <td><button type="button" class="btn btn-outline btn-sm" onclick="borrarCategoria(${c.id})" style="color:var(--destructive); border-color:var(--destructive)">Eliminar</button></td>
+                </tr>`;
+            });
+        }
+        renderCategorias();
+
+        window.borrarCategoria = function(id) {
+            db.categorias_tour = db.categorias_tour.filter(c => c.id !== id);
+            saveMockDb(db);
+            renderCategorias();
+            showToast('Categoría eliminada');
+        };
+
+        document.getElementById('catForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const nom = document.getElementById('cNuevaCat').value;
+            db.categorias_tour.push({ id: db.categorias_tour.length + 1, agencia_id: null, nombre: nom, descripcion: '' });
+            saveMockDb(db);
+            document.getElementById('cNuevaCat').value = '';
+            renderCategorias();
+            showToast('Categoría añadida');
+        });
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        document.getElementById('paramForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            db.parametros_globales.tipo_cambio_usd = parseFloat(document.getElementById('pTc').value);
+            db.parametros_globales.iva_porcentaje = parseInt(document.getElementById('pIva').value);
+            db.parametros_globales.reserva_bloqueo_min = parseInt(document.getElementById('pBloq').value);
+            db.parametros_globales.moneda_default = document.getElementById('pMoneda').value;
+            
+            // Auditar
+            db.auditoria_global.push({ id: db.auditoria_global.length + 1, super_usuario_id: saUser.id, accion: 'UPDATE_PARAMS', detalles: 'Parámetros actualizados', ip: 'Localhost', created_at: new Date().toISOString() });
+            
+            saveMockDb(db);
+            showToast('Parámetros actualizados');
+        });
+
+        document.getElementById('broadcastForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const asunto = document.getElementById('bAsunto').value;
+            const msj = document.getElementById('bMensaje').value;
+
+            // Simular inserción de notificaciones para todas las agencias activas
+            db.agencias.filter(a => a.estado === 'activa').forEach(ag => {
+                db.notificaciones.push({
+                    id: db.notificaciones.length + 1,
+                    agencia_id: ag.id,
+                    turista_id: null,
+                    usuario_id: null,
+                    tipo: 'comunicado',
+                    destinatario: ag.email,
+                    asunto: asunto,
+                    cuerpo: msj,
+                    enviado: 1,
+                    enviado_at: new Date().toISOString(),
+                    created_at: new Date().toISOString()
+                });
+            });
+            
+            db.auditoria_global.push({ id: db.auditoria_global.length + 1, super_usuario_id: saUser.id, accion: 'BROADCAST', detalles: 'Envío de comunicado masivo', ip: 'Localhost', created_at: new Date().toISOString() });
+            saveMockDb(db);
+            
+            document.getElementById('broadcastForm').reset();
+            showToast('Comunicado enviado a ' + db.agencias.filter(a => a.estado === 'activa').length + ' agencias');
+        });
+    </script>
+</body>
+</html>

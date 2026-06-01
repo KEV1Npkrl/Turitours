@@ -1,6 +1,6 @@
 /**
  * ========================================
- * DESTINOS PAGE - Tarapoto Tours
+ * DESTINOS PAGE - Turi Tours
  * ========================================
  */
 

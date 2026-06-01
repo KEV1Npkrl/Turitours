@@ -29,7 +29,7 @@ async function loadTourDetalle(tourId) {
     try {
         currentTour = await API.getTourById(tourId);
         if (breadcrumbTour) breadcrumbTour.textContent = currentTour.nombre;
-        document.title = currentTour.nombre + ' - Tarapoto Tours';
+        document.title = currentTour.nombre + ' - Turi Tours';
 
         const resenas = await API.getResenasTour(tourId);
         renderTourDetalle(currentTour, resenas, tourContent);
@@ -52,14 +52,21 @@ function renderTourDetalle(tour, resenas, container) {
     container.innerHTML = `
         <div class="tour-detail">
             <div class="tour-main">
-                <div class="tour-gallery">
-                    <div class="gallery-main">
-                        <img src="${tour.imagen_principal}" alt="${tour.nombre}" id="mainImage">
+                <div class="tour-carousel-wrapper" style="position:relative; width:100%; height:450px; border-radius:12px; overflow:hidden; background:#1a1a1a; margin-bottom:1.5rem;">
+                    <div id="carouselTrack" style="display:flex; transition:transform 0.4s ease-in-out; height:100%; width:${tour.imagenes.length * 100}%;">
+                        ${tour.imagenes.map(img => `
+                            <div style="flex:0 0 ${100 / tour.imagenes.length}%; height:100%;">
+                                <img src="${img.url}" style="width:100%; height:100%; object-fit:cover;" alt="${tour.nombre}">
+                            </div>
+                        `).join('')}
                     </div>
-                    ${tour.imagenes.slice(1, 3).map(function(img, i) {
-                        return '<div class="gallery-thumb" onclick="changeMainImage(\'' + img.url + '\')">' +
-                            '<img src="' + img.url + '" alt="' + tour.nombre + '"></div>';
-                    }).join('')}
+                    ${tour.imagenes.length > 1 ? `
+                        <button onclick="moveCarousel(-1)" style="position:absolute; top:50%; left:10px; transform:translateY(-50%); background:rgba(0,0,0,0.6); color:#fff; border:none; width:44px; height:44px; border-radius:50%; cursor:pointer; font-size:24px; display:flex; align-items:center; justify-content:center; transition:background 0.2s; z-index:10;">&#10094;</button>
+                        <button onclick="moveCarousel(1)" style="position:absolute; top:50%; right:10px; transform:translateY(-50%); background:rgba(0,0,0,0.6); color:#fff; border:none; width:44px; height:44px; border-radius:50%; cursor:pointer; font-size:24px; display:flex; align-items:center; justify-content:center; transition:background 0.2s; z-index:10;">&#10095;</button>
+                        <div style="position:absolute; bottom:15px; left:0; width:100%; text-align:center; z-index:10;">
+                            ${tour.imagenes.map((_, i) => `<span id="dot-${i}" style="display:inline-block; width:10px; height:10px; background:${i===0?'#fff':'rgba(255,255,255,0.4)'}; border-radius:50%; margin:0 5px; transition:background 0.3s; cursor:pointer;" onclick="goToSlide(${i})"></span>`).join('')}
+                        </div>
+                    ` : ''}
                 </div>
                 <div class="tour-header">
                     <span class="tour-category">${tour.categoria_nombre}</span>
@@ -147,14 +154,17 @@ function renderTourDetalle(tour, resenas, container) {
         </div>
     `;
 
-    const personasSelect = document.getElementById('bookingPersonas');
-    for (let n = 1; n <= tour.capacidad_maxima; n++) {
-        const opt = document.createElement('option');
-        opt.value = n;
-        opt.textContent = n + ' persona' + (n > 1 ? 's' : '');
-        personasSelect.appendChild(opt);
-    }
-}
+      const personasSelect = document.getElementById('bookingPersonas');
+      for (let n = 1; n <= tour.capacidad_maxima; n++) {
+          const opt = document.createElement('option');
+          opt.value = n;
+          opt.textContent = n + ' persona' + (n > 1 ? 's' : '');
+          personasSelect.appendChild(opt);
+      }
+
+      totalCarouselItems = tour.imagenes.length;
+      currentCarouselIndex = 0;
+  }
 
 function renderResenaItem(r) {
     const stars = '★'.repeat(r.calificacion) + '☆'.repeat(5 - r.calificacion);
@@ -214,6 +224,8 @@ async function refreshCotizador() {
     const temporadaLabel = document.getElementById('temporadaLabel');
 
     if (!fecha) {
+        const basePrecio = tipo === 'extranjero' ? currentTour.precio_extranjero : currentTour.precio_nacional;
+        precioDisplay.innerHTML = 'S/ ' + basePrecio.toFixed(2) + ' <span>/ persona</span>';
         cuposBadge.textContent = 'Selecciona una fecha para ver cupos';
         cuposBadge.className = 'cupos-badge';
         return;
@@ -431,3 +443,35 @@ function escapeHtml(text) {
 }
 
 window.changeMainImage = changeMainImage;
+
+let currentCarouselIndex = 0;
+let totalCarouselItems = 0;
+
+function moveCarousel(direction) {
+    if(totalCarouselItems <= 1) return;
+    currentCarouselIndex += direction;
+    if(currentCarouselIndex < 0) currentCarouselIndex = totalCarouselItems - 1;
+    if(currentCarouselIndex >= totalCarouselItems) currentCarouselIndex = 0;
+    updateCarouselUI();
+}
+
+function goToSlide(index) {
+    currentCarouselIndex = index;
+    updateCarouselUI();
+}
+
+function updateCarouselUI() {
+    const track = document.getElementById('carouselTrack');
+    if(track) {
+        track.style.transform = `translateX(-${currentCarouselIndex * (100 / totalCarouselItems)}%)`;
+    }
+    for(let i=0; i<totalCarouselItems; i++) {
+        const dot = document.getElementById('dot-' + i);
+        if(dot) {
+            dot.style.background = i === currentCarouselIndex ? '#fff' : 'rgba(255,255,255,0.4)';
+        }
+    }
+}
+
+window.moveCarousel = moveCarousel;
+window.goToSlide = goToSlide;

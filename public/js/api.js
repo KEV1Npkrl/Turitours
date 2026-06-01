@@ -472,16 +472,7 @@ const API = (function() {
                     ' fue registrada. Personas: ' + personas + '. Total: S/ ' + total.toFixed(2) +
                     (saldo > 0 ? '. Saldo pendiente: S/ ' + saldo.toFixed(2) : '.')
             });
-            crearNotificacion(state, {
-                turista_id: turistaId,
-                tipo: 'recordatorio_24h',
-                destinatario: email,
-                asunto: 'Recordatorio — ' + tour.nombre + ' (24h antes)',
-                cuerpo: 'Recordatorio programado para tu tour el ' + fecha + '. Recojo: ' +
-                    (nuevaReserva.lugar_recojo || 'Por confirmar') + ' a las ' +
-                    (nuevaReserva.hora_recojo || '08:00').substring(0, 5) + '. Codigo: ' +
-                    nuevaReserva.codigo_qr
-            });
+
 
             persist(state);
 
@@ -711,6 +702,52 @@ const API = (function() {
             const turistaId = getTuristaSessionId();
             if (!turistaId) return [];
             const state = db();
+            const turista = state.turistas.find(t => t.id === turistaId);
+            const email = turista ? turista.email : '';
+            
+            // Generate real notifications dynamically based on dates
+            const hoyStr = new Date().toISOString().split('T')[0];
+            const manana = new Date();
+            manana.setDate(manana.getDate() + 1);
+            const mananaStr = manana.toISOString().split('T')[0];
+            
+            let changed = false;
+            if (state.reservas) {
+                state.reservas.filter(r => r.turista_id === turistaId && r.estado !== 'anulada').forEach(r => {
+                    // 24h Reminder
+                    if (r.fecha_servicio === mananaStr) {
+                        const hasReminder = state.notificaciones.some(n => n.turista_id === turistaId && n.tipo === 'recordatorio_24h' && n.cuerpo.includes(r.codigo_qr));
+                        if (!hasReminder) {
+                            const tour = state.tours.find(t => t.id === r.tour_id);
+                            crearNotificacion(state, {
+                                turista_id: turistaId,
+                                tipo: 'recordatorio_24h',
+                                destinatario: email,
+                                asunto: 'Recordatorio mañana — ' + (tour ? tour.nombre : 'Tour'),
+                                cuerpo: 'Recordatorio para tu tour mañana ' + r.fecha_servicio + '. Codigo: ' + r.codigo_qr
+                            });
+                            changed = true;
+                        }
+                    }
+                    // Post-tour review request
+                    if (r.fecha_servicio < hoyStr) {
+                        const hasReviewReq = state.notificaciones.some(n => n.turista_id === turistaId && n.tipo === 'comunicado' && n.cuerpo.includes(r.codigo_qr));
+                        if (!hasReviewReq) {
+                            const tour = state.tours.find(t => t.id === r.tour_id);
+                            crearNotificacion(state, {
+                                turista_id: turistaId,
+                                tipo: 'comunicado',
+                                destinatario: email,
+                                asunto: '¿Qué tal te pareció ' + (tour ? tour.nombre : 'el tour') + '?',
+                                cuerpo: 'Esperamos que hayas disfrutado tu viaje. Déjanos una reseña para tu reserva ' + r.codigo_qr
+                            });
+                            changed = true;
+                        }
+                    }
+                });
+            }
+            if (changed) persist(state);
+
             return (state.notificaciones || [])
                 .filter((n) => n.turista_id === turistaId)
                 .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));

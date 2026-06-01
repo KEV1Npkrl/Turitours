@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo de Destinos – TuriTours</title>
+    <link rel="stylesheet" href="../css/admin.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .tour-row-img {
+            width: 80px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-right: 12px;
+            display: inline-block;
+            vertical-align: middle;
+            border: 1px solid var(--a-border);
+        }
+        .tour-img-preview {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid var(--a-border);
+            margin-top: 8px;
+            display: none;
+        }
+    </style>
+</head>
+<body class="admin-body">
+    <div class="admin-layout">
+        <aside class="admin-sidebar" id="adminSidebar"></aside>
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <main class="admin-main">
+            <header class="admin-header">
+                <div class="admin-header-left">
+                    <button class="menu-toggle-admin" id="menuToggleAdmin">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <div>
+                        <h1 class="admin-header-title">Destinos Turísticos</h1>
+                        <p class="admin-header-subtitle">Gestión de ciudades y zonas turísticas del catálogo</p>
+                    </div>
+                </div>
+            </header>
+
+            <div class="admin-content">
+                <div class="a-toolbar">
+                    <input type="text" class="a-search-input" placeholder="Buscar destino..." onkeyup="filtrarDestinos(this.value)">
+                    <button class="a-btn a-btn-primary" onclick="abrirModalDestino()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Crear Destino
+                    </button>
+                </div>
+
+                <div class="a-table-wrap">
+                    <table class="a-table" id="tablaDestinos">
+                        <thead>
+                            <tr>
+                                <th>Destino (Ciudad)</th>
+                                <th>Descripción</th>
+                                <th>Estado</th>
+                                <th style="text-align: right">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="4" style="text-align:center">Cargando destinos...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Destino -->
+    <div class="a-modal-overlay" id="modalDestino">
+        <div class="a-modal" style="max-width: 600px; width: 100%;">
+            <div class="a-modal-header">
+                <h3 class="a-modal-title" id="modalDestinoTitle">Nuevo Destino</h3>
+                <button class="a-modal-close" onclick="AdminApp.closeModal('modalDestino')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="a-modal-body">
+                <form id="formDestino" onsubmit="guardarDestino(event)">
+                    <input type="hidden" id="destinoId">
+                    <div class="a-form-group">
+                        <label class="a-form-label">Nombre del Destino</label>
+                        <input type="text" id="destinoNombre" class="a-form-input" required placeholder="Ej: Tarapoto">
+                    </div>
+                    <div class="a-form-group">
+                        <label class="a-form-label">Descripción</label>
+                        <textarea id="destinoDesc" class="a-form-input" rows="3" required placeholder="Ciudad de las Palmeras..."></textarea>
+                    </div>
+                    <div class="a-form-group">
+                        <label class="a-form-label">URL de Imagen</label>
+                        <input type="url" id="destinoImg" class="a-form-input" required placeholder="https://..." oninput="actualizarPreview(this.value)">
+                        <img id="destinoPreview" class="tour-img-preview" alt="Preview">
+                    </div>
+                    <div class="a-form-group">
+                        <label class="a-form-label">Estado</label>
+                        <select id="destinoEstado" class="a-form-input">
+                            <option value="1">Activo</option>
+                            <option value="0">Inactivo</option>
+                        </select>
+                    </div>
+                    <div class="a-modal-footer" style="justify-content: flex-end; padding: 0; margin-top: 1.5rem;">
+                        <button type="button" class="a-btn" onclick="AdminApp.closeModal('modalDestino')" style="margin-right: 1rem;">Cancelar</button>
+                        <button type="submit" class="a-btn a-btn-primary">Guardar Destino</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="adminToastContainer" class="toast-container"></div>
+
+    <script src="../js/data.js"></script>
+    <script src="../js/schema.js"></script>
+    <script src="../js/admin-data.js"></script>
+    <script src="../js/admin-api.js"></script>
+    <script src="../js/admin-app.js"></script>
+    <script>
+        let allDestinos = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (AdminApp.init('destinos')) {
+                cargarDestinos();
+            }
+        });
+
+        async function cargarDestinos() {
+            try {
+                allDestinos = await AdminAPI.getDestinos();
+                renderDestinos(allDestinos);
+            } catch (err) {
+                AdminApp.toast(err.message, 'error');
+            }
+        }
+
+        function renderDestinos(lista) {
+            const tbody = document.querySelector('#tablaDestinos tbody');
+            if (lista.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center">No hay destinos registrados.</td></tr>';
+                return;
+            }
+
+            const getMedia = (id) => {
+                const schemaWin = window.Schema || {};
+                const schemaDB = JSON.parse(localStorage.getItem('turitours_db')) || {destinos:[]};
+                const dest = schemaDB.destinos.find(d => d.id === id);
+                if (dest && dest.imagen) return dest.imagen;
+                // Fallback to initial DESTINO_MEDIA logic if possible, or dummy
+                return 'https://images.unsplash.com/photo-1518495973542-4542c06a5843?w=800&q=80';
+            };
+
+            tbody.innerHTML = lista.map(d => {
+                const badgeClass = d.activo ? 'a-badge-success' : 'a-badge-danger';
+                const estado = d.activo ? 'Activo' : 'Inactivo';
+                const img = d.imagen || getMedia(d.id);
+                
+                return `
+                    <tr>
+                        <td>
+                            <div style="display:flex; align-items:center;">
+                                <img src="${img}" class="tour-row-img" alt="Foto">
+                                <strong>${d.nombre}</strong>
+                            </div>
+                        </td>
+                        <td><div style="max-width:300px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${d.descripcion}">${d.descripcion || ''}</div></td>
+                        <td><span class="a-badge ${badgeClass}">${estado}</span></td>
+                        <td style="text-align: right">
+                            <button class="a-btn" style="padding:4px 8px; font-size:12px;" onclick="editarDestino(${d.id})">Editar</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filtrarDestinos(term) {
+            const txt = term.toLowerCase();
+            const filtrados = allDestinos.filter(d => 
+                d.nombre.toLowerCase().includes(txt) || 
+                (d.descripcion && d.descripcion.toLowerCase().includes(txt))
+            );
+            renderDestinos(filtrados);
+        }
+
+        function abrirModalDestino() {
+            document.getElementById('destinoId').value = '';
+            document.getElementById('formDestino').reset();
+            document.getElementById('modalDestinoTitle').textContent = 'Nuevo Destino';
+            document.getElementById('destinoPreview').style.display = 'none';
+            AdminApp.openModal('modalDestino');
+        }
+
+        function cerrarModalDestino() {
+            AdminApp.closeModal('modalDestino');
+        }
+
+        function editarDestino(id) {
+            const d = allDestinos.find(x => x.id === id);
+            if (!d) return;
+
+            document.getElementById('modalDestinoTitle').textContent = 'Editar Destino';
+            document.getElementById('destinoId').value = d.id;
+            document.getElementById('destinoNombre').value = d.nombre;
+            document.getElementById('destinoDesc').value = d.descripcion || '';
+            
+            const schemaDB = JSON.parse(localStorage.getItem('turitours_db')) || {destinos:[]};
+            const localDest = schemaDB.destinos.find(x => x.id === d.id);
+            const img = d.imagen || (localDest && localDest.imagen) || 'https://images.unsplash.com/photo-1518495973542-4542c06a5843?w=800&q=80';
+            
+            document.getElementById('destinoImg').value = img;
+            document.getElementById('destinoEstado').value = d.activo;
+            
+            actualizarPreview(img);
+            AdminApp.openModal('modalDestino');
+        }
+
+        function actualizarPreview(url) {
+            const img = document.getElementById('destinoPreview');
+            if (url) {
+                img.src = url;
+                img.style.display = 'block';
+            } else {
+                img.style.display = 'none';
+            }
+        }
+
+        async function guardarDestino(e) {
+            e.preventDefault();
+            const btn = document.querySelector('#formDestino button[type="submit"]');
+            btn.disabled = true;
+
+            const id = document.getElementById('destinoId').value;
+            const payload = {
+                nombre: document.getElementById('destinoNombre').value,
+                descripcion: document.getElementById('destinoDesc').value,
+                imagen: document.getElementById('destinoImg').value,
+                activo: parseInt(document.getElementById('destinoEstado').value)
+            };
+
+            try {
+                if (id) {
+                    await AdminAPI.actualizarDestino(id, payload);
+                    AdminApp.toast('Destino actualizado correctamente', 'success');
+                } else {
+                    const newId = await AdminAPI.buscarOCrearDestino(payload.nombre, 0, 0);
+                    await AdminAPI.actualizarDestino(newId, payload);
+                    AdminApp.toast('Destino creado', 'success');
+                }
+                cerrarModalDestino();
+                cargarDestinos();
+            } catch (err) {
+                AdminApp.toast(err.message, 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

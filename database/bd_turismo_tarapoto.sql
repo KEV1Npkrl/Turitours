@@ -16,6 +16,11 @@ CREATE TABLE planes (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
+CREATE TABLE paises (
+    codigo_iso CHAR(2) PRIMARY KEY,
+    nombre VARCHAR(80) NOT NULL UNIQUE
+) ENGINE=InnoDB;
+
 CREATE TABLE agencias (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(120) NOT NULL,
@@ -151,10 +156,12 @@ CREATE TABLE destinos (
     agencia_id INT UNSIGNED NOT NULL,
     nombre VARCHAR(120) NOT NULL,
     descripcion TEXT NULL,
+    pais_iso CHAR(2) NULL DEFAULT 'PE',
     latitud DECIMAL(10,7) NULL,
     longitud DECIMAL(10,7) NULL,
     activo TINYINT(1) NOT NULL DEFAULT 1,
     CONSTRAINT fk_destinos_agencia FOREIGN KEY (agencia_id) REFERENCES agencias(id),
+    CONSTRAINT fk_destinos_pais FOREIGN KEY (pais_iso) REFERENCES paises(codigo_iso),
     UNIQUE KEY uq_destino_agencia (agencia_id, nombre)
 ) ENGINE=InnoDB;
 

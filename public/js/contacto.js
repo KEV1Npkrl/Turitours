@@ -1,5 +1,5 @@
 /**
- * Contacto - Tarapoto Tours
+ * Contacto - Turi Tours
  */
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('contactForm');

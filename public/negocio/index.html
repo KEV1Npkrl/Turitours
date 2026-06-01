@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — TuriTours Panel</title>
+    <meta name="description" content="Panel de control con KPIs en tiempo real — TuriTours">
+    <link rel="stylesheet" href="../css/admin.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+</head>
+<body class="admin-body">
+    <div class="admin-layout">
+        <aside class="admin-sidebar" id="adminSidebar"></aside>
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <main class="admin-main">
+            <header class="admin-header">
+                <div class="admin-header-left">
+                    <button class="menu-toggle-admin" id="menuToggleAdmin">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <div>
+                        <h1 class="admin-header-title">Dashboard</h1>
+                        <p class="admin-header-subtitle" id="headerDate"></p>
+                    </div>
+                </div>
+                <div class="admin-header-right">
+                    <span class="a-badge a-badge-green a-badge-dot" id="cajaIndicator" style="display:none">Caja abierta</span>
+                </div>
+            </header>
+
+            <div class="admin-content" id="dashboardContent">
+                <div class="a-loading"><div class="a-spinner"></div></div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/data.js"></script>
+    <script src="../js/schema.js"></script>
+    <script src="../js/admin-data.js"></script>
+    <script src="../js/admin-api.js"></script>
+    <script src="../js/admin-app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!AdminApp.init('dashboard')) return;
+
+            const hoy = new Date();
+            document.getElementById('headerDate').textContent =
+                hoy.toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+            try {
+                const kpis = await AdminAPI.getDashboardKPIs();
+                const mods = AdminAPI.getModulosPermitidos();
+                if (kpis.caja_abierta && mods.includes('caja')) document.getElementById('cajaIndicator').style.display = '';
+                renderDashboard(kpis);
+            } catch (err) {
+                document.getElementById('dashboardContent').innerHTML =
+                    '<div class="a-empty"><p class="a-empty-title">Error cargando dashboard</p><p class="a-empty-text">' + err.message + '</p></div>';
+            }
+        });
+
+        function renderDashboard(kpis) {
+            const content = document.getElementById('dashboardContent');
+            const mods = AdminAPI.getModulosPermitidos();
+            
+            const puedeVerVentas = mods.includes('reservas') || mods.includes('caja');
+
+            let html = '';
+
+            // Stat Cards - only if has access to sales
+            if (puedeVerVentas) {
+                html += `
+                <div class="stats-grid">
+                    <div class="stat-card" style="--stat-accent: var(--a-success)">
+                        <div class="stat-icon green">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-label">Ventas del Día</div>
+                            <div class="stat-value">${AdminApp.formatMoney(kpis.ventas_hoy)}</div>
+                            <div class="stat-change up">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+                                ${kpis.reservas_hoy} reserva(s) hoy
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card" style="--stat-accent: var(--a-info)">
+                        <div class="stat-icon blue">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-label">Personas próximas 7 días</div>
+                            <div class="stat-value">${kpis.personas_proximas}</div>
+                            <div class="stat-change up">${kpis.tours_proximos.length} tour(s) programado(s)</div>
+                        </div>
+                    </div>
+                    <div class="stat-card" style="--stat-accent: var(--a-warning)">
+                        <div class="stat-icon amber">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-label">Saldos Pendientes</div>
+                            <div class="stat-value">${AdminApp.formatMoney(kpis.saldos_pendientes)}</div>
+                        </div>
+                    </div>
+                    <div class="stat-card" style="--stat-accent: #8b5cf6">
+                        <div class="stat-icon purple">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-label">Turistas Registrados</div>
+                            <div class="stat-value">${kpis.total_turistas}</div>
+                            <div class="stat-change up">${kpis.total_tours_activos} tours activos</div>
+                        </div>
+                    </div>
+                </div>
+                `;
+            } else {
+                // Guia view: Just show the upcoming tours count as a stat
+                html += `
+                <div class="stats-grid">
+                    <div class="stat-card" style="--stat-accent: var(--a-info)">
+                        <div class="stat-icon blue">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-label">Tours activos próximos (7 días)</div>
+                            <div class="stat-value">${kpis.tours_proximos.length}</div>
+                            <div class="stat-change up">Programados en la agencia</div>
+                        </div>
+                    </div>
+                </div>
+                `;
+            }
+
+            // Charts + Alerts
+            html += `<div class="dashboard-grid">`;
+            if (puedeVerVentas) {
+                html += `
+                    <div class="a-card">
+                        <div class="a-card-header">
+                            <h3 class="a-card-title">Ventas últimos 7 días</h3>
+                        </div>
+                        <div class="a-card-body">
+                            <div class="chart-container"><canvas id="chartVentas"></canvas></div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Alertas
+            html += `
+                    <div class="a-card">
+                        <div class="a-card-header">
+                            <h3 class="a-card-title">Alertas Activas</h3>
+                            <span class="a-badge a-badge-red">${kpis.alertas.length}</span>
+                        </div>
+                        <div class="a-card-body" style="padding: 0.5rem 1.25rem;">
+                            ${kpis.alertas.length === 0
+                                ? '<div class="a-empty" style="padding:1.5rem"><p class="a-empty-text">Sin alertas activas 🎉</p></div>'
+                                : kpis.alertas.map(a => `
+                                    <div class="alert-item">
+                                        <div class="alert-item-icon ${a.tipo}">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                        </div>
+                                        <span class="alert-item-text">${a.texto}</span>
+                                    </div>`).join('')}
+                        </div>
+                    </div>
+            </div>`;
+
+            // Tours Próximos table
+            html += `
+                <div class="a-card mt-2">
+                    <div class="a-card-header">
+                        <h3 class="a-card-title">Tours Próximos (7 días)</h3>
+                    </div>
+                    ${kpis.tours_proximos.length === 0
+                        ? '<div class="a-card-body"><div class="a-empty"><p class="a-empty-text">Sin tours programados próximamente</p></div></div>'
+                        : `<div class="a-card-body-flush"><div class="a-table-wrap"><table class="a-table">
+                            <thead><tr>
+                                <th>Tour</th><th>Fecha</th><th>Personas</th><th>Ocupación</th><th>Asignación</th>
+                            </tr></thead>
+                            <tbody>
+                                ${kpis.tours_proximos.map(t => {
+                                    const pct = t.cupo_max > 0 ? Math.round(t.personas / t.cupo_max * 100) : 0;
+                                    const barColor = pct >= 80 ? 'var(--a-danger)' : pct >= 50 ? 'var(--a-warning)' : 'var(--a-success)';
+                                    return `<tr>
+                                        <td><strong>${t.tour_nombre}</strong></td>
+                                        <td>${AdminApp.formatFecha(t.fecha)}</td>
+                                        <td>${t.personas}/${t.cupo_max}</td>
+                                        <td>
+                                            <div style="display:flex;align-items:center;gap:0.5rem;">
+                                                <div style="flex:1;height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;min-width:60px;">
+                                                    <div style="width:${pct}%;height:100%;background:${barColor};border-radius:3px;transition:width 0.5s;"></div>
+                                                </div>
+                                                <span style="font-size:0.75rem;font-weight:600;color:var(--a-text-secondary)">${pct}%</span>
+                                            </div>
+                                        </td>
+                                        <td>${t.asignado
+                                            ? '<span class="a-badge a-badge-green a-badge-dot">Asignado</span>'
+                                            : '<span class="a-badge a-badge-amber a-badge-dot">Pendiente</span>'}</td>
+                                    </tr>`;
+                                }).join('')}
+                            </tbody></table></div></div>`}
+                </div>
+            `;
+
+            // Accesos Rapidos (Dynamic based on permissions)
+            let qLinks = '';
+            if (mods.includes('reservas')) {
+                qLinks += `<a href="reservas.html" class="quick-action-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nueva Reserva</a>`;
+            }
+            if (mods.includes('caja')) {
+                qLinks += `<a href="caja.html" class="quick-action-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Gestión de Caja</a>`;
+            }
+            if (mods.includes('operaciones')) {
+                qLinks += `<a href="operaciones.html" class="quick-action-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Operaciones</a>`;
+            }
+            if (mods.includes('inventario')) {
+                qLinks += `<a href="inventario.html" class="quick-action-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> Inventario</a>`;
+            }
+            if (mods.includes('personal')) {
+                qLinks += `<a href="personal.html" class="quick-action-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> Personal</a>`;
+            }
+            if (mods.includes('auditoria')) {
+                qLinks += `<a href="auditoria.html" class="quick-action-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Auditoría</a>`;
+            }
+
+            if (qLinks !== '') {
+                html += `
+                <div class="a-card mt-2">
+                    <div class="a-card-header">
+                        <h3 class="a-card-title">Accesos Rápidos</h3>
+                    </div>
+                    <div class="a-card-body">
+                        <div class="quick-actions">
+                            ${qLinks}
+                        </div>
+                    </div>
+                </div>
+                `;
+            }
+
+            content.innerHTML = html;
+
+            // Render chart if applicable
+            if (puedeVerVentas) {
+                renderVentasChart(kpis.ventas_semana);
+            }
+        }
+
+        function renderVentasChart(data) {
+            const ctx = document.getElementById('chartVentas');
+            if (!ctx) return;
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.label),
+                    datasets: [{
+                        label: 'Ventas (S/)',
+                        data: data.map(d => d.total),
+                        backgroundColor: 'rgba(22, 163, 74, 0.15)',
+                        borderColor: 'rgba(22, 163, 74, 0.8)',
+                        borderWidth: 2,
+                        borderRadius: 6,
+                        hoverBackgroundColor: 'rgba(22, 163, 74, 0.3)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1e293b',
+                            titleFont: { family: 'Inter' },
+                            bodyFont: { family: 'Inter' },
+                            callbacks: {
+                                label: (ctx) => 'S/ ' + ctx.parsed.y.toFixed(2)
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { family: 'Inter', size: 12 } }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#f1f5f9' },
+                            ticks: {
+                                font: { family: 'Inter', size: 12 },
+                                callback: (v) => 'S/ ' + v
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

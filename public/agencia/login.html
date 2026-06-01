@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Agencia - Turi Tours</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .agencia-auth-container { max-width: 400px; margin: 80px auto; padding: 30px; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .agencia-header { text-align: center; margin-bottom: 25px; }
+        .agencia-header h1 { color: var(--primary); font-size: 24px; margin-top: 10px; }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container">
+        <div class="agencia-auth-container">
+            <div class="agencia-header">
+                <img src="../assets/turitours_logo.webp" alt="Turi Tours" height="40">
+                <h1>Acceso Personal (Agencia)</h1>
+                <p>Sistema Interno de Gestión</p>
+            </div>
+            <form id="agenciaLoginForm" class="form">
+                <div class="form-group">
+                    <label for="rol">Ingresar como:</label>
+                    <select id="rol" class="form-control" required>
+                        <option value="vendedor">Vendedor</option>
+                        <option value="cajero">Cajero</option>
+                        <option value="operaciones">Jefe de Operaciones</option>
+                        <option value="admin">Administrador de Agencia</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="password">Contraseña (PIN):</label>
+                    <input type="password" id="password" class="form-control" placeholder="Cualquier PIN funciona en demo" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Ingresar al Sistema</button>
+            </form>
+        </div>
+    </div>
+    <script>
+        document.getElementById('agenciaLoginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const rol = document.getElementById('rol').value;
+            localStorage.setItem('agencia_rol', rol);
+            localStorage.setItem('agencia_auth', 'true');
+            window.location.href = 'index.html';
+        });
+    </script>
+</body>
+</html>

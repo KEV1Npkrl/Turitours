@@ -23,4 +23,4 @@ Cuando el backend Java este listo, los endpoints REST devolveran los mismos camp
 
 ## Multitenancy
 
-Todas las tablas operativas incluyen `agencia_id`. El portal publico actual usa `agencia_id = 1` (Tarapoto Tours).
+Todas las tablas operativas incluyen `agencia_id`. El portal publico actual usa `agencia_id = 1` (Turi Tours).

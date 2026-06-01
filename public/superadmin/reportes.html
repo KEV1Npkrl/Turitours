@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportes Sectoriales - SuperAdmin</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sa-sidebar: #1e293b;
+            --sa-hover: #334155;
+            --sa-accent: #3b82f6;
+        }
+        body { background-color: #f1f5f9; display: flex; min-height: 100vh; margin: 0; }
+        .sa-sidebar { width: 260px; background-color: var(--sa-sidebar); color: white; display: flex; flex-direction: column; position: fixed; height: 100vh; z-index: 10; }
+        .sa-brand { padding: 1.5rem; font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sa-nav { padding: 1rem 0; flex: 1; }
+        .sa-nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.5rem; color: #cbd5e1; transition: all var(--transition); }
+        .sa-nav-item:hover, .sa-nav-item.active { background-color: var(--sa-hover); color: white; border-left: 4px solid var(--sa-accent); }
+        .sa-main { margin-left: 260px; flex: 1; display: flex; flex-direction: column; }
+        .sa-header { background-color: white; height: 4rem; display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+        .sa-user { display: flex; align-items: center; gap: 1rem; font-weight: 500; }
+        .btn-logout { color: var(--destructive); font-size: 0.875rem; font-weight: 500; display: flex; align-items: center; gap: 0.25rem; }
+        .sa-content { padding: 2rem; }
+        
+        .panel-card { background: white; border-radius: var(--radius-lg); padding: 1.5rem; box-shadow: var(--shadow-sm); margin-bottom: 2rem; }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .panel-title { font-size: 1.25rem; font-weight: 600; }
+        
+        /* Bar Chart CSS */
+        .chart-container { margin-top: 1rem; }
+        .bar-item { margin-bottom: 1rem; }
+        .bar-label { display: flex; justify-content: space-between; font-size: 0.875rem; margin-bottom: 0.25rem; font-weight: 500; }
+        .bar-track { width: 100%; height: 1rem; background-color: var(--muted); border-radius: 999px; overflow: hidden; }
+        .bar-fill { height: 100%; background-color: var(--sa-accent); border-radius: 999px; transition: width 1s ease-out; }
+        .bar-fill.green { background-color: var(--success); }
+        
+        .filters { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
+        .form-select { padding: 0.5rem; border: 1px solid var(--border); border-radius: var(--radius); outline: none; }
+    </style>
+</head>
+<body>
+
+    <aside class="sa-sidebar">
+        <div class="sa-brand">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+            Tarapoto SaaS
+        </div>
+        <nav class="sa-nav">
+            <a href="index.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg> Dashboard Global</a>
+            <a href="agencias.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg> Agencias y Planes</a>
+            <a href="reportes.html" class="sa-nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg> Reportes Sectoriales</a>
+            <a href="auditoria.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg> Auditoría</a>
+            <a href="soporte.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg> Soporte Técnico</a>
+            <a href="maestros.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> Usuarios Maestros</a>
+            <a href="versiones.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg> Versiones y Despliegue</a>
+            <a href="parametros.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg> Parámetros Globales</a>
+        </nav>
+    </aside>
+
+    <main class="sa-main">
+        <header class="sa-header">
+            <h2 style="font-size: 1.25rem; font-weight: 600;">Reportes Sectoriales (DIRCETUR)</h2>
+            <div class="sa-user">
+                <span id="saUserName">SuperAdmin</span>
+                <button id="btnLogout" class="btn-logout">Salir</button>
+            </div>
+        </header>
+
+        <div class="sa-content">
+            <div class="filters">
+                <select class="form-select">
+                    <option>Año 2026</option>
+                    <option>Año 2025</option>
+                </select>
+                <select class="form-select">
+                    <option>Todos los Meses</option>
+                    <option>Enero - Junio</option>
+                </select>
+                <button class="btn btn-outline" style="margin-left: auto;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Exportar PDF
+                </button>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <div class="panel-card">
+                    <div class="panel-header">
+                        <h3 class="panel-title">Tours Más Populares</h3>
+                    </div>
+                    <div class="chart-container" id="toursChart">
+                        <!-- JS populated -->
+                    </div>
+                </div>
+
+                <div class="panel-card">
+                    <div class="panel-header">
+                        <h3 class="panel-title">Ingresos Consolidados por Agencia</h3>
+                    </div>
+                    <div class="chart-container" id="ingresosChart">
+                        <!-- JS populated -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../js/data.js"></script>
+    <script>
+        const saUser = JSON.parse(localStorage.getItem('sa_user'));
+        if (!saUser) window.location.href = 'login.html';
+        document.getElementById('saUserName').textContent = saUser.nombre;
+        document.getElementById('btnLogout').addEventListener('click', () => {
+            localStorage.removeItem('sa_user'); window.location.href = 'login.html';
+        });
+
+        const db = getMockDb();
+
+        // 1. Tours más populares
+        const toursChart = document.getElementById('toursChart');
+        const toursReservados = db.reservas.reduce((acc, r) => {
+            acc[r.tour_id] = (acc[r.tour_id] || 0) + r.num_personas;
+            return acc;
+        }, {});
+        
+        const topTours = Object.entries(toursReservados)
+            .sort((a,b) => b[1] - a[1])
+            .map(t => {
+                const tourInfo = db.tours.find(x => x.id === parseInt(t[0]));
+                return { nombre: tourInfo ? tourInfo.nombre : 'Tour', pax: t[1] };
+            });
+
+        const maxPax = Math.max(...topTours.map(t => t.pax), 1);
+
+        topTours.slice(0, 5).forEach(t => {
+            const pct = (t.pax / maxPax) * 100;
+            toursChart.innerHTML += `
+                <div class="bar-item">
+                    <div class="bar-label"><span>${t.nombre}</span> <span>${t.pax} pax</span></div>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width: ${pct}%"></div>
+                    </div>
+                </div>
+            `;
+        });
+
+        // 2. Ingresos por Agencia
+        const ingresosChart = document.getElementById('ingresosChart');
+        const ingresosAgencia = db.reservas.reduce((acc, r) => {
+            acc[r.agencia_id] = (acc[r.agencia_id] || 0) + r.total;
+            return acc;
+        }, {});
+
+        const topAgencias = Object.entries(ingresosAgencia)
+            .sort((a,b) => b[1] - a[1])
+            .map(a => {
+                const agInfo = db.agencias.find(x => x.id === parseInt(a[0]));
+                return { nombre: agInfo ? agInfo.nombre : 'Agencia', total: a[1] };
+            });
+
+        const maxIngreso = Math.max(...topAgencias.map(a => a.total), 1);
+
+        topAgencias.slice(0, 5).forEach(a => {
+            const pct = (a.total / maxIngreso) * 100;
+            ingresosChart.innerHTML += `
+                <div class="bar-item">
+                    <div class="bar-label"><span>${a.nombre}</span> <span>S/ ${a.total.toFixed(2)}</span></div>
+                    <div class="bar-track">
+                        <div class="bar-fill green" style="width: ${pct}%"></div>
+                    </div>
+                </div>
+            `;
+        });
+    </script>
+</body>
+</html>

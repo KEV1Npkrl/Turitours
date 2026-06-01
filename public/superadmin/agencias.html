@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Agencias - SuperAdmin</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Reutilizamos los estilos del sidebar/main de index.html */
+        :root {
+            --sa-primary: #0f172a;
+            --sa-sidebar: #1e293b;
+            --sa-hover: #334155;
+            --sa-accent: #3b82f6;
+        }
+        body {
+            background-color: #f1f5f9;
+            display: flex;
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+        }
+        .sa-sidebar {
+            width: 260px;
+            background-color: var(--sa-sidebar);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            z-index: 10;
+        }
+        .sa-brand {
+            padding: 1.5rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .sa-nav { padding: 1rem 0; flex: 1; }
+        .sa-nav-item {
+            display: flex; align-items: center; gap: 0.75rem;
+            padding: 0.875rem 1.5rem; color: #cbd5e1; transition: all var(--transition);
+        }
+        .sa-nav-item:hover, .sa-nav-item.active {
+            background-color: var(--sa-hover); color: white; border-left: 4px solid var(--sa-accent);
+        }
+        .sa-main {
+            margin-left: 260px; flex: 1; display: flex; flex-direction: column;
+        }
+        .sa-header {
+            background-color: white; height: 4rem; display: flex; align-items: center;
+            justify-content: space-between; padding: 0 2rem; border-bottom: 1px solid var(--border);
+            position: sticky; top: 0; z-index: 5;
+        }
+        .sa-user { display: flex; align-items: center; gap: 1rem; font-weight: 500; }
+        .btn-logout { color: var(--destructive); font-size: 0.875rem; font-weight: 500; display: flex; align-items: center; gap: 0.25rem; }
+        .sa-content { padding: 2rem; }
+        
+        .panel-card {
+            background: white; border-radius: var(--radius-lg); padding: 1.5rem;
+            box-shadow: var(--shadow-sm); margin-bottom: 2rem;
+        }
+        .panel-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;
+        }
+        .panel-title { font-size: 1.25rem; font-weight: 600; }
+        .table-responsive { overflow-x: auto; }
+        .table-sa { width: 100%; border-collapse: collapse; }
+        .table-sa th, .table-sa td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        .table-sa th { background-color: var(--muted); color: var(--muted-foreground); font-weight: 500; font-size: 0.875rem; }
+        .badge { padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
+        .badge.active { background-color: #dcfce7; color: #166534; }
+        .badge.pending { background-color: #fef9c3; color: #854d0e; }
+        .badge.suspended { background-color: #fee2e2; color: #991b1b; }
+        
+        .modal {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            z-index: 50; align-items: center; justify-content: center;
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: white; padding: 2rem; border-radius: var(--radius-lg); width: 100%; max-width: 500px;
+        }
+        .form-group { margin-bottom: 1rem; }
+        .form-label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; }
+        .form-input, .form-select {
+            width: 100%; padding: 0.625rem; border: 1px solid var(--border); border-radius: var(--radius);
+        }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sa-sidebar">
+        <div class="sa-brand">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+            Tarapoto SaaS
+        </div>
+        <nav class="sa-nav">
+            <a href="index.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg> Dashboard Global</a>
+            <a href="agencias.html" class="sa-nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg> Agencias y Planes</a>
+            <a href="reportes.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg> Reportes Sectoriales</a>
+            <a href="auditoria.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg> Auditoría</a>
+            <a href="soporte.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg> Soporte Técnico</a>
+            <a href="maestros.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> Usuarios Maestros</a>
+            <a href="versiones.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg> Versiones y Despliegue</a>
+            <a href="parametros.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg> Parámetros Globales</a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="sa-main">
+        <header class="sa-header">
+            <h2 style="font-size: 1.25rem; font-weight: 600;">Gestión de Agencias</h2>
+            <div class="sa-user">
+                <span id="saUserName">SuperAdmin</span>
+                <button id="btnLogout" class="btn-logout">Salir</button>
+            </div>
+        </header>
+
+        <div class="sa-content">
+            <div class="panel-card">
+                <div class="panel-header">
+                    <h3 class="panel-title">Directorio de Agencias</h3>
+                    <button class="btn btn-primary" onclick="openModal()">+ Nueva Agencia</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table-sa">
+                        <thead>
+                            <tr>
+                                <th>Nombre Comercial</th>
+                                <th>RUC</th>
+                                <th>Límite Usuarios</th>
+                                <th>Módulos</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="agenciasTableBody">
+                            <!-- JS populates -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Nueva Agencia -->
+    <div id="agenciaModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 1.5rem;">Alta de Nueva Agencia</h3>
+            <form id="agenciaForm">
+                <div class="form-group">
+                    <label class="form-label">Nombre Comercial</label>
+                    <input type="text" id="aNombre" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">RUC (11 dígitos)</label>
+                    <input type="text" id="aRuc" class="form-input" pattern="[0-9]{11}" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Límite de Usuarios</label>
+                    <input type="number" id="aUsuariosMax" class="form-input" min="1" value="3" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Módulos Activos</label>
+                    <div style="display:flex; gap:1rem;">
+                        <label><input type="checkbox" id="modCaja" checked> Caja</label>
+                        <label><input type="checkbox" id="modOperaciones" checked> Operaciones</label>
+                        <label><input type="checkbox" id="modReportes"> Reportes</label>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Agencia</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../js/data.js"></script>
+    <script>
+        const saUser = JSON.parse(localStorage.getItem('sa_user'));
+        if (!saUser) window.location.href = 'login.html';
+        document.getElementById('saUserName').textContent = saUser.nombre;
+
+        document.getElementById('btnLogout').addEventListener('click', () => {
+            localStorage.removeItem('sa_user');
+            window.location.href = 'login.html';
+        });
+
+        let db = getMockDb();
+        const tbody = document.getElementById('agenciasTableBody');
+
+        function renderTable() {
+            tbody.innerHTML = '';
+            db.agencias.forEach(ag => {
+                const badgeClass = ag.estado === 'activa' ? 'active' : ag.estado === 'suspendida' ? 'suspended' : 'pending';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${ag.nombre}</strong><br><small style="color:#64748b">${ag.email}</small></td>
+                    <td>${ag.ruc}</td>
+                    <td>${ag.usuarios_max || 'Ilimitado'}</td>
+                    <td>
+                        <small>Caja: ${ag.mod_caja!==false?'✅':'❌'}</small><br>
+                        <small>Op: ${ag.mod_operaciones!==false?'✅':'❌'}</small>
+                    </td>
+                    <td><span class="badge ${badgeClass}">${ag.estado.toUpperCase()}</span></td>
+                    <td>
+                        <button class="btn btn-outline btn-sm" onclick="toggleEstado(${ag.id})">Cambiar Estado</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        renderTable();
+
+        function openModal() { document.getElementById('agenciaModal').classList.add('show'); }
+        function closeModal() { document.getElementById('agenciaModal').classList.remove('show'); document.getElementById('agenciaForm').reset(); }
+
+        document.getElementById('agenciaForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const nueva = {
+                id: db.agencias.length + 1,
+                nombre: document.getElementById('aNombre').value,
+                ruc: document.getElementById('aRuc').value,
+                plan_id: 1,
+                email: 'admin@' + document.getElementById('aNombre').value.toLowerCase().replace(/\s+/g,'') + '.com',
+                usuarios_max: parseInt(document.getElementById('aUsuariosMax').value),
+                mod_caja: document.getElementById('modCaja').checked,
+                mod_operaciones: document.getElementById('modOperaciones').checked,
+                mod_reportes: document.getElementById('modReportes').checked,
+                estado: 'activa',
+                fecha_alta: new Date().toISOString().split('T')[0]
+            };
+            db.agencias.push(nueva);
+            saveMockDb(db);
+            renderTable();
+            closeModal();
+        });
+
+        window.toggleEstado = function(id) {
+            const ag = db.agencias.find(a => a.id === id);
+            if (ag) {
+                ag.estado = ag.estado === 'activa' ? 'suspendida' : 'activa';
+                saveMockDb(db);
+                renderTable();
+            }
+        };
+    </script>
+</body>
+</html>

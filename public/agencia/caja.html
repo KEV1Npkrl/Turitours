@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caja - Agencia Interna</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .agencia-layout { display: flex; min-height: 100vh; background: #f3f4f6; }
+        .sidebar { width: 260px; background: #1e293b; color: white; display: flex; flex-direction: column; }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid #334155; }
+        .sidebar-nav { padding: 20px 0; flex-grow: 1; }
+        .sidebar-link { display: block; padding: 12px 20px; color: #cbd5e1; text-decoration: none; transition: 0.2s; }
+        .sidebar-link:hover, .sidebar-link.active { background: #334155; color: white; border-left: 4px solid var(--primary); }
+        .sidebar-footer { padding: 20px; border-top: 1px solid #334155; }
+        
+        .main-content { flex-grow: 1; display: flex; flex-direction: column; }
+        .topbar { background: white; padding: 15px 30px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+        .content-area { padding: 30px; overflow-y: auto; }
+        
+        .caja-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .card h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px; }
+        
+        .stat-card { background: #f8fafc; padding: 20px; border-radius: 8px; text-align: center; border: 1px solid #e2e8f0; margin-bottom: 15px; }
+        .stat-card .value { font-size: 32px; font-weight: 700; color: #0f172a; }
+        .stat-card p { color: #64748b; margin: 0; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="agencia-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="../assets/turitours_logo.webp" alt="Turi Tours" height="30" style="filter: brightness(0) invert(1);">
+                <p style="margin-top:5px; font-size:12px; color:#cbd5e1;">Portal Interno</p>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="index.html" class="sidebar-link">Dashboard</a>
+                <a href="reservas.html" class="sidebar-link">Reservas y Ventas</a>
+                <a href="caja.html" class="sidebar-link active">Caja y Tesorería</a>
+                <a href="operaciones.html" class="sidebar-link">Operaciones y Manifiestos</a>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="login.html" id="btnLogout" style="color: #ef4444; text-decoration: none; font-size: 14px;">Cerrar Sesión</a>
+            </div>
+        </aside>
+        
+        <main class="main-content">
+            <header class="topbar">
+                <h2>Control de Caja Diaria</h2>
+                <span class="badge" style="background:#10b981; color:white; padding:5px 10px; border-radius:15px;">Caja Abierta</span>
+            </header>
+            
+            <div class="content-area">
+                <div class="caja-grid">
+                    <div class="card">
+                        <h3>Resumen de Caja</h3>
+                        <div class="stat-card">
+                            <p>Saldo Actual en Efectivo</p>
+                            <div class="value" id="saldoCaja">S/ 450.00</div>
+                        </div>
+                        <p><strong>Apertura:</strong> S/ 100.00</p>
+                        <p><strong>Ingresos (Efectivo):</strong> S/ 450.00</p>
+                        <p><strong>Egresos:</strong> S/ -100.00</p>
+                        <hr style="margin: 15px 0; border: 0; border-top: 1px solid #e2e8f0;">
+                        <button class="btn btn-primary btn-block" style="margin-bottom: 10px;" onclick="alert('Registrar Nuevo Ingreso/Egreso')">Nuevo Movimiento</button>
+                        <button class="btn btn-outline btn-block" onclick="alert('Cerrando Caja y Arqueo...')">Cerrar Caja (Arqueo)</button>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>Movimientos de Hoy</h3>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: #f8fafc; color: #64748b; font-size: 14px; text-align: left;">
+                                    <th style="padding: 10px; border-bottom: 1px solid #e2e8f0;">Hora</th>
+                                    <th style="padding: 10px; border-bottom: 1px solid #e2e8f0;">Tipo</th>
+                                    <th style="padding: 10px; border-bottom: 1px solid #e2e8f0;">Concepto</th>
+                                    <th style="padding: 10px; border-bottom: 1px solid #e2e8f0;">Monto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">08:00</td>
+                                    <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;"><span style="color:#2563eb">Apertura</span></td>
+                                    <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">Fondo de inicio</td>
+                                    <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">S/ 100.00</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">09:15</td>
+                                    <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;"><span style="color:#166534">Ingreso</span></td>
+                                    <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">Adelanto Reserva TT-001</td>
+                                    <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; color:#166534">+ S/ 450.00</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">11:30</td>
+                                    <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;"><span style="color:#ef4444">Egreso</span></td>
+                                    <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">Pago proveedor de movilidad</td>
+                                    <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; color:#ef4444">- S/ 100.00</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script>
+        if (localStorage.getItem('agencia_auth') !== 'true') { window.location.href = 'login.html'; }
+    </script>
+</body>
+</html>

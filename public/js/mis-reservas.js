@@ -196,7 +196,7 @@ function openVoucher(reservaId) {
         <div class="voucher-print" id="voucherPrint">
             <div class="voucher-header">
                 <div>
-                    <p class="voucher-kicker">Tarapoto Tours</p>
+                    <p class="voucher-kicker">Turi Tours</p>
                     <h2 id="modalTitle">Voucher de reserva</h2>
                     <p class="voucher-code">${reserva.codigo_qr}</p>
                 </div>

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turistas (CRM) — TuriTours</title>
+    <link rel="stylesheet" href="../css/admin.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="admin-body">
+    <div class="admin-layout">
+        <aside class="admin-sidebar" id="adminSidebar"></aside>
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <main class="admin-main">
+            <header class="admin-header">
+                <div class="admin-header-left">
+                    <button class="menu-toggle-admin" id="menuToggleAdmin">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <div>
+                        <h1 class="admin-header-title">Directorio de Turistas</h1>
+                        <p class="admin-header-subtitle">Gestión de clientes (CRM) y registro médico</p>
+                    </div>
+                </div>
+            </header>
+
+            <div class="admin-content">
+                <div class="a-toolbar">
+                    <input type="text" class="a-search-input" placeholder="Buscar por DNI, pasaporte, nombre o correo..." onkeyup="filtrarTuristas(this.value)">
+                    <button class="a-btn a-btn-primary" onclick="abrirModalCRM()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                        Nuevo Turista
+                    </button>
+                </div>
+
+                <div class="a-table-wrap">
+                    <table class="a-table" id="tablaTuristas">
+                        <thead>
+                            <tr>
+                                <th>Documento</th>
+                                <th>Nombres y Apellidos</th>
+                                <th>Contacto</th>
+                                <th>Segmento</th>
+                                <th>Notas CRM / Salud</th>
+                                <th style="text-align: right">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="6" style="text-align:center">Cargando turistas...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal CRM / Editar Turista -->
+    <div class="a-modal-overlay" id="modalCRM">
+        <div class="a-modal a-modal-lg">
+            <div class="a-modal-header">
+                <h3 class="a-modal-title">Ficha del Turista</h3>
+                <button class="a-modal-close" onclick="AdminApp.closeModal('modalCRM')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="a-modal-body">
+                <form id="formCRM" onsubmit="guardarCRM(event)">
+                    <input type="hidden" id="turId" value="">
+                    
+                    <h4 style="margin: 0 0 1rem 0; font-size: 1rem; color: var(--a-text-light);">Datos Personales</h4>
+                    <div class="a-form-group a-grid-cols-2">
+                        <div>
+                            <label class="a-form-label">Tipo Documento</label>
+                            <select class="a-form-input" id="turTipoDoc" required>
+                                <option value="DNI">DNI</option>
+                                <option value="PASAPORTE">PASAPORTE</option>
+                                <option value="CE">CARNET EXT.</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="a-form-label">N° Documento</label>
+                            <input type="text" class="a-form-input" id="turDocumento" required>
+                        </div>
+                    </div>
+                    
+                    <div class="a-form-group a-grid-cols-2">
+                        <div>
+                            <label class="a-form-label">Nombres</label>
+                            <input type="text" class="a-form-input" id="turNombres" required>
+                        </div>
+                        <div>
+                            <label class="a-form-label">Apellidos</label>
+                            <input type="text" class="a-form-input" id="turApellidos" required>
+                        </div>
+                    </div>
+
+                    <div class="a-form-group a-grid-cols-2">
+                        <div>
+                            <label class="a-form-label">Correo Electrónico</label>
+                            <input type="email" class="a-form-input" id="turEmail">
+                        </div>
+                        <div>
+                            <label class="a-form-label">Celular / WhatsApp</label>
+                            <input type="text" class="a-form-input" id="turCelular">
+                        </div>
+                    </div>
+
+                    <div style="border-top: 1px solid var(--a-border); margin: 1.5rem 0; padding-top: 1.5rem;">
+                        <h4 style="margin: 0 0 1rem 0; font-size: 1rem; color: var(--a-text-light);">Restricciones e Historial</h4>
+                        <div class="a-form-group">
+                            <label class="a-form-label">Restricciones Médicas (Obligatorio preguntar)</label>
+                            <input type="text" class="a-form-input" id="turRestricciones" placeholder="Ej: Asma, alergia a penicilina, problemas cardiacos... (Dejar en blanco si no tiene)">
+                        </div>
+                        <div class="a-form-group">
+                            <label class="a-form-label">Notas CRM / Preferencias</label>
+                            <textarea class="a-form-input" id="turNotas" rows="2" placeholder="Ej: Prefiere asientos en la ventana, viaja por aniversario..."></textarea>
+                        </div>
+                        <div class="a-form-group a-grid-cols-2">
+                            <div>
+                                <label class="a-form-label">Segmento del Cliente</label>
+                                <select class="a-form-input" id="turSegmento">
+                                    <option value="normal">Normal</option>
+                                    <option value="frecuente">Frecuente</option>
+                                    <option value="vip">VIP</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="a-modal-footer">
+                <button type="button" class="a-btn a-btn-outline" onclick="AdminApp.closeModal('modalCRM')">Cancelar</button>
+                <button type="submit" form="formCRM" class="a-btn a-btn-primary">Guardar Datos</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Historial de Compras -->
+    <div class="a-modal-overlay" id="modalHistorial">
+        <div class="a-modal a-modal-lg">
+            <div class="a-modal-header">
+                <h3 class="a-modal-title">Historial de Compras</h3>
+                <button class="a-modal-close" onclick="AdminApp.closeModal('modalHistorial')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="a-modal-body">
+                <div id="historialTuristaNombre" style="font-weight: 600; margin-bottom: 1rem; font-size: 1.1rem; color: var(--a-primary);"></div>
+                <div class="a-table-wrap">
+                    <table class="a-table" id="tablaHistorial">
+                        <thead>
+                            <tr>
+                                <th>Cod. Reserva</th>
+                                <th>Fecha Servicio</th>
+                                <th>Tour</th>
+                                <th>Personas</th>
+                                <th>Total</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Historial rellenado por JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="a-modal-footer">
+                <button type="button" class="a-btn a-btn-primary" onclick="AdminApp.closeModal('modalHistorial')">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/data.js"></script>
+    <script src="../js/schema.js"></script>
+    <script src="../js/admin-data.js"></script>
+    <script src="../js/admin-api.js"></script>
+    <script src="../js/admin-app.js"></script>
+    <script>
+        let allTuristas = [];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            AdminApp.init();
+            AdminApp.renderSidebar('turistas');
+            AdminApp.initModalCloseButtons();
+            
+            await cargarTuristas();
+        });
+
+        async function cargarTuristas() {
+            try {
+                allTuristas = await AdminAPI.getTuristas();
+                // Ordenar por nombre
+                allTuristas.sort((a, b) => a.nombres?.localeCompare(b.nombres) || a.nombre?.localeCompare(b.nombre));
+                renderTuristas(allTuristas);
+            } catch (err) {
+                AdminApp.toast(err.message, 'error');
+            }
+        }
+
+        function renderTuristas(lista) {
+            const tbody = document.querySelector('#tablaTuristas tbody');
+            if (!lista.length) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--a-text-light);">No hay turistas registrados.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = lista.map(t => {
+                const nombreCompleto = (t.nombres || t.nombre) + ' ' + t.apellidos;
+                
+                let segColor = 'gray';
+                let segLabel = 'Normal';
+                if (t.segmento === 'frecuente') { segColor = 'blue'; segLabel = 'Frecuente'; }
+                if (t.segmento === 'vip') { segColor = 'yellow'; segLabel = 'VIP'; }
+
+                let badgeMed = t.restricciones_medicas 
+                    ? `<span class="a-badge a-badge-red" title="${t.restricciones_medicas}"><svg style="width:12px;height:12px;margin-right:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Salud</span>`
+                    : '';
+
+                return `<tr>
+                    <td><div style="font-size:0.75rem;color:var(--a-text-light)">${t.tipo_doc}</div><div style="font-weight:500;">${t.documento}</div></td>
+                    <td style="font-weight:500;">${nombreCompleto}</td>
+                    <td><div style="font-size:0.875rem;">${t.celular || '-'}</div><div style="font-size:0.75rem;color:var(--a-text-light)">${t.email || '-'}</div></td>
+                    <td><span class="a-badge a-badge-${segColor}">${segLabel}</span></td>
+                    <td>
+                        ${badgeMed}
+                        ${t.notas_crm ? `<div style="font-size:0.75rem;color:var(--a-text-light);margin-top:4px;">${t.notas_crm}</div>` : ''}
+                    </td>
+                    <td style="text-align: right">
+                        <button class="a-btn a-btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; margin-right: 0.25rem;" onclick="abrirModalHistorial(${t.id})" title="Historial de Compras">
+                            <svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        </button>
+                        <button class="a-btn a-btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="abrirModalCRM(${t.id})" title="Editar Ficha CRM">
+                            <svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function filtrarTuristas(q) {
+            const ql = q.toLowerCase();
+            const filt = allTuristas.filter(t => 
+                (t.documento && t.documento.includes(ql)) ||
+                (t.nombres && t.nombres.toLowerCase().includes(ql)) ||
+                (t.nombre && t.nombre.toLowerCase().includes(ql)) ||
+                (t.apellidos && t.apellidos.toLowerCase().includes(ql)) ||
+                (t.email && t.email.toLowerCase().includes(ql))
+            );
+            renderTuristas(filt);
+        }
+
+        function abrirModalCRM(id = null) {
+            document.getElementById('formCRM').reset();
+            document.getElementById('turId').value = id || '';
+            const titulo = document.querySelector('#modalCRM .a-modal-title');
+            
+            if (id) {
+                const tur = allTuristas.find(t => t.id === id);
+                if (!tur) return;
+                titulo.textContent = 'Editar Ficha del Turista';
+                document.getElementById('turTipoDoc').value = tur.tipo_doc;
+                document.getElementById('turDocumento').value = tur.documento;
+                document.getElementById('turNombres').value = tur.nombres || tur.nombre;
+                document.getElementById('turApellidos').value = tur.apellidos;
+                document.getElementById('turEmail').value = tur.email || '';
+                document.getElementById('turCelular').value = tur.celular || '';
+                document.getElementById('turRestricciones').value = tur.restricciones_medicas || '';
+                document.getElementById('turNotas').value = tur.notas_crm || '';
+                document.getElementById('turSegmento').value = tur.segmento || 'normal';
+            } else {
+                titulo.textContent = 'Registrar Nuevo Turista';
+            }
+            AdminApp.openModal('modalCRM');
+        }
+
+        async function guardarCRM(e) {
+            e.preventDefault();
+            const form = document.getElementById('formCRM');
+            const btn = form.closest('.a-modal').querySelector('.a-btn-primary');
+            btn.disabled = true;
+
+            const id = document.getElementById('turId').value;
+            const datos = {
+                tipo_doc: document.getElementById('turTipoDoc').value,
+                documento: document.getElementById('turDocumento').value,
+                nombre: document.getElementById('turNombres').value, // compatibility with data.js
+                apellidos: document.getElementById('turApellidos').value,
+                email: document.getElementById('turEmail').value,
+                celular: document.getElementById('turCelular').value,
+                restricciones_medicas: document.getElementById('turRestricciones').value,
+                notas_crm: document.getElementById('turNotas').value,
+                segmento: document.getElementById('turSegmento').value
+            };
+
+            try {
+                if (id) {
+                    await AdminAPI.actualizarTurista(parseInt(id), datos);
+                    AdminApp.toast('Turista actualizado correctamente', 'success');
+                } else {
+                    // Si no hay crearTurista en API, podramos implementarlo o mostrar error.
+                    // await AdminAPI.crearTurista(datos);
+                    AdminApp.toast('Para crear un turista desde cero usa el mdulo Ventas o el Portal Pblico', 'info');
+                    btn.disabled = false;
+                    return;
+                }
+                AdminApp.closeModal('modalCRM');
+                cargarTuristas();
+            } catch (err) {
+                AdminApp.toast(err.message, 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function abrirModalHistorial(id) {
+            const tur = allTuristas.find(t => t.id === id);
+            if (!tur) return;
+            
+            document.getElementById('historialTuristaNombre').textContent = 'Historial de: ' + ((tur.nombres || tur.nombre) + ' ' + tur.apellidos);
+            const tbody = document.querySelector('#tablaHistorial tbody');
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Cargando...</td></tr>';
+            
+            AdminApp.openModal('modalHistorial');
+            
+            try {
+                const historial = await AdminAPI.getHistorialTurista(id);
+                if (!historial.length) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--a-text-light);">Este turista an no tiene reservas registradas.</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = historial.map(r => {
+                    let badgeState = 'gray';
+                    if (r.estado === 'completada') badgeState = 'green';
+                    if (r.estado === 'pendiente_pago') badgeState = 'yellow';
+                    if (r.estado === 'anulada') badgeState = 'red';
+                    
+                    return `<tr>
+                        <td style="font-weight:500;">${r.codigo}</td>
+                        <td>${AdminApp.formatFecha(r.fecha_servicio)}</td>
+                        <td>${r.tour_nombre}</td>
+                        <td>${r.num_personas} pers.</td>
+                        <td>${AdminApp.formatMoney(r.total, r.moneda)}</td>
+                        <td><span class="a-badge a-badge-${badgeState}">${r.estado}</span></td>
+                    </tr>`;
+                }).join('');
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--a-danger);">${err.message}</td></tr>`;
+            }
+        }
+    </script>
+</body>
+</html>

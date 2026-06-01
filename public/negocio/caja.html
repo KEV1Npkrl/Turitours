@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caja y Tesorería — TuriTours Panel</title>
+    <meta name="description" content="Gestión de caja, pagos y arqueo — TuriTours">
+    <link rel="stylesheet" href="../css/admin.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="admin-body">
+    <div class="admin-layout">
+        <aside class="admin-sidebar" id="adminSidebar"></aside>
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <main class="admin-main">
+            <header class="admin-header">
+                <div class="admin-header-left">
+                    <button class="menu-toggle-admin" id="menuToggleAdmin">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <div>
+                        <h1 class="admin-header-title">Caja y Tesorería</h1>
+                        <p class="admin-header-subtitle">Apertura, movimientos y cierre de caja</p>
+                    </div>
+                </div>
+            </header>
+
+            <div class="admin-content" id="cajaContent">
+                <div class="a-loading"><div class="a-spinner"></div></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal: Abrir Caja -->
+    <div class="a-modal-overlay" id="modalAbrir">
+        <div class="a-modal">
+            <div class="a-modal-header">
+                <h3 class="a-modal-title">Apertura de Caja</h3>
+                <button class="a-modal-close" data-close-modal="modalAbrir">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="a-modal-body">
+                <div class="a-form-group">
+                    <label class="a-form-label" for="montoApertura">Monto Inicial (S/) <span class="required">*</span></label>
+                    <input type="number" id="montoApertura" class="a-form-input" min="0" step="0.01" value="200" placeholder="200.00" required>
+                    <p class="a-form-hint">Ingresa el monto de efectivo con el que inicias tu turno.</p>
+                </div>
+            </div>
+            <div class="a-modal-footer">
+                <button class="a-btn a-btn-outline" data-close-modal="modalAbrir">Cancelar</button>
+                <button class="a-btn a-btn-primary" id="btnConfirmarAbrir">Abrir Caja</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Registrar Pago -->
+    <div class="a-modal-overlay" id="modalPago">
+        <div class="a-modal">
+            <div class="a-modal-header">
+                <h3 class="a-modal-title" id="modalPagoTitle">Registrar Ingreso</h3>
+                <button class="a-modal-close" data-close-modal="modalPago">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="a-modal-body">
+                <div class="a-form-group">
+                    <label class="a-form-label" for="pagoTipo">Tipo <span class="required">*</span></label>
+                    <select id="pagoTipo" class="a-form-input">
+                        <option value="adelanto">Adelanto</option>
+                        <option value="saldo">Saldo</option>
+                        <option value="pago_completo">Pago Completo</option>
+                        <option value="egreso">Egreso</option>
+                    </select>
+                </div>
+                <div class="a-form-group">
+                    <label class="a-form-label" for="pagoMetodo">Método de Pago <span class="required">*</span></label>
+                    <select id="pagoMetodo" class="a-form-input">
+                        <option value="efectivo">💵 Efectivo</option>
+                        <option value="yape">📱 Yape</option>
+                        <option value="plin">📲 Plin</option>
+                        <option value="transferencia">🏦 Transferencia</option>
+                        <option value="tarjeta">💳 Tarjeta</option>
+                    </select>
+                </div>
+                <div class="a-form-row">
+                    <div class="a-form-group">
+                        <label class="a-form-label" for="pagoMonto">Monto (S/) <span class="required">*</span></label>
+                        <input type="number" id="pagoMonto" class="a-form-input" min="0.01" step="0.01" placeholder="0.00" required>
+                    </div>
+                    <div class="a-form-group" id="grupoRecibido">
+                        <label class="a-form-label" for="pagoRecibido">Monto Recibido (S/)</label>
+                        <input type="number" id="pagoRecibido" class="a-form-input" min="0" step="0.01" placeholder="0.00">
+                    </div>
+                </div>
+                <div id="vueltoDisplay" style="display:none;padding:0.75rem 1rem;background:var(--a-primary-50);border-radius:var(--a-radius);margin-bottom:1rem;">
+                    <span style="font-size:0.8125rem;color:var(--a-text-secondary)">Vuelto:</span>
+                    <span style="font-size:1.125rem;font-weight:800;color:var(--a-primary);margin-left:0.5rem" id="vueltoValor">S/ 0.00</span>
+                </div>
+                <div class="a-form-group">
+                    <label class="a-form-label" for="pagoConcepto">Concepto</label>
+                    <input type="text" id="pagoConcepto" class="a-form-input" placeholder="Descripcion del pago...">
+                </div>
+                <div class="a-form-group">
+                    <label class="a-form-label" for="pagoComprobante">Nº Comprobante</label>
+                    <input type="text" id="pagoComprobante" class="a-form-input" placeholder="BOL-001, FAC-001, etc.">
+                </div>
+            </div>
+            <div class="a-modal-footer">
+                <button class="a-btn a-btn-outline" data-close-modal="modalPago">Cancelar</button>
+                <button class="a-btn a-btn-primary" id="btnConfirmarPago">Registrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Cerrar Caja -->
+    <div class="a-modal-overlay" id="modalCerrar">
+        <div class="a-modal">
+            <div class="a-modal-header">
+                <h3 class="a-modal-title">Cierre de Caja</h3>
+                <button class="a-modal-close" data-close-modal="modalCerrar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="a-modal-body">
+                <div style="padding:1rem;background:#f8fafc;border-radius:var(--a-radius);margin-bottom:1rem;">
+                    <p style="font-size:0.75rem;color:var(--a-text-secondary);text-transform:uppercase;font-weight:600;margin-bottom:0.25rem">Total según sistema</p>
+                    <p style="font-size:1.5rem;font-weight:800;color:var(--a-text)" id="cierreSistema">S/ 0.00</p>
+                </div>
+                <div class="a-form-group">
+                    <label class="a-form-label" for="montoReal">Monto Real Contado (S/) <span class="required">*</span></label>
+                    <input type="number" id="montoReal" class="a-form-input" min="0" step="0.01" placeholder="Cuenta el dinero y registra el total" required>
+                </div>
+                <div id="diferenciaDisplay" style="display:none;padding:0.75rem 1rem;border-radius:var(--a-radius);margin-bottom:1rem;">
+                    <span style="font-size:0.8125rem">Diferencia:</span>
+                    <span style="font-size:1rem;font-weight:800;margin-left:0.5rem" id="diferenciaValor">S/ 0.00</span>
+                </div>
+            </div>
+            <div class="a-modal-footer">
+                <button class="a-btn a-btn-outline" data-close-modal="modalCerrar">Cancelar</button>
+                <button class="a-btn a-btn-danger" id="btnConfirmarCerrar">Cerrar Caja</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/data.js"></script>
+    <script src="../js/schema.js"></script>
+    <script src="../js/admin-data.js"></script>
+    <script src="../js/admin-api.js"></script>
+    <script src="../js/admin-app.js"></script>
+
+    <script>
+        let cajaActiva = null;
+        let pagosActuales = [];
+        let montoSistema = 0;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!AdminApp.init('caja')) return;
+            AdminApp.initModalCloseButtons();
+            initCajaEvents();
+            await loadCaja();
+        });
+
+        function initCajaEvents() {
+            document.getElementById('btnConfirmarAbrir').addEventListener('click', handleAbrirCaja);
+            document.getElementById('btnConfirmarPago').addEventListener('click', handleRegistrarPago);
+            document.getElementById('btnConfirmarCerrar').addEventListener('click', handleCerrarCaja);
+
+            // Vuelto calculator
+            const montoIn = document.getElementById('pagoMonto');
+            const recibidoIn = document.getElementById('pagoRecibido');
+            [montoIn, recibidoIn].forEach(el => el.addEventListener('input', calcularVuelto));
+
+            document.getElementById('pagoTipo').addEventListener('change', () => {
+                const esEgreso = document.getElementById('pagoTipo').value === 'egreso';
+                document.getElementById('grupoRecibido').style.display = esEgreso ? 'none' : '';
+                document.getElementById('modalPagoTitle').textContent = esEgreso ? 'Registrar Egreso' : 'Registrar Ingreso';
+            });
+
+            document.getElementById('montoReal').addEventListener('input', () => {
+                const real = parseFloat(document.getElementById('montoReal').value) || 0;
+                const diff = real - montoSistema;
+                const display = document.getElementById('diferenciaDisplay');
+                display.style.display = '';
+                display.style.background = diff === 0 ? '#f0fdf4' : diff < 0 ? '#fef2f2' : '#fffbeb';
+                const color = diff === 0 ? 'var(--a-success)' : diff < 0 ? 'var(--a-danger)' : 'var(--a-warning)';
+                document.getElementById('diferenciaValor').textContent = (diff >= 0 ? '+' : '') + 'S/ ' + diff.toFixed(2);
+                document.getElementById('diferenciaValor').style.color = color;
+            });
+        }
+
+        function calcularVuelto() {
+            const monto = parseFloat(document.getElementById('pagoMonto').value) || 0;
+            const recibido = parseFloat(document.getElementById('pagoRecibido').value) || 0;
+            const vuelto = Math.max(0, recibido - monto);
+            const display = document.getElementById('vueltoDisplay');
+            if (recibido > 0 && document.getElementById('pagoTipo').value !== 'egreso') {
+                display.style.display = '';
+                document.getElementById('vueltoValor').textContent = AdminApp.formatMoney(vuelto);
+            } else {
+                display.style.display = 'none';
+            }
+        }
+
+        async function loadCaja() {
+            try {
+                cajaActiva = await AdminAPI.getCajaActiva();
+                if (cajaActiva) {
+                    pagosActuales = await AdminAPI.getPagosCaja(cajaActiva.id);
+                }
+                const historial = await AdminAPI.getHistorialCajas();
+                renderCaja(historial);
+            } catch (err) {
+                document.getElementById('cajaContent').innerHTML =
+                    '<div class="a-empty"><p class="a-empty-title">Error</p><p class="a-empty-text">' + err.message + '</p></div>';
+            }
+        }
+
+        function renderCaja(historial) {
+            const content = document.getElementById('cajaContent');
+            const ingresos = pagosActuales.filter(p => p.tipo !== 'egreso').reduce((s, p) => s + p.monto, 0);
+            const egresos = pagosActuales.filter(p => p.tipo === 'egreso').reduce((s, p) => s + p.monto, 0);
+            montoSistema = cajaActiva ? cajaActiva.monto_apertura + ingresos - egresos : 0;
+
+            content.innerHTML = `
+                <!-- Estado de Caja -->
+                <div class="caja-status-bar ${cajaActiva ? 'abierta' : 'cerrada'}">
+                    <div class="caja-status-indicator">
+                        <div class="caja-status-dot"></div>
+                        ${cajaActiva ? 'Caja Abierta' : 'Caja Cerrada'}
+                    </div>
+                    ${cajaActiva ? `
+                        <div class="caja-stat">
+                            <div class="caja-stat-label">Apertura</div>
+                            <div class="caja-stat-value">${AdminApp.formatMoney(cajaActiva.monto_apertura)}</div>
+                        </div>
+                        <div class="caja-stat">
+                            <div class="caja-stat-label">Ingresos</div>
+                            <div class="caja-stat-value" style="color:var(--a-success)">+${AdminApp.formatMoney(ingresos)}</div>
+                        </div>
+                        <div class="caja-stat">
+                            <div class="caja-stat-label">Egresos</div>
+                            <div class="caja-stat-value" style="color:var(--a-danger)">-${AdminApp.formatMoney(egresos)}</div>
+                        </div>
+                        <div class="caja-stat">
+                            <div class="caja-stat-label">Saldo Sistema</div>
+                            <div class="caja-stat-value" style="font-size:1.25rem">${AdminApp.formatMoney(montoSistema)}</div>
+                        </div>
+                    ` : ''}
+                    <div style="margin-left:auto;display:flex;gap:0.5rem;flex-wrap:wrap">
+                        ${!cajaActiva ? '<button class="a-btn a-btn-primary" onclick="AdminApp.openModal(\'modalAbrir\')">Abrir Caja</button>' : ''}
+                        ${cajaActiva ? '<button class="a-btn a-btn-primary" onclick="abrirModalPago()">Registrar Movimiento</button>' : ''}
+                        ${cajaActiva ? '<button class="a-btn a-btn-danger" onclick="abrirModalCerrar()">Cerrar Caja</button>' : ''}
+                    </div>
+                </div>
+
+                ${cajaActiva ? `
+                <!-- Movimientos de la caja activa -->
+                <div class="a-card">
+                    <div class="a-card-header">
+                        <h3 class="a-card-title">Movimientos del Turno</h3>
+                        <span class="a-badge a-badge-gray">${pagosActuales.length} movimiento(s)</span>
+                    </div>
+                    <div class="a-card-body-flush">
+                        <div class="a-table-wrap">
+                            <table class="a-table">
+                                <thead><tr>
+                                    <th>Hora</th><th>Tipo</th><th>Método</th><th>Concepto</th>
+                                    <th class="text-right">Monto</th><th class="text-right">Recibido</th><th class="text-right">Vuelto</th><th>Comprobante</th>
+                                </tr></thead>
+                                <tbody>
+                                    ${pagosActuales.length === 0
+                                        ? '<tr><td colspan="8"><div class="a-empty" style="padding:1.5rem"><p class="a-empty-text">Sin movimientos aún</p></div></td></tr>'
+                                        : pagosActuales.map(p => {
+                                            const esEgreso = p.tipo === 'egreso';
+                                            return `<tr>
+                                                <td>${AdminApp.formatFechaHora(p.created_at).split(' ')[1] || ''}</td>
+                                                <td>${AdminApp.badgeEstado(p.tipo)}</td>
+                                                <td>${AdminApp.badgeMetodo(p.metodo)}</td>
+                                                <td>${p.concepto || '—'}</td>
+                                                <td class="text-right" style="font-weight:700;color:${esEgreso ? 'var(--a-danger)' : 'var(--a-success)'}">
+                                                    ${esEgreso ? '-' : '+'}${AdminApp.formatMoney(p.monto)}
+                                                </td>
+                                                <td class="text-right">${p.monto_recibido != null ? AdminApp.formatMoney(p.monto_recibido) : '—'}</td>
+                                                <td class="text-right">${p.vuelto != null ? AdminApp.formatMoney(p.vuelto) : '—'}</td>
+                                                <td><span class="font-mono" style="font-size:0.75rem">${p.comprobante_ref || '—'}</span></td>
+                                            </tr>`;
+                                        }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>` : ''}
+
+                <!-- Historial de Turnos -->
+                <div class="a-card mt-2">
+                    <div class="a-card-header">
+                        <h3 class="a-card-title">Historial de Turnos</h3>
+                    </div>
+                    <div class="a-card-body-flush">
+                        <div class="a-table-wrap">
+                            <table class="a-table">
+                                <thead><tr>
+                                    <th>Cajero</th><th>Apertura</th><th>Cierre</th>
+                                    <th class="text-right">Inicio</th><th class="text-right">Sistema</th>
+                                    <th class="text-right">Real</th><th class="text-right">Diferencia</th><th>Estado</th>
+                                </tr></thead>
+                                <tbody>
+                                    ${historial.map(c => `<tr>
+                                        <td>${c.cajero_nombre}</td>
+                                        <td>${AdminApp.formatFechaHora(c.abierta_at)}</td>
+                                        <td>${c.cerrada_at ? AdminApp.formatFechaHora(c.cerrada_at) : '—'}</td>
+                                        <td class="text-right">${AdminApp.formatMoney(c.monto_apertura)}</td>
+                                        <td class="text-right">${c.monto_cierre_sistema != null ? AdminApp.formatMoney(c.monto_cierre_sistema) : '—'}</td>
+                                        <td class="text-right">${c.monto_cierre_real != null ? AdminApp.formatMoney(c.monto_cierre_real) : '—'}</td>
+                                        <td class="text-right" style="font-weight:700;color:${c.diferencia === 0 ? 'var(--a-success)' : c.diferencia < 0 ? 'var(--a-danger)' : 'var(--a-warning)'}">
+                                            ${c.diferencia != null ? (c.diferencia >= 0 ? '+' : '') + AdminApp.formatMoney(c.diferencia) : '—'}
+                                        </td>
+                                        <td>${AdminApp.badgeEstado(c.estado)}</td>
+                                    </tr>`).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        function abrirModalPago() {
+            document.getElementById('pagoTipo').value = 'pago_completo';
+            document.getElementById('pagoMetodo').value = 'efectivo';
+            document.getElementById('pagoMonto').value = '';
+            document.getElementById('pagoRecibido').value = '';
+            document.getElementById('pagoConcepto').value = '';
+            document.getElementById('pagoComprobante').value = '';
+            document.getElementById('vueltoDisplay').style.display = 'none';
+            document.getElementById('grupoRecibido').style.display = '';
+            document.getElementById('modalPagoTitle').textContent = 'Registrar Ingreso';
+            AdminApp.openModal('modalPago');
+        }
+
+        function abrirModalCerrar() {
+            document.getElementById('cierreSistema').textContent = AdminApp.formatMoney(montoSistema);
+            document.getElementById('montoReal').value = '';
+            document.getElementById('diferenciaDisplay').style.display = 'none';
+            AdminApp.openModal('modalCerrar');
+        }
+
+        async function handleAbrirCaja() {
+            const monto = parseFloat(document.getElementById('montoApertura').value);
+            if (!monto || monto < 0) { AdminApp.toast('Ingresa un monto válido', 'error'); return; }
+            try {
+                await AdminAPI.abrirCaja(monto);
+                AdminApp.closeModal('modalAbrir');
+                AdminApp.toast('Caja abierta exitosamente');
+                await loadCaja();
+            } catch (err) { AdminApp.toast(err.message, 'error'); }
+        }
+
+        async function handleRegistrarPago() {
+            const datos = {
+                tipo: document.getElementById('pagoTipo').value,
+                metodo: document.getElementById('pagoMetodo').value,
+                monto: document.getElementById('pagoMonto').value,
+                monto_recibido: document.getElementById('pagoRecibido').value || null,
+                concepto: document.getElementById('pagoConcepto').value,
+                comprobante_ref: document.getElementById('pagoComprobante').value
+            };
+            if (!datos.monto || parseFloat(datos.monto) <= 0) { AdminApp.toast('Ingresa un monto válido', 'error'); return; }
+            try {
+                const result = await AdminAPI.registrarPago(datos);
+                AdminApp.closeModal('modalPago');
+                let msg = 'Movimiento registrado';
+                if (result.vuelto != null && result.vuelto > 0) msg += '. Vuelto: ' + AdminApp.formatMoney(result.vuelto);
+                AdminApp.toast(msg);
+                await loadCaja();
+            } catch (err) { AdminApp.toast(err.message, 'error'); }
+        }
+
+        async function handleCerrarCaja() {
+            const real = document.getElementById('montoReal').value;
+            if (!real) { AdminApp.toast('Ingresa el monto real contado', 'error'); return; }
+            try {
+                const result = await AdminAPI.cerrarCaja(real);
+                AdminApp.closeModal('modalCerrar');
+                const diff = result.caja.diferencia;
+                if (diff === 0) AdminApp.toast('Caja cerrada. Arqueo cuadra perfectamente ✅');
+                else AdminApp.toast('Caja cerrada. Diferencia: S/ ' + diff.toFixed(2), diff < 0 ? 'warning' : 'info');
+                await loadCaja();
+            } catch (err) { AdminApp.toast(err.message, 'error'); }
+        }
+    </script>
+</body>
+</html>

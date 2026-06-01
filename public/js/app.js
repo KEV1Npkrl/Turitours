@@ -1,6 +1,6 @@
 /**
  * ========================================
- * MAIN APPLICATION - Tarapoto Tours
+ * MAIN APPLICATION - Turi Tours
  * ========================================
  */
 
@@ -210,8 +210,11 @@ function renderTours(tours, container, limite = 4, options = {}) {
                             <span style="color: var(--muted-foreground)">(${tour.reviews_count})</span>
                         </div>
                         <div class="tour-price">
-                            <span class="tour-price-label">Desde</span>
-                            <span class="tour-price-value">S/ ${tour.precio.toFixed(2)}</span>
+                            <span class="tour-price-label">Tarifas desde</span>
+                            <span class="tour-price-value" style="font-size: 0.95rem; line-height: 1.2; text-align: right;">
+                                Nac: S/ ${tour.precio_nacional.toFixed(2)}<br>
+                                <span style="font-size: 0.85rem; color: var(--muted-foreground);">Ext: S/ ${tour.precio_extranjero.toFixed(2)}</span>
+                            </span>
                         </div>
                     </div>
                 </div>

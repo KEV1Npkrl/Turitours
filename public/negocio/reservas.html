@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservas — TuriTours Panel</title>
+    <meta name="description" content="Gestión de reservas internas — TuriTours">
+    <link rel="stylesheet" href="../css/admin.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="admin-body">
+    <div class="admin-layout">
+        <aside class="admin-sidebar" id="adminSidebar"></aside>
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <main class="admin-main">
+            <header class="admin-header">
+                <div class="admin-header-left">
+                    <button class="menu-toggle-admin" id="menuToggleAdmin">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <div>
+                        <h1 class="admin-header-title">Reservas y Ventas</h1>
+                        <p class="admin-header-subtitle">Gestión de reservas internas</p>
+                    </div>
+                </div>
+            </header>
+
+            <div class="admin-content">
+                <!-- Toolbar -->
+                <div class="a-toolbar">
+                    <input type="text" class="a-search-input" id="searchReservas" placeholder="Buscar por nombre, código QR o tour...">
+                    <select class="a-filter-select" id="filterEstado">
+                        <option value="">Todos los estados</option>
+                        <option value="pendiente">Pendiente</option>
+                        <option value="confirmada">Confirmada</option>
+                        <option value="completada">Completada</option>
+                        <option value="anulada">Anulada</option>
+                        <option value="reprogramada">Reprogramada</option>
+                    </select>
+                    <input type="date" class="a-form-input" id="filterFecha" style="width:auto;max-width:180px;">
+                </div>
+
+                <!-- Stats Row -->
+                <div class="stats-grid" id="reservaStats" style="margin-bottom:1rem;"></div>
+
+                <!-- Table Card -->
+                <div class="a-card">
+                    <div class="a-card-header">
+                        <h3 class="a-card-title">Listado de Reservas</h3>
+                        <span class="a-badge a-badge-gray" id="totalCount">0 registros</span>
+                    </div>
+                    <div class="a-card-body-flush">
+                        <div class="a-table-wrap">
+                            <table class="a-table">
+                                <thead>
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Turista</th>
+                                        <th>Tour</th>
+                                        <th>Fecha Servicio</th>
+                                        <th>Personas</th>
+                                        <th>Total</th>
+                                        <th>Saldo</th>
+                                        <th>Estado</th>
+                                        <th>Canal</th>
+                                        <th class="text-right">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reservasBody">
+                                    <tr><td colspan="10"><div class="a-loading"><div class="a-spinner"></div></div></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="a-card-footer" id="paginationFooter"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal: Detalle Reserva -->
+    <div class="a-modal-overlay" id="modalDetalle">
+        <div class="a-modal a-modal-lg">
+            <div class="a-modal-header">
+                <h3 class="a-modal-title">Detalle de Reserva</h3>
+                <button class="a-modal-close" data-close-modal="modalDetalle">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="a-modal-body" id="modalDetalleBody"></div>
+            <div class="a-modal-footer">
+                <button class="a-btn a-btn-outline" data-close-modal="modalDetalle">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Anular Reserva -->
+    <div class="a-modal-overlay" id="modalAnular">
+        <div class="a-modal">
+            <div class="a-modal-header">
+                <h3 class="a-modal-title">Anular Reserva</h3>
+                <button class="a-modal-close" data-close-modal="modalAnular">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="a-modal-body">
+                <p style="margin-bottom:1rem;font-size:0.875rem">¿Estás seguro de anular la reserva <strong id="anularCodigo"></strong>? Esta acción liberará los cupos.</p>
+                <div class="a-form-group">
+                    <label class="a-form-label" for="anularMotivo">Motivo de anulación <span class="required">*</span></label>
+                    <textarea id="anularMotivo" class="a-form-input" rows="3" placeholder="Ingresa el motivo obligatorio..." required></textarea>
+                </div>
+            </div>
+            <div class="a-modal-footer">
+                <button class="a-btn a-btn-outline" data-close-modal="modalAnular">Cancelar</button>
+                <button class="a-btn a-btn-danger" id="confirmarAnular">Confirmar Anulación</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/data.js"></script>
+    <script src="../js/schema.js"></script>
+    <script src="../js/admin-data.js"></script>
+    <script src="../js/admin-api.js"></script>
+    <script src="../js/admin-app.js"></script>
+
+    <script>
+        let allReservas = [];
+        let currentPage = 1;
+        const PAGE_SIZE = 10;
+        let anularId = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!AdminApp.init('reservas')) return;
+            AdminApp.initModalCloseButtons();
+            loadReservas();
+
+            document.getElementById('searchReservas').addEventListener('input', debounce(loadReservas, 300));
+            document.getElementById('filterEstado').addEventListener('change', loadReservas);
+            document.getElementById('filterFecha').addEventListener('change', loadReservas);
+
+            document.getElementById('confirmarAnular').addEventListener('click', handleAnular);
+        });
+
+        async function loadReservas() {
+            const filtros = {
+                busqueda: document.getElementById('searchReservas').value,
+                estado: document.getElementById('filterEstado').value,
+                fecha: document.getElementById('filterFecha').value
+            };
+
+            try {
+                allReservas = await AdminAPI.getReservasInternas(filtros);
+                currentPage = 1;
+                renderStats();
+                renderTable();
+            } catch (err) {
+                AdminApp.toast(err.message, 'error');
+            }
+        }
+
+        function renderStats() {
+            const total = allReservas.length;
+            const confirmadas = allReservas.filter(r => r.estado === 'confirmada').length;
+            const pendientes = allReservas.filter(r => r.estado === 'pendiente').length;
+            const totalVentas = allReservas.filter(r => r.estado !== 'anulada').reduce((s, r) => s + r.total, 0);
+
+            document.getElementById('reservaStats').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+                    <div class="stat-info"><div class="stat-label">Total Reservas</div><div class="stat-value">${total}</div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
+                    <div class="stat-info"><div class="stat-label">Confirmadas</div><div class="stat-value">${confirmadas}</div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+                    <div class="stat-info"><div class="stat-label">Pendientes</div><div class="stat-value">${pendientes}</div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+                    <div class="stat-info"><div class="stat-label">Ventas Totales</div><div class="stat-value">${AdminApp.formatMoney(totalVentas)}</div></div>
+                </div>`;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('reservasBody');
+            const start = (currentPage - 1) * PAGE_SIZE;
+            const page = allReservas.slice(start, start + PAGE_SIZE);
+
+            document.getElementById('totalCount').textContent = allReservas.length + ' registro(s)';
+
+            if (page.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10"><div class="a-empty"><p class="a-empty-title">Sin reservas</p><p class="a-empty-text">No se encontraron reservas con los filtros aplicados.</p></div></td></tr>';
+                document.getElementById('paginationFooter').innerHTML = '';
+                return;
+            }
+
+            tbody.innerHTML = page.map(r => `
+                <tr>
+                    <td><span class="font-mono" style="font-size:0.75rem;font-weight:600;">${r.codigo_qr || '—'}</span></td>
+                    <td>
+                        <div><strong>${r.turista_nombre}</strong></div>
+                        <div style="font-size:0.6875rem;color:var(--a-text-muted)">${r.turista_doc}</div>
+                    </td>
+                    <td>${r.tour_nombre}</td>
+                    <td>${AdminApp.formatFecha(r.fecha_servicio)}</td>
+                    <td class="text-center">${r.num_personas}</td>
+                    <td><strong>${AdminApp.formatMoney(r.total)}</strong></td>
+                    <td>${r.saldo_pendiente > 0
+                        ? '<span style="color:var(--a-danger);font-weight:600">' + AdminApp.formatMoney(r.saldo_pendiente) + '</span>'
+                        : '<span style="color:var(--a-success)">Pagado</span>'}</td>
+                    <td>${AdminApp.badgeEstado(r.estado)}</td>
+                    <td>${AdminApp.badgeMetodo(r.canal === 'web' ? 'Portal web' : 'Mostrador')}</td>
+                    <td class="td-actions">
+                        <button class="a-btn a-btn-ghost a-btn-sm" title="Ver detalle" onclick="verDetalle(${r.id})">
+                            ${AdminApp.icon('eye')}
+                        </button>
+                        ${r.estado !== 'anulada' && r.estado !== 'completada' ? `
+                        <button class="a-btn a-btn-ghost a-btn-sm" title="Anular" onclick="iniciarAnular(${r.id}, '${r.codigo_qr}')">
+                            ${AdminApp.icon('trash')}
+                        </button>` : ''}
+                    </td>
+                </tr>`).join('');
+
+            renderPagination();
+        }
+
+        function renderPagination() {
+            const total = Math.ceil(allReservas.length / PAGE_SIZE);
+            if (total <= 1) { document.getElementById('paginationFooter').innerHTML = ''; return; }
+
+            const start = (currentPage - 1) * PAGE_SIZE + 1;
+            const end = Math.min(currentPage * PAGE_SIZE, allReservas.length);
+
+            let pages = '';
+            for (let i = 1; i <= total; i++) {
+                pages += `<button class="a-pagination-btn${i === currentPage ? ' active' : ''}" onclick="goPage(${i})">${i}</button>`;
+            }
+
+            document.getElementById('paginationFooter').innerHTML = `
+                <span>Mostrando ${start}-${end} de ${allReservas.length}</span>
+                <div class="a-pagination-pages">${pages}</div>`;
+        }
+
+        function goPage(p) { currentPage = p; renderTable(); }
+
+        function verDetalle(id) {
+            const r = allReservas.find(x => x.id === id);
+            if (!r) return;
+            document.getElementById('modalDetalleBody').innerHTML = `
+                <div class="a-form-row" style="gap:1.5rem">
+                    <div>
+                        <p class="a-form-label">Código QR</p>
+                        <p class="font-mono" style="font-size:1rem;font-weight:700">${r.codigo_qr || '—'}</p>
+                    </div>
+                    <div>
+                        <p class="a-form-label">Estado</p>
+                        <p>${AdminApp.badgeEstado(r.estado)}</p>
+                    </div>
+                </div>
+                <hr style="border:none;border-top:1px solid var(--a-border);margin:1rem 0">
+                <div class="a-form-row">
+                    <div class="a-form-group">
+                        <p class="a-form-label">Turista</p>
+                        <p><strong>${r.turista_nombre}</strong><br><span style="font-size:0.8125rem;color:var(--a-text-secondary)">${r.turista_doc}</span></p>
+                    </div>
+                    <div class="a-form-group">
+                        <p class="a-form-label">Tour</p>
+                        <p><strong>${r.tour_nombre}</strong></p>
+                    </div>
+                </div>
+                <div class="a-form-row">
+                    <div class="a-form-group">
+                        <p class="a-form-label">Fecha del Servicio</p>
+                        <p>${AdminApp.formatFecha(r.fecha_servicio)}</p>
+                    </div>
+                    <div class="a-form-group">
+                        <p class="a-form-label">Hora Recojo</p>
+                        <p>${r.hora_recojo || '—'}</p>
+                    </div>
+                    <div class="a-form-group">
+                        <p class="a-form-label">Lugar Recojo</p>
+                        <p>${r.lugar_recojo || '—'}</p>
+                    </div>
+                </div>
+                <div class="a-form-row">
+                    <div class="a-form-group">
+                        <p class="a-form-label">Personas</p>
+                        <p>${r.num_personas}</p>
+                    </div>
+                    <div class="a-form-group">
+                        <p class="a-form-label">Precio Unitario</p>
+                        <p>${AdminApp.formatMoney(r.precio_unitario)}</p>
+                    </div>
+                    <div class="a-form-group">
+                        <p class="a-form-label">Descuento</p>
+                        <p>${AdminApp.formatMoney(r.descuento)}</p>
+                    </div>
+                </div>
+                <div class="a-form-row">
+                    <div class="a-form-group">
+                        <p class="a-form-label">Total</p>
+                        <p style="font-size:1.125rem;font-weight:800;color:var(--a-primary)">${AdminApp.formatMoney(r.total)}</p>
+                    </div>
+                    <div class="a-form-group">
+                        <p class="a-form-label">Saldo Pendiente</p>
+                        <p style="font-weight:700;color:${r.saldo_pendiente > 0 ? 'var(--a-danger)' : 'var(--a-success)'}">${r.saldo_pendiente > 0 ? AdminApp.formatMoney(r.saldo_pendiente) : 'Pagado'}</p>
+                    </div>
+                    <div class="a-form-group">
+                        <p class="a-form-label">Canal</p>
+                        <p>${r.vendedor_nombre}</p>
+                    </div>
+                </div>
+                <div class="a-form-group">
+                    <p class="a-form-label">Registrado</p>
+                    <p style="font-size:0.8125rem;color:var(--a-text-secondary)">${AdminApp.formatFechaHora(r.created_at)}</p>
+                </div>
+                ${r.motivo_anulacion ? `<div class="a-form-group"><p class="a-form-label">Motivo Anulación</p><p style="color:var(--a-danger)">${r.motivo_anulacion}</p></div>` : ''}
+            `;
+            AdminApp.openModal('modalDetalle');
+        }
+
+        function iniciarAnular(id, codigo) {
+            anularId = id;
+            document.getElementById('anularCodigo').textContent = codigo;
+            document.getElementById('anularMotivo').value = '';
+            AdminApp.openModal('modalAnular');
+        }
+
+        async function handleAnular() {
+            const motivo = document.getElementById('anularMotivo').value.trim();
+            if (!motivo) {
+                AdminApp.toast('El motivo es obligatorio', 'error');
+                return;
+            }
+            try {
+                await AdminAPI.anularReserva(anularId, motivo);
+                AdminApp.closeModal('modalAnular');
+                AdminApp.toast('Reserva anulada exitosamente');
+                loadReservas();
+            } catch (err) {
+                AdminApp.toast(err.message, 'error');
+            }
+        }
+
+        function debounce(fn, ms) {
+            let timer;
+            return function (...args) { clearTimeout(timer); timer = setTimeout(() => fn.apply(this, args), ms); };
+        }
+    </script>
+</body>
+</html>

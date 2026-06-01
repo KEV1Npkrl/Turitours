@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auditoría — TuriTours Panel</title>
+    <meta name="description" content="Log de auditoría inmutable — TuriTours">
+    <link rel="stylesheet" href="../css/admin.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="admin-body">
+    <div class="admin-layout">
+        <aside class="admin-sidebar" id="adminSidebar"></aside>
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <main class="admin-main">
+            <header class="admin-header">
+                <div class="admin-header-left">
+                    <button class="menu-toggle-admin" id="menuToggleAdmin">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <div>
+                        <h1 class="admin-header-title">Log de Auditoría</h1>
+                        <p class="admin-header-subtitle">Registro inmutable de todas las operaciones del sistema</p>
+                    </div>
+                </div>
+            </header>
+
+            <div class="admin-content">
+                <!-- Filters -->
+                <div class="a-toolbar">
+                    <select class="a-filter-select" id="filterUsuario">
+                        <option value="">Todos los usuarios</option>
+                    </select>
+                    <select class="a-filter-select" id="filterAccion">
+                        <option value="">Todas las acciones</option>
+                        <option value="CREATE">CREATE</option>
+                        <option value="UPDATE">UPDATE</option>
+                        <option value="DELETE">DELETE</option>
+                        <option value="LOGIN">LOGIN</option>
+                        <option value="LOGOUT">LOGOUT</option>
+                        <option value="BLOQUEO">BLOQUEO</option>
+                        <option value="INHABILITAR">INHABILITAR</option>
+                        <option value="REACTIVAR">REACTIVAR</option>
+                        <option value="ANULAR">ANULAR</option>
+                        <option value="APERTURA_CAJA">APERTURA_CAJA</option>
+                        <option value="CIERRE_CAJA">CIERRE_CAJA</option>
+                    </select>
+                    <select class="a-filter-select" id="filterTabla">
+                        <option value="">Todas las tablas</option>
+                        <option value="usuarios">usuarios</option>
+                        <option value="reservas">reservas</option>
+                        <option value="pagos">pagos</option>
+                        <option value="cajas">cajas</option>
+                        <option value="sesiones">sesiones</option>
+                        <option value="tours">tours</option>
+                        <option value="asignaciones_tour">asignaciones</option>
+                    </select>
+                    <input type="date" class="a-form-input" id="filterDesde" style="width:auto;max-width:160px;" title="Desde">
+                    <input type="date" class="a-form-input" id="filterHasta" style="width:auto;max-width:160px;" title="Hasta">
+                    <button class="a-btn a-btn-outline" id="btnFiltrar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                        Filtrar
+                    </button>
+                </div>
+
+                <!-- Table -->
+                <div class="a-card">
+                    <div class="a-card-header">
+                        <h3 class="a-card-title">Registros de Auditoría</h3>
+                        <span class="a-badge a-badge-gray" id="logCount">0 registros</span>
+                    </div>
+                    <div class="a-card-body-flush">
+                        <div class="a-table-wrap">
+                            <table class="a-table">
+                                <thead><tr>
+                                    <th>Fecha / Hora</th>
+                                    <th>Usuario</th>
+                                    <th>Acción</th>
+                                    <th>Tabla</th>
+                                    <th>ID Reg.</th>
+                                    <th>IP</th>
+                                    <th>Valor Anterior</th>
+                                    <th>Valor Nuevo</th>
+                                </tr></thead>
+                                <tbody id="logsBody">
+                                    <tr><td colspan="8"><div class="a-loading"><div class="a-spinner"></div></div></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="a-card-footer" id="logPagination"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/data.js"></script>
+    <script src="../js/schema.js"></script>
+    <script src="../js/admin-data.js"></script>
+    <script src="../js/admin-api.js"></script>
+    <script src="../js/admin-app.js"></script>
+
+    <script>
+        let allLogs = [];
+        let currentPage = 1;
+        const PAGE_SIZE = 15;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!AdminApp.init('auditoria')) return;
+
+            // Populate user filter
+            const usuarios = await AdminAPI.getUsuarios();
+            const select = document.getElementById('filterUsuario');
+            usuarios.forEach(u => {
+                select.insertAdjacentHTML('beforeend', `<option value="${u.id}">${u.nombre}</option>`);
+            });
+
+            loadLogs();
+            document.getElementById('btnFiltrar').addEventListener('click', loadLogs);
+        });
+
+        async function loadLogs() {
+            const filtros = {
+                usuario_id: document.getElementById('filterUsuario').value,
+                accion: document.getElementById('filterAccion').value,
+                tabla: document.getElementById('filterTabla').value,
+                fecha_desde: document.getElementById('filterDesde').value,
+                fecha_hasta: document.getElementById('filterHasta').value
+            };
+
+            try {
+                allLogs = await AdminAPI.getLogsAuditoria(filtros);
+                currentPage = 1;
+                renderLogs();
+            } catch (err) {
+                AdminApp.toast(err.message, 'error');
+            }
+        }
+
+        function renderLogs() {
+            const tbody = document.getElementById('logsBody');
+            const start = (currentPage - 1) * PAGE_SIZE;
+            const page = allLogs.slice(start, start + PAGE_SIZE);
+
+            document.getElementById('logCount').textContent = allLogs.length + ' registro(s)';
+
+            if (page.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8"><div class="a-empty"><p class="a-empty-title">Sin registros</p><p class="a-empty-text">No se encontraron logs con los filtros aplicados.</p></div></td></tr>';
+                document.getElementById('logPagination').innerHTML = '';
+                return;
+            }
+
+            const accionBadge = (accion) => {
+                const map = {
+                    CREATE: 'green', UPDATE: 'blue', DELETE: 'red',
+                    LOGIN: 'blue', LOGOUT: 'gray', BLOQUEO: 'red',
+                    INHABILITAR: 'red', REACTIVAR: 'green',
+                    ANULAR: 'red', APERTURA_CAJA: 'green', CIERRE_CAJA: 'amber'
+                };
+                return `<span class="a-badge a-badge-${map[accion] || 'gray'}">${accion}</span>`;
+            };
+
+            const formatJson = (str) => {
+                if (!str) return '<span class="text-muted">—</span>';
+                try {
+                    const obj = typeof str === 'string' ? JSON.parse(str) : str;
+                    const entries = Object.entries(obj).slice(0, 3);
+                    return entries.map(([k, v]) =>
+                        `<span style="font-size:0.6875rem"><strong>${k}:</strong> ${v}</span>`
+                    ).join('<br>');
+                } catch (_) {
+                    return '<span style="font-size:0.6875rem">' + String(str).substring(0, 60) + '</span>';
+                }
+            };
+
+            tbody.innerHTML = page.map(l => `<tr>
+                <td style="white-space:nowrap;font-size:0.75rem">${AdminApp.formatFechaHora(l.created_at)}</td>
+                <td><strong>${l.usuario_nombre}</strong></td>
+                <td>${accionBadge(l.accion)}</td>
+                <td><span class="font-mono" style="font-size:0.75rem">${l.tabla_afectada}</span></td>
+                <td class="text-center">${l.registro_id || '—'}</td>
+                <td><span class="font-mono" style="font-size:0.75rem">${l.ip || '—'}</span></td>
+                <td>${formatJson(l.valor_anterior)}</td>
+                <td>${formatJson(l.valor_nuevo)}</td>
+            </tr>`).join('');
+
+            renderPagination();
+        }
+
+        function renderPagination() {
+            const total = Math.ceil(allLogs.length / PAGE_SIZE);
+            if (total <= 1) { document.getElementById('logPagination').innerHTML = ''; return; }
+            const s = (currentPage - 1) * PAGE_SIZE + 1;
+            const e = Math.min(currentPage * PAGE_SIZE, allLogs.length);
+            let pages = '';
+            for (let i = 1; i <= total; i++) {
+                pages += `<button class="a-pagination-btn${i === currentPage ? ' active' : ''}" onclick="goPage(${i})">${i}</button>`;
+            }
+            document.getElementById('logPagination').innerHTML = `
+                <span>Mostrando ${s}-${e} de ${allLogs.length}</span>
+                <div class="a-pagination-pages">${pages}</div>`;
+        }
+
+        function goPage(p) { currentPage = p; renderLogs(); }
+    </script>
+</body>
+</html>

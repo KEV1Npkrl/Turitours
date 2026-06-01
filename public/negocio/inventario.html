@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventario y Proveedores — TuriTours</title>
+    <link rel="stylesheet" href="../css/admin.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="admin-body">
+    <div class="admin-layout">
+        <aside class="admin-sidebar" id="adminSidebar"></aside>
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <main class="admin-main">
+            <header class="admin-header">
+                <div class="admin-header-left">
+                    <button class="menu-toggle-admin" id="menuToggleAdmin">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <div>
+                        <h1 class="admin-header-title">Inventario y Proveedores</h1>
+                        <p class="admin-header-subtitle">Gestión de activos y directorio de terceros</p>
+                    </div>
+                </div>
+            </header>
+
+            <div class="admin-content">
+                <div class="a-tabs">
+                    <div class="a-tabs-list">
+                        <button class="a-tab active" onclick="cambiarTab('equipos')" id="tab-btn-equipos">Equipos (Activos)</button>
+                        <button class="a-tab" onclick="cambiarTab('proveedores')" id="tab-btn-proveedores">Directorio Proveedores</button>
+                    </div>
+                </div>
+
+                <!-- Tab Equipos -->
+                <div id="tab-equipos" class="tab-pane active" style="margin-top: 1rem;">
+                    <div class="a-toolbar">
+                        <input type="text" class="a-search-input" placeholder="Buscar equipo..." onkeyup="filtrarEquipos(this.value)">
+                        <button class="a-btn a-btn-primary" onclick="abrirModalEquipo()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Registrar Equipo
+                        </button>
+                    </div>
+
+                    <div class="a-table-wrap">
+                        <table class="a-table" id="tablaEquipos">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Equipo / Activo</th>
+                                    <th>Disponibilidad</th>
+                                    <th>Ubicación</th>
+                                    <th>Estado / Alerta</th>
+                                    <th style="text-align: right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="6" style="text-align:center">Cargando equipos...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab Proveedores -->
+                <div id="tab-proveedores" class="tab-pane" style="display: none; margin-top: 1rem;">
+                    <div class="a-toolbar">
+                        <input type="text" class="a-search-input" placeholder="Buscar RUC o nombre..." onkeyup="filtrarProveedores(this.value)">
+                        <button class="a-btn a-btn-primary" onclick="abrirModalProveedor()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Registrar Proveedor
+                        </button>
+                    </div>
+
+                    <div class="a-table-wrap">
+                        <table class="a-table" id="tablaProveedores">
+                            <thead>
+                                <tr>
+                                    <th>Razón Social</th>
+                                    <th>RUC</th>
+                                    <th>Categoría</th>
+                                    <th>Contacto Principal</th>
+                                    <th>Teléfono / Email</th>
+                                    <th style="text-align: right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="6" style="text-align:center">Cargando proveedores...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Registro Equipo -->
+    <div class="a-modal-overlay" id="modalEquipo">
+        <div class="a-modal">
+            <div class="a-modal-header">
+                <h3 class="a-modal-title">Registrar Nuevo Equipo</h3>
+                <button class="a-modal-close" onclick="AdminApp.closeModal('modalEquipo')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="a-modal-body">
+                <form id="formEquipo" onsubmit="guardarEquipo(event)">
+                <input type="hidden" id="eqId" value="">
+                    <div class="a-form-group">
+                        <label class="a-form-label">Nombre del Equipo / Insumo</label>
+                        <input type="text" class="a-form-input" id="eqNombre" required placeholder="Ej: Chalecos Salvavidas Adulto">
+                    </div>
+                    <div class="a-form-group a-grid-cols-3">
+                        <div>
+                            <label class="a-form-label">Cant. Total</label>
+                            <input type="number" class="a-form-input" id="eqTotal" required min="1" max="999999">
+                        </div>
+                        <div>
+                            <label class="a-form-label">Cant. Disponible</label>
+                            <input type="number" class="a-form-input" id="eqDisponible" required min="0" max="999999">
+                        </div>
+                        <div>
+                            <label class="a-form-label">Stock Mínimo</label>
+                            <input type="number" class="a-form-input" id="eqMinimo" required min="1" max="999999">
+                        </div>
+                    </div>
+                    <div class="a-form-group">
+                        <label class="a-form-label">Ubicación Faltante</label>
+                        <input type="text" class="a-form-input" id="eqUbicacion" placeholder="Ej: Almacén Secundario">
+                    </div>
+                </form>
+            </div>
+            <div class="a-modal-footer">
+                <button type="button" class="a-btn a-btn-outline" onclick="AdminApp.closeModal('modalEquipo')">Cancelar</button>
+                <button type="submit" form="formEquipo" class="a-btn a-btn-primary">Guardar Equipo</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ajuste Stock -->
+    <div class="a-modal-overlay" id="modalAjuste">
+        <div class="a-modal">
+            <div class="a-modal-header">
+                <h3 class="a-modal-title">Ajustar Stock</h3>
+                <button class="a-modal-close" onclick="AdminApp.closeModal('modalAjuste')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="a-modal-body">
+                <form id="formAjuste" onsubmit="guardarAjuste(event)">
+                    <input type="hidden" id="ajusteEqId">
+                    <div class="a-form-group">
+                        <label class="a-form-label">Cantidad a sumar/restar</label>
+                        <input type="number" class="a-form-input" id="ajusteCantidad" required>
+                        <small>Use números negativos para restar stock</small>
+                    </div>
+                </form>
+            </div>
+            <div class="a-modal-footer">
+                <button type="button" class="a-btn a-btn-outline" onclick="AdminApp.closeModal('modalAjuste')">Cancelar</button>
+                <button type="submit" form="formAjuste" class="a-btn a-btn-primary">Confirmar Ajuste</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Registro Proveedor -->
+    <div class="a-modal-overlay" id="modalProveedor">
+        <div class="a-modal">
+            <div class="a-modal-header">
+                <h3 class="a-modal-title">Registrar Nuevo Proveedor</h3>
+                <button class="a-modal-close" onclick="AdminApp.closeModal('modalProveedor')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="a-modal-body">
+                <form id="formProveedor" onsubmit="guardarProveedor(event)">
+                <input type="hidden" id="provId" value="">
+                    <div class="a-form-group a-grid-cols-2">
+                        <div>
+                            <label class="a-form-label">RUC (11 dígitos)</label>
+                            <input type="text" class="a-form-input" id="provRuc" required pattern="[0-9]{11}" title="El RUC debe contener exactamente 11 números" maxlength="11" placeholder="Ej: 20123456789">
+                        </div>
+                        <div>
+                            <label class="a-form-label">Razón Social / Nombre</label>
+                            <input type="text" class="a-form-input" id="provNombre" required>
+                        </div>
+                    </div>
+                    <div class="a-form-group">
+                        <label class="a-form-label">Categoría de Servicio</label>
+                        <select class="a-form-input" id="provCategoria" required>
+                            <option value="">Seleccione...</option>
+                        </select>
+                    </div>
+                    <div class="a-form-group a-grid-cols-2">
+                        <div>
+                            <label class="a-form-label">Persona de Contacto</label>
+                            <input type="text" class="a-form-input" id="provContacto" required>
+                        </div>
+                        <div>
+                            <label class="a-form-label">Teléfono</label>
+                            <input type="tel" class="a-form-input" id="provTelefono" required>
+                        </div>
+                    </div>
+                    <div class="a-form-group">
+                        <label class="a-form-label">Email (Opcional)</label>
+                        <input type="email" class="a-form-input" id="provEmail">
+                    </div>
+                </form>
+            </div>
+            <div class="a-modal-footer">
+                <button type="button" class="a-btn a-btn-outline" onclick="AdminApp.closeModal('modalProveedor')">Cancelar</button>
+                <button type="submit" form="formProveedor" class="a-btn a-btn-primary">Guardar Proveedor</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/data.js"></script>
+    <script src="../js/schema.js"></script>
+    <script src="../js/admin-data.js"></script>
+    <script src="../js/admin-api.js"></script>
+    <script src="../js/admin-app.js"></script>
+    <script>
+        let allEquipos = [];
+        let allProveedores = [];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!AdminApp.init('inventario')) return;
+            cargarCategorias();
+            cargarEquipos();
+            cargarProveedores();
+        });
+
+        function cambiarTab(tab) {
+            document.querySelectorAll('.a-tab').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
+            document.getElementById('tab-btn-' + tab).classList.add('active');
+            document.getElementById('tab-' + tab).style.display = 'block';
+        }
+
+        /* ----- EQUIPOS ----- */
+        async function cargarEquipos() {
+            try {
+                allEquipos = await AdminAPI.getEquipos();
+                renderEquipos(allEquipos);
+            } catch (err) {
+                document.querySelector('#tablaEquipos tbody').innerHTML = `<tr><td colspan="5" style="color:red;text-align:center">${err.message}</td></tr>`;
+            }
+        }
+
+        function renderEquipos(lista) {
+            const tbody = document.querySelector('#tablaEquipos tbody');
+            if (lista.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">No hay equipos registrados</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = lista.map(e => {
+                const enAlerta = e.cantidad_disponible <= e.stock_minimo;
+                const porcentaje = Math.round((e.cantidad_disponible / e.cantidad_total) * 100);
+                const anchoBarra = Math.min(porcentaje, 100);
+                
+                let alertaHtml = enAlerta 
+                    ? `<span class="a-badge a-badge-red a-badge-dot">Stock Crítico</span>` 
+                    : `<span class="a-badge a-badge-green">Saludable</span>`;
+
+                return `<tr>
+                    <td>#EQ-${e.id.toString().padStart(3, '0')}</td>
+                    <td style="font-weight: 500">${e.nombre}</td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <div style="flex-grow:1;background:var(--a-border);height:6px;border-radius:3px;overflow:hidden;">
+                                <div style="height:100%;width:${anchoBarra}%;background:${enAlerta ? 'var(--a-danger)' : 'var(--a-success)'}"></div>
+                            </div>
+                            <span style="font-size:0.875rem">${e.cantidad_disponible} / ${e.cantidad_total}</span>
+                        </div>
+                    </td>
+                    <td>${e.ubicacion}</td>
+                    <td>${alertaHtml}</td>
+                    <td style="text-align: right">
+                        <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                            <button class="a-btn a-btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="abrirModalAjuste(${e.id})" title="Ajuste de Stock">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                            </button>
+                            <button class="a-btn a-btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="abrirModalEquipo(${e.id})" title="Editar">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            </button>
+                            <button class="a-btn a-btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="eliminarEquipo(${e.id})" title="Eliminar">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function filtrarEquipos(q) {
+            const ql = q.toLowerCase();
+            const filt = allEquipos.filter(e => e.nombre.toLowerCase().includes(ql) || e.ubicacion.toLowerCase().includes(ql));
+            renderEquipos(filt);
+        }
+
+        function abrirModalEquipo(id = null) {
+            document.getElementById('formEquipo').reset();
+            document.getElementById('eqId').value = id || '';
+            const titulo = document.querySelector('#modalEquipo .a-modal-title');
+            
+            if (id) {
+                const eq = allEquipos.find(e => e.id === id);
+                if (!eq) return;
+                titulo.textContent = 'Editar Equipo';
+                document.getElementById('eqNombre').value = eq.nombre;
+                document.getElementById('eqTotal').value = eq.cantidad_total;
+                document.getElementById('eqDisponible').value = eq.cantidad_disponible;
+                document.getElementById('eqMinimo').value = eq.stock_minimo;
+                document.getElementById('eqUbicacion').value = eq.ubicacion;
+            } else {
+                titulo.textContent = 'Registrar Nuevo Equipo';
+            }
+            AdminApp.openModal('modalEquipo');
+        }
+
+        async function guardarEquipo(e) {
+            e.preventDefault();
+            const form = document.getElementById('formEquipo');
+            const btn = form.closest('.a-modal').querySelector('.a-btn-primary');
+            btn.disabled = true;;
+
+            const id = document.getElementById('eqId').value;
+            const datos = {
+                nombre: document.getElementById('eqNombre').value,
+                cantidad_total: document.getElementById('eqTotal').value,
+                cantidad_disponible: document.getElementById('eqDisponible').value,
+                stock_minimo: document.getElementById('eqMinimo').value,
+                ubicacion: document.getElementById('eqUbicacion').value
+            };
+
+            try {
+                if (id) {
+                    await AdminAPI.actualizarEquipo(parseInt(id), datos);
+                    AdminApp.toast('Equipo actualizado', 'success');
+                } else {
+                    await AdminAPI.crearEquipo(datos);
+                    AdminApp.toast('Equipo guardado correctamente', 'success');
+                }
+                AdminApp.closeModal('modalEquipo');
+                cargarEquipos();
+            } catch (err) {
+                AdminApp.toast(err.message, 'error');
+            } finally {
+                btn.disabled = false;;
+            }
+        }
+
+        function abrirModalAjuste(id) {
+            document.getElementById('formAjuste').reset();
+            document.getElementById('ajusteEqId').value = id;
+            AdminApp.openModal('modalAjuste');
+        }
+
+        async function guardarAjuste(e) {
+            e.preventDefault();
+            const id = parseInt(document.getElementById('ajusteEqId').value);
+            const cantidad = parseInt(document.getElementById('ajusteCantidad').value);
+            
+            const eq = allEquipos.find(x => x.id === id);
+            if (!eq) return;
+
+            const nuevaDisp = eq.cantidad_disponible + cantidad;
+            const nuevaTotal = eq.cantidad_total + cantidad;
+
+            if (nuevaDisp < 0) {
+                AdminApp.toast('La cantidad disponible no puede ser negativa', 'error');
+                return;
+            }
+            if (nuevaTotal < 1) {
+                AdminApp.toast('La cantidad total no puede ser menor a 1', 'error');
+                return;
+            }
+            if (nuevaDisp > nuevaTotal) {
+                AdminApp.toast('La cantidad disponible no puede ser mayor a la cantidad total', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('formAjuste').closest('.a-modal').querySelector('.a-btn-primary');
+            btn.disabled = true;;
+
+            try {
+                await AdminAPI.ajustarStock(id, nuevaDisp, nuevaTotal);
+                AdminApp.toast('Stock ajustado', 'success');
+                AdminApp.closeModal('modalAjuste');
+                cargarEquipos();
+            } catch (err) {
+                AdminApp.toast(err.message, 'error');
+            } finally {
+                btn.disabled = false;;
+            }
+        }
+
+        async function eliminarEquipo(id) {
+            if (!confirm('¿Estás seguro de que deseas eliminar este equipo?')) return;
+            try {
+                await AdminAPI.eliminarEquipo(id);
+                AdminApp.toast('Equipo eliminado', 'success');
+                cargarEquipos();
+            } catch (err) {
+                AdminApp.toast(err.message, 'error');
+            }
+        }
+
+        /* ----- PROVEEDORES ----- */
+        async function cargarCategorias() {
+            try {
+                const cats = await AdminAPI.getCategoriasProveedor();
+                const sel = document.getElementById('provCategoria');
+                cats.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.id;
+                    opt.textContent = c.nombre;
+                    sel.appendChild(opt);
+                });
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function cargarProveedores() {
+            try {
+                allProveedores = await AdminAPI.getProveedores();
+                renderProveedores(allProveedores);
+            } catch (err) {
+                document.querySelector('#tablaProveedores tbody').innerHTML = `<tr><td colspan="5" style="color:red;text-align:center">${err.message}</td></tr>`;
+            }
+        }
+
+        function renderProveedores(lista) {
+            const tbody = document.querySelector('#tablaProveedores tbody');
+            if (lista.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">No hay proveedores registrados</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = lista.map(p => {
+                return `<tr>
+                    <td style="font-weight: 500">${p.razon_social}</td>
+                    <td>${p.ruc}</td>
+                    <td><span class="a-badge a-badge-gray">${p.categoria_nombre}</span></td>
+                    <td>${p.contacto_nombre}</td>
+                    <td>
+                        <div style="font-size:0.875rem;">${p.telefono}</div>
+                        ${p.email ? `<div style="font-size:0.75rem;color:var(--a-text-secondary)">${p.email}</div>` : ''}
+                    </td>
+                    <td style="text-align: right">
+                        <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                            <button class="a-btn a-btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="abrirModalProveedor(${p.id})" title="Editar">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            </button>
+                            <button class="a-btn a-btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="eliminarProveedor(${p.id})" title="Eliminar">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function filtrarProveedores(q) {
+            const ql = q.toLowerCase();
+            const filt = allProveedores.filter(p => 
+                p.razon_social.toLowerCase().includes(ql) || 
+                p.ruc.includes(ql) ||
+                p.contacto_nombre.toLowerCase().includes(ql)
+            );
+            renderProveedores(filt);
+        }
+
+        function abrirModalProveedor(id = null) {
+            document.getElementById('formProveedor').reset();
+            document.getElementById('provId').value = id || '';
+            const titulo = document.querySelector('#modalProveedor .a-modal-title');
+
+            if (id) {
+                const prov = allProveedores.find(p => p.id === id);
+                if (!prov) return;
+                titulo.textContent = 'Editar Proveedor';
+                document.getElementById('provRuc').value = prov.ruc;
+                document.getElementById('provNombre').value = prov.razon_social;
+                document.getElementById('provCategoria').value = prov.categoria_id;
+                document.getElementById('provContacto').value = prov.contacto_nombre;
+                document.getElementById('provTelefono').value = prov.telefono;
+                document.getElementById('provEmail').value = prov.email || '';
+            } else {
+                titulo.textContent = 'Registrar Nuevo Proveedor';
+            }
+            AdminApp.openModal('modalProveedor');
+        }
+
+        async function guardarProveedor(e) {
+            e.preventDefault();
+            const form = document.getElementById('formProveedor');
+            const btn = form.closest('.a-modal').querySelector('.a-btn-primary');
+            btn.disabled = true;;
+
+            const id = document.getElementById('provId').value;
+            const datos = {
+                ruc: document.getElementById('provRuc').value,
+                razon_social: document.getElementById('provNombre').value,
+                categoria_id: document.getElementById('provCategoria').value,
+                contacto_nombre: document.getElementById('provContacto').value,
+                telefono: document.getElementById('provTelefono').value,
+                email: document.getElementById('provEmail').value
+            };
+
+            try {
+                if (id) {
+                    await AdminAPI.actualizarProveedor(parseInt(id), datos);
+                    AdminApp.toast('Proveedor actualizado', 'success');
+                } else {
+                    await AdminAPI.crearProveedor(datos);
+                    AdminApp.toast('Proveedor guardado correctamente', 'success');
+                }
+                AdminApp.closeModal('modalProveedor');
+                cargarProveedores();
+            } catch (err) {
+                AdminApp.toast(err.message, 'error');
+            } finally {
+                btn.disabled = false;;
+            }
+        }
+
+        async function eliminarProveedor(id) {
+            if (!confirm('¿Estás seguro de que deseas eliminar a este proveedor?')) return;
+            try {
+                await AdminAPI.eliminarProveedor(id);
+                AdminApp.toast('Proveedor eliminado', 'success');
+                cargarProveedores();
+            } catch (err) {
+                AdminApp.toast(err.message, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

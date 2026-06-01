@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tarapoto Tours - Descubre la Selva Peruana</title>
+    <title>Turi Tours - Descubre la Selva Peruana</title>
     <meta name="description" content="Plataforma de reservas turísticas en Tarapoto, San Martín. Explora cascadas, lagunas y la selva amazónica.">
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/styles.css?v=1.1">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -14,12 +14,13 @@
     <header class="header">
         <div class="container header-content">
             <a href="index.html" class="logo">
-                <img src="assets/turitours_logo.webp" alt="Tarapoto Tours" class="logo-img" width="160" height="48">
+                <img src="assets/turitours_logo.webp" alt="Turi Tours" class="logo-img" width="160" height="48">
             </a>
 
             <nav class="nav-desktop">
                 <a href="index.html" class="nav-link active">Inicio</a>
                 <a href="tours.html" class="nav-link">Tours</a>
+
                 <a href="destinos.html" class="nav-link">Destinos</a>
                 <a href="nosotros.html" class="nav-link">Nosotros</a>
                 <a href="contacto.html" class="nav-link">Contacto</a>
@@ -56,7 +57,7 @@
 
     <section class="hero">
         <div class="hero-background">
-            <img src="https://images.unsplash.com/photo-1518495973542-4542c06a5843?w=1920&q=80" alt="Selva amazónica" class="hero-image">
+            <video src="videos/hero_video.mp4" autoplay loop muted playsinline class="hero-image"></video>
             <div class="hero-overlay"></div>
         </div>
         <div class="container hero-content">
@@ -119,7 +120,15 @@
     <section class="section">
         <div class="container">
             <h2 class="section-title">Explora por categoría</h2>
-            <div class="categories-grid" id="categoriesGrid"></div>
+            <div class="carousel-container" style="position: relative; display: flex; align-items: center;">
+                <button class="carousel-btn left" onclick="document.getElementById('categoriesGrid').scrollBy({left: -300, behavior: 'smooth'})">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
+                <div class="categories-carousel" id="categoriesGrid" style="display: flex !important; flex-direction: row !important; gap: 1rem; overflow-x: auto; scroll-behavior: smooth; -ms-overflow-style: none; scrollbar-width: none; padding: 0.5rem 0; width: 100%;"></div>
+                <button class="carousel-btn right" onclick="document.getElementById('categoriesGrid').scrollBy({left: 300, behavior: 'smooth'})">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M9 18l6-6-6-6"/></svg>
+                </button>
+            </div>
         </div>
     </section>
 
@@ -212,7 +221,7 @@
             <div class="footer-grid">
                 <div class="footer-brand">
                     <a href="index.html" class="logo">
-                        <img src="assets/turitours_logo.webp" alt="Tarapoto Tours" class="logo-img" width="160" height="48">
+                        <img src="assets/turitours_logo.webp" alt="Turi Tours" class="logo-img" width="160" height="48">
                     </a>
                     <p class="footer-description">Tu plataforma de confianza para explorar la selva peruana. Descubre tours, actividades y experiencias únicas en Tarapoto.</p>
                     <div class="social-links">
@@ -271,14 +280,14 @@
                         </li>
                         <li>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                            info@tarapototours.com
+                            info@turitours.com
                         </li>
                     </ul>
                 </div>
             </div>
 
             <div class="footer-bottom">
-                <p>&copy; 2024 Tarapoto Tours. Todos los derechos reservados.</p>
+                <p>&copy; 2024 Turi Tours. Todos los derechos reservados.</p>
             </div>
         </div>
     </footer>

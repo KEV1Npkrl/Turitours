@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal y Roles — TuriTours Panel</title>
+    <meta name="description" content="Gestión de personal, roles y permisos — TuriTours">
+    <link rel="stylesheet" href="../css/admin.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="admin-body">
+    <div class="admin-layout">
+        <aside class="admin-sidebar" id="adminSidebar"></aside>
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <main class="admin-main">
+            <header class="admin-header">
+                <div class="admin-header-left">
+                    <button class="menu-toggle-admin" id="menuToggleAdmin">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <div>
+                        <h1 class="admin-header-title">Personal y Roles</h1>
+                        <p class="admin-header-subtitle">Gestión de colaboradores, roles y permisos</p>
+                    </div>
+                </div>
+            </header>
+
+            <div class="admin-content">
+                <!-- Toolbar -->
+                <div class="a-toolbar">
+                    <input type="text" class="a-search-input" id="searchPersonal" placeholder="Buscar por nombre, DNI o email...">
+                    <select class="a-filter-select" id="filterRol">
+                        <option value="">Todos los roles</option>
+                    </select>
+                    <select class="a-filter-select" id="filterEstadoP">
+                        <option value="">Todos</option>
+                        <option value="activo">Activos</option>
+                        <option value="inactivo">Inactivos</option>
+                        <option value="bloqueado">Bloqueados</option>
+                    </select>
+                    <button class="a-btn a-btn-primary" id="btnNuevoUsuario">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Nuevo Colaborador
+                    </button>
+                </div>
+
+                <!-- Table Card -->
+                <div class="a-card">
+                    <div class="a-card-header">
+                        <h3 class="a-card-title">Colaboradores</h3>
+                        <span class="a-badge a-badge-gray" id="personalCount">0</span>
+                    </div>
+                    <div class="a-card-body-flush">
+                        <div class="a-table-wrap">
+                            <table class="a-table">
+                                <thead><tr>
+                                    <th>Colaborador</th>
+                                    <th>DNI</th>
+                                    <th>Rol</th>
+                                    <th>Teléfono</th>
+                                    <th>Último Login</th>
+                                    <th>Intentos</th>
+                                    <th>Estado</th>
+                                    <th class="text-right">Acciones</th>
+                                </tr></thead>
+                                <tbody id="personalBody">
+                                    <tr><td colspan="8"><div class="a-loading"><div class="a-spinner"></div></div></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Roles & Permisos -->
+                <div class="a-card mt-2">
+                    <div class="a-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                        <h3 class="a-card-title">Roles y Permisos</h3>
+                        <button class="a-btn a-btn-primary a-btn-sm" onclick="abrirModalRol()">+ Nuevo Rol</button>
+                    </div>
+                    <div class="a-card-body-flush">
+                        <div class="a-table-wrap" style="overflow-x: auto; white-space: nowrap;">
+                            <table class="a-table" id="rolesTable" style="min-width: max-content;">
+                                <thead><tr>
+                                    <th>Módulo</th>
+                                </tr></thead>
+                                <tbody id="rolesBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="a-card-footer" style="display:flex; justify-content:flex-end; gap:12px; padding:1rem; border-top:1px solid #eef2f6;">
+                        <button class="a-btn a-btn-outline" onclick="reloadRolesAndPermisos()">Cancelar Cambios</button>
+                        <button class="a-btn a-btn-primary" onclick="guardarPermisosRoles()">Guardar Permisos</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal: Nuevo Usuario -->
+    <div class="a-modal-overlay" id="modalNuevo">
+        <div class="a-modal">
+            <div class="a-modal-header">
+                <h3 class="a-modal-title">Nuevo Colaborador</h3>
+                <button class="a-modal-close" data-close-modal="modalNuevo">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="a-modal-body">
+                <form id="formNuevo">
+                    <div class="a-form-group">
+                        <label class="a-form-label" for="nuevoNombre">Nombre completo <span class="required">*</span></label>
+                        <input type="text" id="nuevoNombre" class="a-form-input" placeholder="Nombres y apellidos" required>
+                    </div>
+                    <div class="a-form-row">
+                        <div class="a-form-group">
+                            <label class="a-form-label" for="nuevoDni">DNI <span class="required">*</span></label>
+                            <input type="text" id="nuevoDni" class="a-form-input" maxlength="8" pattern="[0-9]{8}" placeholder="12345678" required>
+                        </div>
+                        <div class="a-form-group">
+                            <label class="a-form-label" for="nuevoRol">Rol <span class="required">*</span></label>
+                            <select id="nuevoRol" class="a-form-input" required></select>
+                        </div>
+                    </div>
+                    <div class="a-form-row">
+                        <div class="a-form-group">
+                            <label class="a-form-label" for="nuevoEmail">Email <span class="required">*</span></label>
+                            <input type="email" id="nuevoEmail" class="a-form-input" placeholder="correo@agencia.com" required>
+                        </div>
+                        <div class="a-form-group">
+                            <label class="a-form-label" for="nuevoTelefono">Teléfono</label>
+                            <input type="text" id="nuevoTelefono" class="a-form-input" placeholder="+51 900 000 000">
+                        </div>
+                    </div>
+                    <div class="a-form-group">
+                        <label class="a-form-label" for="nuevoPassword">Contraseña temporal <span class="required">*</span></label>
+                        <input type="text" id="nuevoPassword" class="a-form-input" value="temp1234" required>
+                        <p class="a-form-hint">El colaborador deberá cambiarla en su primer inicio de sesión.</p>
+                    </div>
+                </form>
+            </div>
+            <div class="a-modal-footer">
+                <button class="a-btn a-btn-outline" data-close-modal="modalNuevo">Cancelar</button>
+                <button class="a-btn a-btn-primary" id="btnGuardarUsuario">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals for Roles -->
+    <!-- Modal: Crear/Editar Rol -->
+    <div class="a-modal-overlay" id="modalRol">
+        <div class="a-modal" style="max-width:400px;">
+            <div class="a-modal-header">
+                <h3 class="a-modal-title" id="tituloModalRol">Nuevo Rol</h3>
+                <button class="a-btn-close" onclick="AdminApp.closeModal('modalRol')">&times;</button>
+            </div>
+            <div class="a-modal-body">
+                <form id="formRol" onsubmit="event.preventDefault(); guardarRol();">
+                    <input type="hidden" id="rolId">
+                    <div class="form-group">
+                        <label>Nombre del Rol <span class="label-required">*</span></label>
+                        <input type="text" id="rolNombre" class="form-input" required>
+                    </div>
+                </form>
+            </div>
+            <div class="a-modal-footer">
+                <button class="a-btn a-btn-outline" onclick="AdminApp.closeModal('modalRol')">Cancelar</button>
+                <button class="a-btn a-btn-primary" onclick="guardarRol()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Eliminar Rol -->
+    <div class="a-modal-overlay" id="modalEliminarRol">
+        <div class="a-modal" style="max-width:400px;">
+            <div class="a-modal-header">
+                <h3 class="a-modal-title">Eliminar Rol</h3>
+                <button class="a-btn-close" onclick="AdminApp.closeModal('modalEliminarRol')">&times;</button>
+            </div>
+            <div class="a-modal-body">
+                <p id="textoEliminarRol" style="margin-bottom:1rem;color:var(--a-text-secondary);"></p>
+                <div class="form-group">
+                    <label>¿Qué hacer con los usuarios asociados?</label>
+                    <select id="selectMigrarRol" class="form-select">
+                        <option value="">Eliminar a los usuarios del sistema</option>
+                    </select>
+                    <small style="color:var(--a-text-muted);display:block;margin-top:0.5rem;">Si eliges "Eliminar", perderán el acceso y serán inhabilitados.</small>
+                </div>
+                <input type="hidden" id="eliminarRolId">
+            </div>
+            <div class="a-modal-footer">
+                <button class="a-btn a-btn-outline" onclick="AdminApp.closeModal('modalEliminarRol')">Cancelar</button>
+                <button class="a-btn" style="background:#dc2626;color:white;" onclick="confirmarEliminarRol()">Continuar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Validar Contraseña Admin -->
+    <div class="a-modal-overlay" id="modalAuth">
+        <div class="a-modal" style="max-width:400px;">
+            <div class="a-modal-header">
+                <h3 class="a-modal-title" style="color:#dc2626;">Acción Sensible</h3>
+                <button class="a-btn-close" onclick="AdminApp.closeModal('modalAuth')">&times;</button>
+            </div>
+            <div class="a-modal-body">
+                <p style="margin-bottom:1rem;color:var(--a-text-secondary);">Para aplicar estos cambios en los roles, por favor ingresa tu contraseña de Administrador.</p>
+                <div class="form-group">
+                    <label>Contraseña <span class="label-required">*</span></label>
+                    <input type="password" id="authPassword" class="form-input" required>
+                </div>
+            </div>
+            <div class="a-modal-footer">
+                <button class="a-btn a-btn-outline" onclick="AdminApp.closeModal('modalAuth')">Cancelar</button>
+                <button class="a-btn a-btn-primary" onclick="ejecutarAccionAuth()">Validar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/data.js"></script>
+    <script src="../js/schema.js"></script>
+    <script src="../js/admin-data.js"></script>
+    <script src="../js/admin-api.js"></script>
+    <script src="../js/admin-app.js"></script>
+
+    <script>
+        let allUsers = [];
+        let roles = [];
+        const MODULOS = ['dashboard', 'tours', 'reservas', 'caja', 'turistas', 'operaciones', 'inventario', 'personal', 'reportes', 'auditoria'];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!AdminApp.init('personal')) return;
+            AdminApp.initModalCloseButtons();
+
+            roles = await AdminAPI.getRoles();
+            populateRolFilter();
+            loadPersonal();
+            renderPermisos();
+
+            document.getElementById('searchPersonal').addEventListener('input', debounce(renderPersonal, 300));
+            document.getElementById('filterRol').addEventListener('change', renderPersonal);
+            document.getElementById('filterEstadoP').addEventListener('change', renderPersonal);
+            document.getElementById('btnNuevoUsuario').addEventListener('click', () => AdminApp.openModal('modalNuevo'));
+            document.getElementById('btnGuardarUsuario').addEventListener('click', handleGuardarUsuario);
+        });
+
+        function populateRolFilter() {
+            const select = document.getElementById('filterRol');
+            const nuevoRol = document.getElementById('nuevoRol');
+            roles.forEach(r => {
+                select.insertAdjacentHTML('beforeend', `<option value="${r.id}">${r.nombre}</option>`);
+                nuevoRol.insertAdjacentHTML('beforeend', `<option value="${r.id}">${r.nombre}</option>`);
+            });
+        }
+
+        async function loadPersonal() {
+            allUsers = await AdminAPI.getUsuarios();
+            renderPersonal();
+        }
+
+        function renderPersonal() {
+            const search = document.getElementById('searchPersonal').value.toLowerCase();
+            const rolFilter = document.getElementById('filterRol').value;
+            const estadoFilter = document.getElementById('filterEstadoP').value;
+
+            let filtered = allUsers;
+            if (search) filtered = filtered.filter(u =>
+                u.nombre.toLowerCase().includes(search) || u.dni.includes(search) || u.email.toLowerCase().includes(search));
+            if (rolFilter) filtered = filtered.filter(u => u.rol_id === parseInt(rolFilter, 10));
+            if (estadoFilter === 'activo') filtered = filtered.filter(u => u.activo && !u.bloqueado);
+            else if (estadoFilter === 'inactivo') filtered = filtered.filter(u => !u.activo);
+            else if (estadoFilter === 'bloqueado') filtered = filtered.filter(u => u.bloqueado);
+
+            document.getElementById('personalCount').textContent = filtered.length + ' colaborador(es)';
+
+            const tbody = document.getElementById('personalBody');
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8"><div class="a-empty"><p class="a-empty-title">Sin resultados</p></div></td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(u => {
+                const estado = u.bloqueado ? 'bloqueado' : (u.activo ? 'activo' : 'inactivo');
+                return `<tr>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:0.625rem">
+                            <div class="sidebar-user-avatar" style="width:32px;height:32px;font-size:0.6875rem;">${u.nombre.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase()}</div>
+                            <div>
+                                <div style="font-weight:600">${u.nombre}</div>
+                                <div style="font-size:0.6875rem;color:var(--a-text-muted)">${u.email}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="font-mono">${u.dni}</span></td>
+                    <td><span class="a-badge a-badge-blue">${u.rol_nombre}</span></td>
+                    <td>${u.telefono || '—'}</td>
+                    <td style="font-size:0.75rem;color:var(--a-text-secondary)">${u.ultimo_login ? AdminApp.formatFechaHora(u.ultimo_login) : 'Nunca'}</td>
+                    <td class="text-center">
+                        ${u.intentos_fallidos > 0
+                            ? '<span class="a-badge a-badge-red">' + u.intentos_fallidos + '/3</span>'
+                            : '<span style="color:var(--a-text-muted)">0</span>'}
+                    </td>
+                    <td>${AdminApp.badgeEstado(estado)}</td>
+                    <td class="td-actions">
+                        ${u.activo && !u.bloqueado ? `<button class="a-btn a-btn-ghost a-btn-sm" title="Inhabilitar" onclick="handleInhabilitar(${u.id})">
+                            ${AdminApp.icon('lock')}</button>` : ''}
+                        ${(!u.activo || u.bloqueado) ? `<button class="a-btn a-btn-ghost a-btn-sm" title="Reactivar" onclick="handleReactivar(${u.id})">
+                            ${AdminApp.icon('unlock')}</button>` : ''}
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        async function reloadRolesAndPermisos() {
+            roles = await AdminAPI.getRoles();
+            populateRolFilter();
+            renderPermisos();
+        }
+
+        function renderPermisos() {
+            // Header
+            const thead = document.querySelector('#rolesTable thead tr');
+            thead.innerHTML = '<th>Módulo</th>';
+            roles.forEach(r => {
+                const isSuper = r.id === 1;
+                const actions = isSuper ? '' : `
+                    <div style="margin-top:8px; display:flex; justify-content:center; gap:8px;">
+                        <button class="a-btn a-btn-ghost a-btn-sm" style="padding:2px; height:auto; color:var(--a-primary)" onclick="abrirModalRol(${r.id})" title="Editar Rol">${AdminApp.icon('edit', 14)}</button>
+                        <button class="a-btn a-btn-ghost a-btn-sm" style="padding:2px; height:auto; color:#dc2626" onclick="abrirModalEliminarRol(${r.id})" title="Eliminar Rol">${AdminApp.icon('trash', 14)}</button>
+                    </div>`;
+                thead.insertAdjacentHTML('beforeend', `<th class="text-center" style="min-width:140px; padding-bottom:1rem; border-left:1px solid #eef2f6; text-align:center;">
+                    ${r.nombre}
+                    ${actions}
+                </th>`);
+            });
+
+            const as = getAdminDb();
+            const body = document.getElementById('rolesBody');
+            body.innerHTML = '';
+            MODULOS.forEach(mod => {
+                let row = `<td style="font-weight:600;text-transform:capitalize">${mod}</td>`;
+                roles.forEach(r => {
+                    const isSuper = r.id === 1;
+                    const perm = as.permisos.find(p => p.rol_id === r.id && p.modulo === mod) || {};
+                    const checked = perm.puede_ver ? 'checked' : '';
+                    const disabled = isSuper ? 'disabled' : '';
+                    
+                    row += `<td class="text-center" style="border-left:1px solid #eef2f6;">
+                        <input type="checkbox" class="permiso-checkbox" data-rol="${r.id}" data-mod="${mod}" style="width:1.2rem; height:1.2rem; cursor:pointer;" ${checked} ${disabled}>
+                    </td>`;
+                });
+                body.insertAdjacentHTML('beforeend', `<tr>${row}</tr>`);
+            });
+        }
+
+        function guardarPermisosRoles() {
+            const checkboxes = document.querySelectorAll('.permiso-checkbox');
+            const cambios = [];
+            checkboxes.forEach(chk => {
+                cambios.push({
+                    rolId: parseInt(chk.getAttribute('data-rol')),
+                    modulo: chk.getAttribute('data-mod'),
+                    valor: chk.checked
+                });
+            });
+            
+            pedirPasswordAdmin(async () => {
+                try {
+                    await AdminAPI.actualizarPermisosBulk(cambios);
+                    AdminApp.toast('Permisos actualizados correctamente');
+                    await reloadRolesAndPermisos();
+                } catch (err) {
+                    AdminApp.toast(err.message, 'error');
+                }
+            });
+        }
+
+        let pendingAuthAction = null;
+        
+        function abrirModalRol(id = null) {
+            if (id === 1) return;
+            const r = id ? roles.find(x => x.id === id) : null;
+            document.getElementById('rolId').value = r ? r.id : '';
+            document.getElementById('rolNombre').value = r ? r.nombre : '';
+            document.getElementById('tituloModalRol').textContent = r ? 'Editar Rol' : 'Nuevo Rol';
+            AdminApp.openModal('modalRol');
+        }
+
+        function guardarRol() {
+            const id = document.getElementById('rolId').value;
+            const nombre = document.getElementById('rolNombre').value.trim();
+            if(!nombre) { AdminApp.toast('El nombre es requerido', 'error'); return; }
+            
+            AdminApp.closeModal('modalRol');
+            
+            if (id) {
+                pedirPasswordAdmin(async () => {
+                    await AdminAPI.actualizarRol(parseInt(id), nombre, '');
+                    AdminApp.toast('Rol actualizado correctamente');
+                    reloadRolesAndPermisos();
+                });
+            } else {
+                AdminAPI.crearRol(nombre, '').then(() => {
+                    AdminApp.toast('Rol creado correctamente');
+                    reloadRolesAndPermisos();
+                }).catch(err => AdminApp.toast(err.message, 'error'));
+            }
+        }
+
+        function abrirModalEliminarRol(id) {
+            if (id === 1) return;
+            const r = roles.find(x => x.id === id);
+            const usuariosAsociados = allUsers.filter(u => u.rol_id === id);
+            document.getElementById('eliminarRolId').value = id;
+            document.getElementById('textoEliminarRol').textContent = `Estás a punto de eliminar el rol "${r.nombre}". Actualmente hay ${usuariosAsociados.length} usuario(s) con este rol.`;
+            
+            const sel = document.getElementById('selectMigrarRol');
+            sel.innerHTML = '<option value="">Eliminar a los usuarios del sistema</option>';
+            roles.forEach(rol => {
+                if (rol.id !== id) {
+                    sel.insertAdjacentHTML('beforeend', `<option value="${rol.id}">Migrar al rol: ${rol.nombre}</option>`);
+                }
+            });
+            
+            AdminApp.openModal('modalEliminarRol');
+        }
+
+        function confirmarEliminarRol() {
+            const id = document.getElementById('eliminarRolId').value;
+            const migrarA = document.getElementById('selectMigrarRol').value;
+            
+            AdminApp.closeModal('modalEliminarRol');
+            
+            pedirPasswordAdmin(async () => {
+                await AdminAPI.eliminarRol(parseInt(id), migrarA ? parseInt(migrarA) : null);
+                AdminApp.toast('Rol eliminado correctamente');
+                await reloadRolesAndPermisos();
+                loadPersonal();
+            });
+        }
+
+        function pedirPasswordAdmin(actionCallback) {
+            pendingAuthAction = actionCallback;
+            document.getElementById('authPassword').value = '';
+            AdminApp.openModal('modalAuth');
+            setTimeout(() => document.getElementById('authPassword').focus(), 100);
+        }
+
+        async function ejecutarAccionAuth() {
+            const pass = document.getElementById('authPassword').value;
+            if (!pass) return;
+            try {
+                await AdminAPI.verifyAdminPassword(pass);
+                AdminApp.closeModal('modalAuth');
+                if (pendingAuthAction) await pendingAuthAction();
+                pendingAuthAction = null;
+            } catch (err) {
+                AdminApp.toast(err.message, 'error');
+            }
+        }
+
+        async function handleGuardarUsuario() {
+            const datos = {
+                nombre: document.getElementById('nuevoNombre').value,
+                dni: document.getElementById('nuevoDni').value,
+                email: document.getElementById('nuevoEmail').value,
+                telefono: document.getElementById('nuevoTelefono').value,
+                rol_id: document.getElementById('nuevoRol').value,
+                password: document.getElementById('nuevoPassword').value
+            };
+            if (!datos.nombre || !datos.dni || !datos.email || !datos.rol_id) {
+                AdminApp.toast('Completa los campos obligatorios', 'error'); return;
+            }
+            if (!/^\d{8}$/.test(datos.dni)) {
+                AdminApp.toast('El DNI debe tener exactamente 8 digitos', 'error'); return;
+            }
+            try {
+                await AdminAPI.crearUsuario(datos);
+                AdminApp.closeModal('modalNuevo');
+                AdminApp.toast('Colaborador registrado exitosamente');
+                document.getElementById('formNuevo').reset();
+                loadPersonal();
+            } catch (err) { AdminApp.toast(err.message, 'error'); }
+        }
+
+        async function handleInhabilitar(id) {
+            if (!confirm('¿Estás seguro de inhabilitar este colaborador?')) return;
+            try {
+                await AdminAPI.inhabilitarUsuario(id);
+                AdminApp.toast('Colaborador inhabilitado');
+                loadPersonal();
+            } catch (err) { AdminApp.toast(err.message, 'error'); }
+        }
+
+        async function handleReactivar(id) {
+            try {
+                await AdminAPI.reactivarUsuario(id);
+                AdminApp.toast('Colaborador reactivado');
+                loadPersonal();
+            } catch (err) { AdminApp.toast(err.message, 'error'); }
+        }
+
+        function debounce(fn, ms) {
+            let t; return function (...a) { clearTimeout(t); t = setTimeout(() => fn.apply(this, a), ms); };
+        }
+    </script>
+</body>
+</html>

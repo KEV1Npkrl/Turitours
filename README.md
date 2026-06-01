@@ -1,4 +1,4 @@
-# Tarapoto Tours
+# Turi Tours
 
 Frontend del **Modelo Cliente** (portal publico del turista) — HTML + CSS + JavaScript vanilla.
 

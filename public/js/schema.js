@@ -15,11 +15,11 @@ const Schema = (function() {
     };
 
     const DESTINO_MEDIA = {
-        1: { imagen: 'https://images.unsplash.com/photo-1518495973542-4542c06a5843?w=800&q=80', bandera: '🇵🇪' },
-        2: { imagen: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80', bandera: '🇵🇪' },
-        3: { imagen: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&q=80', bandera: '🇵🇪' },
-        4: { imagen: 'https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=800&q=80', bandera: '🇵🇪' },
-        5: { imagen: 'https://images.unsplash.com/photo-1475924156734-496f6cac6ec1?w=800&q=80', bandera: '🇵🇪' }
+        1: { imagen: 'https://upload.wikimedia.org/wikipedia/commons/d/d9/Tarapoto.jpg', bandera: '🇵🇪' },
+        2: { imagen: 'https://upload.wikimedia.org/wikipedia/commons/1/19/Paisatge_de_Lamas%2C_San_Mart%C3%ADn03.jpg', bandera: '🇵🇪' },
+        3: { imagen: 'https://upload.wikimedia.org/wikipedia/commons/d/d1/Valle_del_Alto_Mayo_en_Moyobamba.JPG', bandera: '🇵🇪' },
+        4: { imagen: 'https://upload.wikimedia.org/wikipedia/commons/a/ac/Port_de_Sauce_a_la_Laguna_de_Sauce_a_la_prov%C3%ADncia_de_San_Mart%C3%ADn.jpg', bandera: '🇵🇪' },
+        5: { imagen: 'https://upload.wikimedia.org/wikipedia/commons/c/cd/Cataras_de_Ahuashiyacu.jpg', bandera: '🇵🇪' }
     };
 
     function parseItinerario(itinerario) {
@@ -127,10 +127,10 @@ const Schema = (function() {
 
     function enrichDestino(destino, db) {
         const media = DESTINO_MEDIA[destino.id] || {
-            imagen: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&q=80',
+            imagen: 'https://upload.wikimedia.org/wikipedia/commons/d/d9/Tarapoto.jpg',
             bandera: '🇵🇪'
         };
-        return Object.assign({}, destino, media, {
+        return Object.assign({}, media, destino, {
             tours_count: countToursPorDestino(destino.id, db)
         });
     }
@@ -144,13 +144,27 @@ const Schema = (function() {
         const stats = calcularRating(reseñas);
         const contenido = db.tour_contenido[tour.id] || { incluye: [], no_incluye: [] };
         const precios = getPrecioTour(tour, options.fecha, db);
-        const imagenPrincipal = imagenes.find(function(i) { return i.es_principal === 1; }) || imagenes[0];
+        const imagenPrincipalDB = imagenes.find(function(i) { return i.es_principal === 1; }) || imagenes[0];
+        
+        let imgPrincipal = '';
+        if (tour.imagenes && tour.imagenes.length > 0) imgPrincipal = tour.imagenes[0];
+        else if (tour.imagen) imgPrincipal = tour.imagen;
+        else if (imagenPrincipalDB) imgPrincipal = imagenPrincipalDB.url;
+
+        let todasImagenes = [];
+        if (tour.imagenes && tour.imagenes.length > 0) {
+            todasImagenes = tour.imagenes.map((b64, idx) => ({ id: idx, url: b64, es_principal: idx === 0 ? 1 : 0 }));
+        } else if (tour.imagen) {
+            todasImagenes = [{ id: 1, url: tour.imagen, es_principal: 1 }];
+        } else {
+            todasImagenes = imagenes;
+        }
 
         return Object.assign({}, tour, precios, stats, {
             destino: destino || null,
             categoria: categoria ? enrichCategoria(categoria) : null,
-            imagenes: imagenes,
-            imagen_principal: imagenPrincipal ? imagenPrincipal.url : '',
+            imagenes: todasImagenes,
+            imagen_principal: imgPrincipal,
             itinerario_detalle: parseItinerario(tour.itinerario),
             incluye: contenido.incluye || [],
             no_incluye: contenido.no_incluye || [],
