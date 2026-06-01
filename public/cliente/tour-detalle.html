@@ -192,51 +192,59 @@
     <script src="../js/app.js"></script>
     <script src="../js/tour-detalle.js"></script>
     <script>
-        function toggleClienteFacturacion(tipo) {
-            const campos = document.getElementById('clienteCamposFacturacion');
-            const selectTipoDoc = document.getElementById('clienteTipoDoc');
-            const lblNombre = document.getElementById('lblClienteNombre');
-            const grupoDir = document.getElementById('clienteGrupoDir');
-            const numDoc = document.getElementById('clienteNumDoc');
-
-            if (!tipo) {
-                campos.style.display = 'none';
-            } else {
-                campos.style.display = 'block';
-                if (tipo === '01') {
-                    // Factura: requiere RUC obligatoriamente
-                    selectTipoDoc.value = 'RUC';
-                    selectTipoDoc.disabled = true;
-                    updateClienteDocLabel();
-                    grupoDir.style.display = 'block';
-                    lblNombre.textContent = 'Razón Social';
-                    numDoc.setAttribute('placeholder', 'RUC (11 dígitos)');
-                } else {
-                    // Boleta: permite seleccionar tipo de documento
-                    selectTipoDoc.disabled = false;
-                    grupoDir.style.display = 'none';
-                    lblNombre.textContent = 'Nombre Completo';
-                    updateClienteDocLabel();
-                }
-            }
-        }
-
         function updateClienteDocLabel() {
-            if (typeof TuristaValidacion === 'undefined') {
-                console.warn('TuristaValidacion aún no disponible');
-                return;
-            }
-            
             const tipoDoc = document.getElementById('clienteTipoDoc').value;
             const lblDoc = document.getElementById('lblClienteDoc');
             const numDoc = document.getElementById('clienteNumDoc');
+            
+            // Log para debugging
+            console.log('updateClienteDocLabel llamado con tipoDoc:', tipoDoc);
+            console.log('TuristaValidacion disponible:', typeof TuristaValidacion);
+            
+            if (typeof TuristaValidacion === 'undefined') {
+                console.error('TuristaValidacion no está disponible');
+                return;
+            }
+            
             const regla = TuristaValidacion.getReglaDocumento(tipoDoc);
-
+            console.log('Regla encontrada:', regla);
+            
             if (regla) {
                 lblDoc.textContent = tipoDoc;
                 numDoc.setAttribute('placeholder', regla.placeholder);
                 numDoc.setAttribute('maxlength', regla.maxlength);
                 numDoc.value = '';
+                console.log('Placeholder actualizado a:', regla.placeholder);
+            }
+        }
+
+        function toggleClienteFacturacion(tipo) {
+            const campos = document.getElementById('clienteCamposFacturacion');
+            const selectTipoDoc = document.getElementById('clienteTipoDoc');
+            const grupoDir = document.getElementById('clienteGrupoDir');
+            const numDoc = document.getElementById('clienteNumDoc');
+            const lblNombre = document.getElementById('lblClienteNombre');
+
+            if (!tipo) {
+                campos.style.display = 'none';
+            } else {
+                campos.style.display = 'block';
+                
+                if (tipo === '01') {
+                    // Factura: requiere RUC obligatoriamente
+                    selectTipoDoc.value = 'RUC';
+                    selectTipoDoc.disabled = true;
+                    grupoDir.style.display = 'block';
+                    lblNombre.textContent = 'Razón Social';
+                } else {
+                    // Boleta: permite seleccionar tipo de documento
+                    selectTipoDoc.disabled = false;
+                    grupoDir.style.display = 'none';
+                    lblNombre.textContent = 'Nombre Completo';
+                }
+                
+                // Actualizar label después de cambiar el valor del select
+                updateClienteDocLabel();
             }
         }
     </script>
