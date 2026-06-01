@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ========================================
  * MAIN APPLICATION - Turi Tours
  * ========================================
@@ -20,7 +20,7 @@ function initMobileMenu() {
     const mobileMenu = document.getElementById('mobileMenu');
     
     if (menuToggle && mobileMenu) {
-        menuToggle.addEventListener('click', function() {
+        menuToggle.addEventListener('click', function(e) { e.stopPropagation();
             mobileMenu.classList.toggle('open');
             
             // Cambiar icono
@@ -30,7 +30,7 @@ function initMobileMenu() {
                 : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>';
         });
         
-        // Cerrar menú al hacer click fuera
+        // Cerrar menÃº al hacer click fuera
         document.addEventListener('click', function(e) {
             if (!menuToggle.contains(e.target) && !mobileMenu.contains(e.target)) {
                 mobileMenu.classList.remove('open');
@@ -104,7 +104,7 @@ async function initHomePage() {
     const destinosGrid = document.getElementById('destinosGrid');
     const toursGrid = document.getElementById('toursGrid');
     
-    // Solo ejecutar en la página principal
+    // Solo ejecutar en la pÃ¡gina principal
     if (!categoriesGrid && !destinosGrid && !toursGrid) return;
     
     try {
@@ -132,7 +132,7 @@ async function initHomePage() {
 }
 
 /**
- * Renderizar categorías
+ * Renderizar categorÃ­as
  */
 function renderCategorias(categorias, container) {
     const iconos = {
@@ -302,3 +302,4 @@ window.formatFecha = formatFecha;
 window.mostrarAlerta = mostrarAlerta;
 window.mostrarLoading = mostrarLoading;
 window.initAuthHeader = initAuthHeader;
+

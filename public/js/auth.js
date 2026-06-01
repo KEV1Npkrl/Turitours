@@ -2,7 +2,7 @@
  * Autenticacion turista — Modelo Cliente
  * Tabla BD: turistas
  */
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     initLoginPage();
     initRegistroPage();
 });
@@ -13,7 +13,7 @@ function initLoginPage() {
 
     initPasswordToggle('password', 'togglePassword');
 
-    form.addEventListener('submit', async function(e) {
+    form.addEventListener('submit', async function (e) {
         e.preventDefault();
         const email = form.email.value.trim();
         const password = form.password.value;
@@ -52,7 +52,7 @@ async function initRegistroPage() {
     initPasswordToggle('confirmPassword', 'toggleConfirmPassword');
 
     applyDocumentFieldRules(form.tipo_doc.value, form.documento);
-    form.tipo_doc.addEventListener('change', function() {
+    form.tipo_doc.addEventListener('change', function () {
         form.documento.value = '';
         clearFieldError('documento');
         applyDocumentFieldRules(form.tipo_doc.value, form.documento);
@@ -60,7 +60,7 @@ async function initRegistroPage() {
 
     await initCountryPicker(form);
 
-    form.addEventListener('submit', async function(e) {
+    form.addEventListener('submit', async function (e) {
         e.preventDefault();
         clearFormErrors(form);
 
@@ -128,16 +128,16 @@ function clearFieldError(fieldName) {
 }
 
 function clearFormErrors(form) {
-    form.querySelectorAll('.field-error').forEach(function(el) {
+    form.querySelectorAll('.field-error').forEach(function (el) {
         el.textContent = '';
     });
-    form.querySelectorAll('.is-invalid').forEach(function(el) {
+    form.querySelectorAll('.is-invalid').forEach(function (el) {
         el.classList.remove('is-invalid');
     });
 }
 
 function mostrarErroresFormulario(form, errores) {
-    Object.keys(errores).forEach(function(campo) {
+    Object.keys(errores).forEach(function (campo) {
         const errorEl = document.getElementById(campo + 'Error');
         const input = form[campo] || document.getElementById(campo);
         if (errorEl) errorEl.textContent = errores[campo];
@@ -162,10 +162,10 @@ async function initCountryPicker(form) {
     let selectedPais = null;
     if (hiddenInput.value) {
         const initialId = parseInt(hiddenInput.value, 10);
-        selectedPais = paises.find(function(p) { return p.id === initialId; }) || null;
+        selectedPais = paises.find(function (p) { return p.id === initialId; }) || null;
     }
     if (!selectedPais) {
-        selectedPais = paises.find(function(p) { return p.id === 1; }) || paises[0] || null;
+        selectedPais = paises.find(function (p) { return p.id === 1; }) || paises[0] || null;
     }
     let activeIndex = -1;
 
@@ -218,7 +218,7 @@ async function initCountryPicker(form) {
     function filterPaises(query) {
         const q = normalize(query);
         if (!q) return paises.slice(0, 80);
-        return paises.filter(function(p) {
+        return paises.filter(function (p) {
             return normalize(p.nombre).includes(q) ||
                 (p.codigo_iso && p.codigo_iso.toLowerCase().includes(q));
         }).slice(0, 80);
@@ -236,14 +236,14 @@ async function initCountryPicker(form) {
             return;
         }
 
-        items.forEach(function(pais, index) {
+        items.forEach(function (pais, index) {
             const li = document.createElement('li');
             li.className = 'country-picker-item';
             li.setAttribute('role', 'option');
             li.dataset.id = pais.id;
             li.dataset.index = index;
             li.innerHTML = '<span class="country-flag ' + getFlagClass(pais.codigo_iso) + '"></span><span>' + pais.nombre + '</span>';
-            li.addEventListener('mousedown', function(e) {
+            li.addEventListener('mousedown', function (e) {
                 e.preventDefault();
                 selectPais(pais);
             });
@@ -269,7 +269,7 @@ async function initCountryPicker(form) {
 
     function highlightItem(index) {
         const items = listbox.querySelectorAll('.country-picker-item');
-        items.forEach(function(el) { el.classList.remove('is-active'); });
+        items.forEach(function (el) { el.classList.remove('is-active'); });
         if (index >= 0 && index < items.length) {
             items[index].classList.add('is-active');
             items[index].scrollIntoView({ block: 'nearest' });
@@ -280,17 +280,17 @@ async function initCountryPicker(form) {
 
     const field = searchInput.closest('.country-picker-field');
     if (field) {
-        field.addEventListener('click', function() {
+        field.addEventListener('click', function () {
             searchInput.focus();
         });
     }
 
-    searchInput.addEventListener('focus', function() {
+    searchInput.addEventListener('focus', function () {
         renderList(filterPaises(searchInput.value));
         openList();
     });
 
-    searchInput.addEventListener('input', function() {
+    searchInput.addEventListener('input', function () {
         hiddenInput.value = '';
         selectedPais = null;
         delete searchInput.dataset.iso;
@@ -299,7 +299,7 @@ async function initCountryPicker(form) {
         openList();
     });
 
-    searchInput.addEventListener('keydown', function(e) {
+    searchInput.addEventListener('keydown', function (e) {
         const items = listbox.querySelectorAll('.country-picker-item');
         if (e.key === 'ArrowDown') {
             e.preventDefault();
@@ -317,7 +317,7 @@ async function initCountryPicker(form) {
             e.preventDefault();
             if (activeIndex >= 0 && items[activeIndex]) {
                 const id = parseInt(items[activeIndex].dataset.id, 10);
-                const pais = paises.find(function(p) { return p.id === id; });
+                const pais = paises.find(function (p) { return p.id === id; });
                 if (pais) selectPais(pais);
             }
         } else if (e.key === 'Escape') {
@@ -325,7 +325,7 @@ async function initCountryPicker(form) {
         }
     });
 
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
         if (!picker.contains(e.target)) {
             closeList();
             if (!hiddenInput.value && searchInput.value.trim()) {
@@ -345,7 +345,7 @@ function initPasswordToggle(inputId, buttonId) {
     const iconEye = button.querySelector('.icon-eye');
     const iconEyeOff = button.querySelector('.icon-eye-off');
 
-    button.addEventListener('click', function() {
+    button.addEventListener('click', function () {
         const isHidden = input.type === 'password';
         input.type = isHidden ? 'text' : 'password';
         button.setAttribute('aria-pressed', isHidden ? 'true' : 'false');

@@ -1,0 +1,207 @@
+/* ========================================
+   RESPONSIVE CSS — SuperAdmin + Agencia
+   ======================================== */
+
+/* --- SuperAdmin (<=1023px) --- */
+@media (max-width: 1023px) {
+    .sa-sidebar {
+        transform: translateX(-100%) !important;
+        transition: transform 0.3s ease !important;
+    }
+    .sa-sidebar.open {
+        transform: translateX(0) !important;
+    }
+    .sa-main {
+        margin-left: 0 !important;
+    }
+}
+
+@media (max-width: 768px) {
+    /* === SUPERADMIN LAYOUT === */
+    .sa-sidebar {
+        width: 260px !important;
+        position: fixed !important;
+        z-index: 1000 !important;
+        transform: translateX(-100%) !important;
+        transition: transform 0.3s ease !important;
+    }
+    .sa-sidebar.open {
+        transform: translateX(0) !important;
+    }
+    .sa-main {
+        margin-left: 0 !important;
+        width: 100% !important;
+    }
+    .sa-header {
+        padding: 0 0.75rem !important;
+        gap: 0.5rem;
+        justify-content: flex-start !important;
+    }
+    .sa-header h2 {
+        font-size: 1rem !important;
+        flex: 1;
+    }
+    .sa-user {
+        gap: 0.5rem !important;
+    }
+    #saUserName {
+        display: none !important;
+    }
+    .sa-content {
+        padding: 0.75rem !important;
+    }
+
+    /* Stats */
+    .stats-grid {
+        grid-template-columns: 1fr !important;
+        gap: 0.75rem !important;
+    }
+
+    /* Panels */
+    .panel-card {
+        padding: 1rem !important;
+        margin-bottom: 1rem !important;
+    }
+    .panel-header {
+        flex-direction: column !important;
+        gap: 0.75rem;
+        align-items: flex-start !important;
+    }
+    .panel-title {
+        font-size: 1.1rem !important;
+    }
+
+    /* Tables */
+    .table-responsive {
+        width: 100% !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    .table-sa {
+        min-width: 500px;
+    }
+    .table-sa th,
+    .table-sa td {
+        padding: 0.5rem 0.75rem !important;
+        font-size: 0.8125rem !important;
+        white-space: nowrap;
+    }
+
+    /* Forms */
+    .form-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .form-group {
+        margin-bottom: 1rem !important;
+    }
+
+    /* Filters row */
+    .filters {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+    }
+
+    /* Modals */
+    .modal-content {
+        width: 95vw !important;
+        max-width: 95vw !important;
+        padding: 1rem !important;
+        margin: 0.5rem !important;
+    }
+
+    /* Soporte cards */
+    .ticket-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Chart bars */
+    .bar-label {
+        font-size: 0.75rem !important;
+    }
+
+    /* === AGENCIA LAYOUT === */
+    .sidebar {
+        position: fixed !important;
+        height: 100vh !important;
+        transform: translateX(-100%) !important;
+        transition: transform 0.3s ease !important;
+        z-index: 1000 !important;
+    }
+    .sidebar.open {
+        transform: translateX(0) !important;
+    }
+    .topbar {
+        padding: 10px 12px !important;
+        justify-content: flex-start !important;
+        gap: 0.5rem;
+    }
+    .topbar h2 {
+        font-size: 1rem !important;
+        margin: 0 !important;
+        flex: 1;
+    }
+    .content-area {
+        padding: 0.75rem !important;
+    }
+    .op-grid,
+    .reservas-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .card {
+        padding: 1rem !important;
+    }
+    .card h3 {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 8px;
+    }
+
+    /* Common toggle */
+    .mobile-toggle {
+        display: block !important;
+        background: none !important;
+        border: none !important;
+        font-size: 1.5rem !important;
+        cursor: pointer;
+        margin-right: 0.75rem;
+        color: #0f172a;
+        padding: 4px;
+    }
+}
+
+/* Overlay for sidebar */
+.sa-sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 999;
+}
+.sa-sidebar-overlay.open {
+    display: block;
+}
+
+@media (min-width: 769px) {
+    .mobile-toggle {
+        display: none !important;
+    }
+}
+
+/* --- Small phone (<=480px) --- */
+@media (max-width: 480px) {
+    .sa-content {
+        padding: 0.5rem !important;
+    }
+    .panel-card {
+        padding: 0.75rem !important;
+    }
+    .stats-grid {
+        gap: 0.5rem !important;
+    }
+    .stat-card {
+        padding: 0.75rem !important;
+    }
+    .stat-info .value {
+        font-size: 1.5rem !important;
+    }
+}

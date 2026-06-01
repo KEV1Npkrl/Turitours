@@ -69,7 +69,7 @@ const MOCK_DB = {
                 "duracion_horas": 4,
                 "cupo_maximo": 20,
                 "precio_nacional": 45,
-                "precio_extranjero": 45,
+                "precio_extranjero": 60,
                 "estado": "activo",
                 "destacado": 1,
                 "created_at": "2025-01-01T08:00:00"
@@ -85,7 +85,7 @@ const MOCK_DB = {
                 "duracion_horas": 8,
                 "cupo_maximo": 20,
                 "precio_nacional": 100,
-                "precio_extranjero": 100,
+                "precio_extranjero": 135,
                 "estado": "activo",
                 "destacado": 1,
                 "created_at": "2025-01-01T08:00:00"
@@ -101,7 +101,7 @@ const MOCK_DB = {
                 "duracion_horas": 4,
                 "cupo_maximo": 20,
                 "precio_nacional": 45,
-                "precio_extranjero": 45,
+                "precio_extranjero": 60,
                 "estado": "activo",
                 "destacado": 1,
                 "created_at": "2025-01-01T08:00:00"
@@ -117,7 +117,7 @@ const MOCK_DB = {
                 "duracion_horas": 3,
                 "cupo_maximo": 15,
                 "precio_nacional": 60,
-                "precio_extranjero": 60,
+                "precio_extranjero": 80,
                 "estado": "activo",
                 "destacado": 0,
                 "created_at": "2025-01-01T08:00:00"
@@ -133,7 +133,7 @@ const MOCK_DB = {
                 "duracion_horas": 7,
                 "cupo_maximo": 15,
                 "precio_nacional": 80,
-                "precio_extranjero": 80,
+                "precio_extranjero": 110,
                 "estado": "activo",
                 "destacado": 0,
                 "created_at": "2025-01-01T08:00:00"
@@ -149,7 +149,7 @@ const MOCK_DB = {
                 "duracion_horas": 3,
                 "cupo_maximo": 20,
                 "precio_nacional": 70,
-                "precio_extranjero": 70,
+                "precio_extranjero": 95,
                 "estado": "activo",
                 "destacado": 0,
                 "created_at": "2025-01-01T08:00:00"
@@ -165,7 +165,7 @@ const MOCK_DB = {
                 "duracion_horas": 4,
                 "cupo_maximo": 20,
                 "precio_nacional": 80,
-                "precio_extranjero": 80,
+                "precio_extranjero": 110,
                 "estado": "activo",
                 "destacado": 0,
                 "created_at": "2025-01-01T08:00:00"
@@ -181,7 +181,7 @@ const MOCK_DB = {
                 "duracion_horas": 12,
                 "cupo_maximo": 20,
                 "precio_nacional": 120,
-                "precio_extranjero": 120,
+                "precio_extranjero": 160,
                 "estado": "activo",
                 "destacado": 1,
                 "created_at": "2025-01-01T08:00:00"
@@ -197,7 +197,7 @@ const MOCK_DB = {
                 "duracion_horas": 13,
                 "cupo_maximo": 15,
                 "precio_nacional": 250,
-                "precio_extranjero": 250,
+                "precio_extranjero": 340,
                 "estado": "activo",
                 "destacado": 0,
                 "created_at": "2025-01-01T08:00:00"
@@ -213,7 +213,7 @@ const MOCK_DB = {
                 "duracion_horas": 8,
                 "cupo_maximo": 15,
                 "precio_nacional": 100,
-                "precio_extranjero": 100,
+                "precio_extranjero": 135,
                 "estado": "activo",
                 "destacado": 0,
                 "created_at": "2025-01-01T08:00:00"
@@ -229,7 +229,7 @@ const MOCK_DB = {
                 "duracion_horas": 72,
                 "cupo_maximo": 50,
                 "precio_nacional": 450,
-                "precio_extranjero": 450,
+                "precio_extranjero": 610,
                 "estado": "activo",
                 "destacado": 1,
                 "created_at": "2025-01-01T08:00:00"
@@ -245,7 +245,7 @@ const MOCK_DB = {
                 "duracion_horas": 48,
                 "cupo_maximo": 50,
                 "precio_nacional": 350,
-                "precio_extranjero": 350,
+                "precio_extranjero": 475,
                 "estado": "activo",
                 "destacado": 0,
                 "created_at": "2025-01-01T08:00:00"
@@ -261,7 +261,7 @@ const MOCK_DB = {
                 "duracion_horas": 120,
                 "cupo_maximo": 50,
                 "precio_nacional": 700,
-                "precio_extranjero": 700,
+                "precio_extranjero": 945,
                 "estado": "activo",
                 "destacado": 1,
                 "created_at": "2025-01-01T08:00:00"
@@ -688,7 +688,7 @@ const MOCK_DB = {
 // Compatibilidad: alias legacy usado por scripts antiguos
 const MOCK_DATA = MOCK_DB;
 
-const MOCK_DB_VERSION = 15;
+const MOCK_DB_VERSION = 16;
 
 function getMockDb() {
     const storedVersion = localStorage.getItem('turismo_tarapoto_mock_version');
@@ -751,3 +751,4 @@ if (typeof window !== 'undefined') {
         }
     }
 })();
+
