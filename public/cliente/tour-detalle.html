@@ -197,24 +197,23 @@
             const lblDoc = document.getElementById('lblClienteDoc');
             const numDoc = document.getElementById('clienteNumDoc');
             
-            // Log para debugging
-            console.log('updateClienteDocLabel llamado con tipoDoc:', tipoDoc);
-            console.log('TuristaValidacion disponible:', typeof TuristaValidacion);
+            alert('updateClienteDocLabel llamado con tipoDoc: ' + tipoDoc);
             
             if (typeof TuristaValidacion === 'undefined') {
-                console.error('TuristaValidacion no está disponible');
+                alert('Error: TuristaValidacion no está disponible');
                 return;
             }
             
             const regla = TuristaValidacion.getReglaDocumento(tipoDoc);
-            console.log('Regla encontrada:', regla);
             
             if (regla) {
                 lblDoc.textContent = tipoDoc;
                 numDoc.setAttribute('placeholder', regla.placeholder);
                 numDoc.setAttribute('maxlength', regla.maxlength);
                 numDoc.value = '';
-                console.log('Placeholder actualizado a:', regla.placeholder);
+                alert('Placeholder actualizado a: ' + regla.placeholder);
+            } else {
+                alert('No se encontró regla para: ' + tipoDoc);
             }
         }
 
