@@ -257,6 +257,82 @@ const AdminAPI = (function () {
         return { success: true };
     }
 
+    async function confirmarReserva(reservaId) {
+        await delay(300);
+        const cs = cdb();
+        const as = adb();
+        const reserva = cs.reservas.find(r => r.id === parseInt(reservaId, 10));
+        if (!reserva) throw new Error('Reserva no encontrada');
+        if (reserva.estado !== 'pendiente') throw new Error('Solo se pueden confirmar reservas pendientes');
+        const anterior = JSON.stringify({ estado: reserva.estado });
+        reserva.estado = 'confirmada';
+        saveC(cs);
+        registrarLog(as, { accion: 'CONFIRMAR', tabla: 'reservas', registro_id: reserva.id, anterior, nuevo: JSON.stringify({ estado: 'confirmada' }) });
+        saveA(as);
+        return { success: true };
+    }
+
+    async function crearReservaInterna(datos) {
+        await delay(400);
+        const cs = cdb();
+        const as = adb();
+        const session = getSession();
+
+        let turista = cs.turistas.find(t => t.documento === datos.documento && t.tipo_doc === datos.tipo_doc);
+        if (!turista) {
+            turista = {
+                id: cs.turistas.length ? Math.max(...cs.turistas.map(t => t.id)) + 1 : 1,
+                agencia_id: AGENCIA_ID,
+                tipo_doc: datos.tipo_doc,
+                documento: datos.documento,
+                nombre: datos.nombre,
+                apellidos: datos.apellidos || '',
+                email: datos.email || null,
+                telefono: datos.telefono || null,
+                fecha_nacimiento: null, pais_id: 1,
+                segmento: 'normal', email_verificado: 0,
+                password: null
+            };
+            cs.turistas.push(turista);
+            registrarLog(as, { accion: 'CREATE', tabla: 'turistas', registro_id: turista.id, nuevo: JSON.stringify({ documento: turista.documento }) });
+        }
+
+        const tour = cs.tours.find(t => t.id === parseInt(datos.tour_id, 10));
+        if (!tour) throw new Error('Tour no encontrado');
+
+        const numPersonas = parseInt(datos.num_personas, 10);
+        const total = numPersonas * tour.precio_nacional;
+
+        const reserva = {
+            id: cs.reservas.length ? Math.max(...cs.reservas.map(r => r.id)) + 1 : 1,
+            agencia_id: AGENCIA_ID,
+            tour_id: tour.id,
+            turista_id: turista.id,
+            vendedor_id: session ? session.id : null,
+            cupon_id: null,
+            fecha_servicio: datos.fecha_servicio,
+            hora_recojo: datos.hora_recojo || null,
+            lugar_recojo: datos.lugar_recojo || null,
+            num_personas: numPersonas,
+            precio_unitario: tour.precio_nacional,
+            descuento: 0,
+            total: total,
+            saldo_pendiente: total,
+            moneda: 'PEN',
+            canal: 'interno',
+            estado: 'confirmada',
+            motivo_anulacion: null,
+            codigo_qr: 'QR-TPT-INT' + Math.floor(Math.random() * 10000),
+            created_at: new Date().toISOString()
+        };
+        cs.reservas.push(reserva);
+        saveC(cs);
+        registrarLog(as, { accion: 'CREATE', tabla: 'reservas', registro_id: reserva.id, nuevo: JSON.stringify({ total: reserva.total }) });
+        saveA(as);
+        
+        return { success: true, reserva };
+    }
+
     /* ═══════════════════════════════════════
        CAJA Y TESORERIA
        ═══════════════════════════════════════ */
@@ -1004,7 +1080,7 @@ const AdminAPI = (function () {
         login, logout, isAdminAuth, getSession: getUsuarioActualSync,
         tienePermiso, getPermisosRol, getModulosPermitidos,
         getUsuarios, crearUsuario, inhabilitarUsuario, reactivarUsuario, getRoles,
-        getReservasInternas, anularReserva,
+        getReservasInternas, anularReserva, confirmarReserva, crearReservaInterna,
         getCajaActiva, abrirCaja, registrarPago, getPagosCaja, cerrarCaja, getHistorialCajas,
         getDashboardKPIs,
         getMisToursOperativos, getManifiestoTour, guardarChecklist,

@@ -166,6 +166,10 @@
             <div class="admin-content">
                 <!-- Toolbar -->
                 <div class="a-toolbar">
+                    <button class="a-btn a-btn-primary" onclick="abrirModalNuevaReserva()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Nueva Reserva
+                    </button>
                     <input type="text" class="a-search-input" id="searchReservas" placeholder="Buscar por nombre, código QR o tour...">
                     <select class="a-filter-select" id="filterEstado">
                         <option value="">Todos los estados</option>
@@ -252,6 +256,94 @@
                 <button class="a-btn a-btn-outline" data-close-modal="modalAnular">Cancelar</button>
                 <button class="a-btn a-btn-danger" id="confirmarAnular">Confirmar Anulación</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal: Nueva Reserva -->
+    <div class="a-modal-overlay" id="modalNuevaReserva">
+        <div class="a-modal a-modal-lg">
+            <div class="a-modal-header">
+                <h3 class="a-modal-title">Nueva Reserva</h3>
+                <button class="a-modal-close" data-close-modal="modalNuevaReserva">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <form id="formNuevaReserva">
+                <div class="a-modal-body">
+                    <h4 style="margin-bottom:0.75rem;font-size:1rem;font-weight:600">Datos del Turista</h4>
+                    <div class="a-form-row">
+                        <div class="a-form-group">
+                            <label class="a-form-label">Tipo Documento</label>
+                            <select class="a-form-input" id="nrTipoDoc" required>
+                                <option value="DNI">DNI</option>
+                                <option value="Pasaporte">Pasaporte</option>
+                                <option value="CE">CE</option>
+                            </select>
+                        </div>
+                        <div class="a-form-group">
+                            <label class="a-form-label">Documento</label>
+                            <input type="text" class="a-form-input" id="nrDoc" required>
+                        </div>
+                    </div>
+                    <div class="a-form-row">
+                        <div class="a-form-group">
+                            <label class="a-form-label">Nombre</label>
+                            <input type="text" class="a-form-input" id="nrNombre" required>
+                        </div>
+                        <div class="a-form-group">
+                            <label class="a-form-label">Apellidos</label>
+                            <input type="text" class="a-form-input" id="nrApellidos" required>
+                        </div>
+                    </div>
+                    <div class="a-form-row">
+                        <div class="a-form-group">
+                            <label class="a-form-label">Email</label>
+                            <input type="email" class="a-form-input" id="nrEmail">
+                        </div>
+                        <div class="a-form-group">
+                            <label class="a-form-label">Teléfono</label>
+                            <input type="text" class="a-form-input" id="nrTelefono">
+                        </div>
+                    </div>
+
+                    <h4 style="margin:1.5rem 0 0.75rem;font-size:1rem;font-weight:600">Datos del Tour</h4>
+                    <div class="a-form-row">
+                        <div class="a-form-group" style="grid-column: span 2">
+                            <label class="a-form-label">Tour</label>
+                            <select class="a-form-input" id="nrTour" required></select>
+                        </div>
+                    </div>
+                    <div class="a-form-row">
+                        <div class="a-form-group">
+                            <label class="a-form-label">Fecha del Servicio</label>
+                            <input type="date" class="a-form-input" id="nrFecha" required>
+                        </div>
+                        <div class="a-form-group">
+                            <label class="a-form-label">Personas</label>
+                            <input type="number" class="a-form-input" id="nrPersonas" min="1" value="1" required>
+                        </div>
+                    </div>
+                    <div class="a-form-row">
+                        <div class="a-form-group">
+                            <label class="a-form-label">Lugar de Recojo</label>
+                            <input type="text" class="a-form-input" id="nrLugar" placeholder="Hotel, plaza, etc.">
+                        </div>
+                        <div class="a-form-group">
+                            <label class="a-form-label">Hora Recojo</label>
+                            <input type="time" class="a-form-input" id="nrHora">
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top:1.5rem;padding:1rem;background:var(--a-bg);border-radius:4px;display:flex;justify-content:space-between;align-items:center">
+                        <span style="font-weight:600">Total a cobrar:</span>
+                        <span id="nrTotal" style="font-size:1.25rem;font-weight:800;color:var(--a-primary)">S/ 0.00</span>
+                    </div>
+                </div>
+                <div class="a-modal-footer">
+                    <button type="button" class="a-btn a-btn-outline" data-close-modal="modalNuevaReserva">Cancelar</button>
+                    <button type="submit" class="a-btn a-btn-primary">Guardar Reserva</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -354,6 +446,10 @@
                         <button class="a-btn a-btn-ghost a-btn-sm" title="Ver detalle" onclick="verDetalle(${r.id})">
                             ${AdminApp.icon('eye')}
                         </button>
+                        ${r.estado === 'pendiente' ? `
+                        <button class="a-btn a-btn-ghost a-btn-sm" style="color:var(--a-success)" title="Confirmar" onclick="confirmarRes(${r.id})">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg>
+                        </button>` : ''}
                         ${r.estado !== 'anulada' && r.estado !== 'completada' ? `
                         <button class="a-btn a-btn-ghost a-btn-sm" title="Anular" onclick="iniciarAnular(${r.id}, '${r.codigo_qr}')">
                             ${AdminApp.icon('trash')}
@@ -476,6 +572,88 @@
                 await AdminAPI.anularReserva(anularId, motivo);
                 AdminApp.closeModal('modalAnular');
                 AdminApp.toast('Reserva anulada exitosamente');
+                loadReservas();
+            } catch (err) {
+                AdminApp.toast(err.message, 'error');
+            }
+        }
+
+        let allTours = [];
+
+        async function abrirModalNuevaReserva() {
+            if (allTours.length === 0) {
+                try {
+                    allTours = await AdminAPI.getTours();
+                    const select = document.getElementById('nrTour');
+                    select.innerHTML = '<option value="">Selecciona un tour</option>' + 
+                        allTours.filter(t => t.estado === 'activo').map(t => `<option value="${t.id}" data-precio="${t.precio_nacional}">${t.nombre} (S/ ${t.precio_nacional})</option>`).join('');
+                } catch(e) {
+                    AdminApp.toast('Error cargando tours', 'error');
+                }
+            }
+            document.getElementById('formNuevaReserva').reset();
+            document.getElementById('nrTotal').textContent = 'S/ 0.00';
+            
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('nrFecha').value = tomorrow.toISOString().split('T')[0];
+
+            AdminApp.openModal('modalNuevaReserva');
+        }
+
+        function calcularTotalReserva() {
+            const select = document.getElementById('nrTour');
+            const opt = select.options[select.selectedIndex];
+            if (!opt || !opt.value) {
+                document.getElementById('nrTotal').textContent = 'S/ 0.00';
+                return;
+            }
+            const precio = parseFloat(opt.getAttribute('data-precio') || 0);
+            const personas = parseInt(document.getElementById('nrPersonas').value || 1, 10);
+            document.getElementById('nrTotal').textContent = AdminApp.formatMoney(precio * personas);
+        }
+
+        document.getElementById('nrTour').addEventListener('change', calcularTotalReserva);
+        document.getElementById('nrPersonas').addEventListener('input', calcularTotalReserva);
+
+        document.getElementById('formNuevaReserva').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.textContent = 'Guardando...';
+
+            const datos = {
+                tipo_doc: document.getElementById('nrTipoDoc').value,
+                documento: document.getElementById('nrDoc').value,
+                nombre: document.getElementById('nrNombre').value,
+                apellidos: document.getElementById('nrApellidos').value,
+                email: document.getElementById('nrEmail').value,
+                telefono: document.getElementById('nrTelefono').value,
+                tour_id: document.getElementById('nrTour').value,
+                fecha_servicio: document.getElementById('nrFecha').value,
+                num_personas: document.getElementById('nrPersonas').value,
+                lugar_recojo: document.getElementById('nrLugar').value,
+                hora_recojo: document.getElementById('nrHora').value
+            };
+
+            try {
+                await AdminAPI.crearReservaInterna(datos);
+                AdminApp.closeModal('modalNuevaReserva');
+                AdminApp.toast('Reserva creada exitosamente');
+                loadReservas();
+            } catch (err) {
+                AdminApp.toast(err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Guardar Reserva';
+            }
+        });
+
+        async function confirmarRes(id) {
+            if (!confirm('¿Estás seguro de confirmar esta reserva?')) return;
+            try {
+                await AdminAPI.confirmarReserva(id);
+                AdminApp.toast('Reserva confirmada');
                 loadReservas();
             } catch (err) {
                 AdminApp.toast(err.message, 'error');

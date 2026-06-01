@@ -1,4 +1,4 @@
-﻿/* ========================================
+/* ========================================
    TARAPOTO TOURS - CSS STYLES
    Preparado para integraciÃ³n con Java + MySQL
    ======================================== */
@@ -768,6 +768,7 @@ input, select, textarea {
     font-weight: 600;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     margin-top: 0.35rem;
@@ -779,6 +780,7 @@ input, select, textarea {
     margin-top: 0.35rem;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -789,6 +791,7 @@ input, select, textarea {
     margin-top: 0.25rem;
     display: -webkit-box;
     -webkit-line-clamp: 3;
+    line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -992,6 +995,7 @@ input, select, textarea {
     margin: 0.25rem 0;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -1615,6 +1619,14 @@ input, select, textarea {
     align-items: center;
     justify-content: center;
     padding: 2rem 1rem;
+    overflow-y: auto;
+}
+
+@media (max-height: 600px) {
+    .auth-page {
+        align-items: flex-start;
+        padding-top: 2rem;
+    }
 }
 
 .auth-card {

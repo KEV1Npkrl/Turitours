@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mis Reservas - Turi Tours</title>
-    <meta name="description" content="Consulta el estado de tus reservas y descarga tu voucher con codigo QR.">
-    <link rel="stylesheet" href="css/styles.css?v=3">
+    <title>Mi Perfil - Turi Tours</title>
+    <meta name="description" content="Consulta y actualiza tus datos personales como turista.">
+    <link rel="stylesheet" href="../css/styles.css?v=3">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -14,7 +15,7 @@
     <header class="header">
         <div class="container header-content">
             <a href="index.html" class="logo">
-                <img src="assets/turitours_logo.webp" alt="Turi Tours" class="logo-img" width="160" height="48">
+                <img src="../assets/turitours_logo.webp" alt="Turi Tours" class="logo-img" width="160" height="48">
             </a>
             <nav class="nav-desktop">
                 <a href="index.html" class="nav-link">Inicio</a>
@@ -42,10 +43,7 @@
                 <a href="destinos.html" class="mobile-nav-link">Destinos</a>
                 <a href="nosotros.html" class="mobile-nav-link">Nosotros</a>
                 <a href="contacto.html" class="mobile-nav-link">Contacto</a>
-                <div class="mobile-auth">
-                    <a href="login.html" class="btn btn-outline btn-block">Iniciar Sesion</a>
-                    <a href="registro.html" class="btn btn-primary btn-block">Registrarse</a>
-                </div>
+                <div class="mobile-auth"></div>
             </nav>
         </div>
     </header>
@@ -55,66 +53,35 @@
             <nav class="breadcrumb about-breadcrumb">
                 <a href="index.html">Inicio</a>
                 <span>/</span>
-                <span>Mis reservas</span>
+                <span>Mi perfil</span>
             </nav>
-            <h1 class="contact-title">Mis reservas</h1>
-            <p class="contact-intro" id="reservasWelcome">Consulta el estado de tus tours, descarga tu voucher y gestiona cambios de fecha.</p>
+            <h1 class="contact-title">Mi perfil</h1>
+            <p class="contact-intro" id="perfilIntro">Administra tu informacion personal y preferencias de viaje.</p>
         </div>
     </section>
 
-    <main class="section reservas-section">
+    <main class="section perfil-section">
         <div class="container">
-            <div id="reservasContent">
+            <div id="perfilContent">
                 <div class="loading-container"><div class="spinner"></div></div>
             </div>
         </div>
     </main>
-
-    <div class="reserva-modal" id="reservaModal" hidden>
-        <div class="reserva-modal-backdrop" data-close-modal></div>
-        <div class="reserva-modal-panel" role="dialog" aria-labelledby="modalTitle" aria-modal="true">
-            <button type="button" class="reserva-modal-close" data-close-modal aria-label="Cerrar">&times;</button>
-            <div id="voucherContent"></div>
-        </div>
-    </div>
-
-    <div class="reserva-modal" id="resenaModal" hidden>
-        <div class="reserva-modal-backdrop" data-close-resena-backdrop></div>
-        <div class="reserva-modal-panel resena-panel" role="dialog" aria-labelledby="resenaModalTitle" aria-modal="true">
-            <button type="button" class="reserva-modal-close" data-close-resena aria-label="Cerrar">&times;</button>
-            <div id="resenaFormContent"></div>
-        </div>
-    </div>
 
     <footer class="footer">
         <div class="container">
             <div class="footer-grid">
                 <div class="footer-brand">
                     <a href="index.html" class="logo">
-                        <img src="assets/turitours_logo.webp" alt="Turi Tours" class="logo-img" width="160" height="48">
+                        <img src="../assets/turitours_logo.webp" alt="Turi Tours" class="logo-img" width="160" height="48">
                     </a>
                     <p class="footer-description">Tu plataforma de confianza para explorar la selva peruana.</p>
-                </div>
-                <div class="footer-links">
-                    <h4>Explorar</h4>
-                    <ul>
-                        <li><a href="tours.html">Tours</a></li>
-                        <li><a href="destinos.html">Destinos</a></li>
-                    </ul>
                 </div>
                 <div class="footer-links">
                     <h4>Cuenta</h4>
                     <ul>
                         <li><a href="mi-perfil.html">Mi perfil</a></li>
                         <li><a href="mis-reservas.html">Mis reservas</a></li>
-                        <li><a href="login.html">Iniciar sesion</a></li>
-                    </ul>
-                </div>
-                <div class="footer-contact">
-                    <h4>Contacto</h4>
-                    <ul>
-                        <li>+51 942 123 456</li>
-                        <li>info@turitours.com</li>
                     </ul>
                 </div>
             </div>
@@ -124,10 +91,13 @@
         </div>
     </footer>
 
-    <script src="js/data.js"></script>
-    <script src="js/schema.js"></script>
-    <script src="js/api.js"></script>
-    <script src="js/app.js"></script>
-    <script src="js/mis-reservas.js"></script>
+    <script src="../js/data.js"></script>
+    <script src="../js/schema.js"></script>
+    <script src="../js/paises.js"></script>
+    <script src="../js/turista-validacion.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/app.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/mi-perfil.js"></script>
 </body>
 </html>

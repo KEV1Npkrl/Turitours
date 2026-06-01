@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Mock de BD â turismo_tarapoto
  * Estructura alineada con database/bd_turismo_tarapoto.sql
  * Cuando exista Java+MySQL, reemplazar por respuestas de /api/*
@@ -36,17 +36,17 @@ const MOCK_DB = {
     ],
 
     categorias_tour: [
-        { id: 1, agencia_id: 1, nombre: 'Full Day', descripcion: 'Tours de dia completo' },
-        { id: 2, agencia_id: 1, nombre: 'Aventura', descripcion: 'Tours de aventura y deportes extremos' },
-        { id: 3, agencia_id: 1, nombre: 'Cultural', descripcion: 'Sitios arqueolÃ³gicos, museos y comunidades' },
-        { id: 4, agencia_id: 1, nombre: 'Naturaleza', descripcion: 'ObservaciÃ³n de flora, fauna y selva' },
-        { id: 5, agencia_id: 1, nombre: 'Cascadas', descripcion: 'Tours a cataratas y caÃ­das de agua' },
-        { id: 6, agencia_id: 1, nombre: 'GastronÃ³mico', descripcion: 'Rutas culinarias y degustaciones' },
-        { id: 7, agencia_id: 1, nombre: 'Urbano', descripcion: 'City tours y paseos en la ciudad' },
-        { id: 8, agencia_id: 1, nombre: 'Playa', descripcion: 'Tours costeros y balnearios' },
-        { id: 9, agencia_id: 1, nombre: 'Trekking', descripcion: 'Caminatas de varias horas o dÃ­as' },
-        { id: 10, agencia_id: 1, nombre: 'MÃ­stico', descripcion: 'Rituales y turismo esotÃ©rico' },
-        { id: 11, agencia_id: 1, nombre: 'Pernocte', descripcion: 'Tours que incluyen noche de campamento o lodge' }
+        { id: 1, agencia_id: 1, nombre: 'Full Day', descripcion: 'Tours de día completo', icono: 'fullday' },
+        { id: 2, agencia_id: 1, nombre: 'Aventura', descripcion: 'Tours de aventura y deportes extremos', icono: 'adventure' },
+        { id: 3, agencia_id: 1, nombre: 'Cultural', descripcion: 'Sitios arqueológicos, museos y comunidades', icono: 'cultural' },
+        { id: 4, agencia_id: 1, nombre: 'Naturaleza', descripcion: 'Observación de flora, fauna y selva', icono: 'nature' },
+        { id: 5, agencia_id: 1, nombre: 'Cascadas', descripcion: 'Tours a cataratas y caídas de agua', icono: 'waterfall' },
+        { id: 6, agencia_id: 1, nombre: 'Gastronómico', descripcion: 'Rutas culinarias y degustaciones', icono: 'gastronomic' },
+        { id: 7, agencia_id: 1, nombre: 'Urbano', descripcion: 'City tours y paseos en la ciudad', icono: 'urban' },
+        { id: 8, agencia_id: 1, nombre: 'Playa', descripcion: 'Tours costeros y balnearios', icono: 'beach' },
+        { id: 9, agencia_id: 1, nombre: 'Trekking', descripcion: 'Caminatas de varias horas o días', icono: 'trekking' },
+        { id: 10, agencia_id: 1, nombre: 'Místico', descripcion: 'Rituales y turismo esotérico', icono: 'mystic' },
+        { id: 11, agencia_id: 1, nombre: 'Pernocte', descripcion: 'Tours que incluyen noche de campamento o lodge', icono: 'night' }
     ],
 
     destinos: [
@@ -688,7 +688,7 @@ const MOCK_DB = {
 // Compatibilidad: alias legacy usado por scripts antiguos
 const MOCK_DATA = MOCK_DB;
 
-const MOCK_DB_VERSION = 16;
+const MOCK_DB_VERSION = 17;
 
 function getMockDb() {
     const storedVersion = localStorage.getItem('turismo_tarapoto_mock_version');

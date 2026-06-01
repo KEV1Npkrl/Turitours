@@ -16,11 +16,6 @@ CREATE TABLE planes (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
-CREATE TABLE paises (
-    codigo_iso CHAR(2) PRIMARY KEY,
-    nombre VARCHAR(80) NOT NULL UNIQUE
-) ENGINE=InnoDB;
-
 CREATE TABLE agencias (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(120) NOT NULL,
@@ -156,12 +151,10 @@ CREATE TABLE destinos (
     agencia_id INT UNSIGNED NOT NULL,
     nombre VARCHAR(120) NOT NULL,
     descripcion TEXT NULL,
-    pais_iso CHAR(2) NULL DEFAULT 'PE',
     latitud DECIMAL(10,7) NULL,
     longitud DECIMAL(10,7) NULL,
     activo TINYINT(1) NOT NULL DEFAULT 1,
     CONSTRAINT fk_destinos_agencia FOREIGN KEY (agencia_id) REFERENCES agencias(id),
-    CONSTRAINT fk_destinos_pais FOREIGN KEY (pais_iso) REFERENCES paises(codigo_iso),
     UNIQUE KEY uq_destino_agencia (agencia_id, nombre)
 ) ENGINE=InnoDB;
 
@@ -184,8 +177,10 @@ CREATE TABLE tours (
     itinerario TEXT NULL,
     duracion_horas SMALLINT NOT NULL DEFAULT 8,
     cupo_maximo SMALLINT NOT NULL,
-    precio_nacional DECIMAL(10,2) NOT NULL,
-    precio_extranjero DECIMAL(10,2) NOT NULL,
+    -- Precios eliminados de tours: la única fuente de precios es la tabla
+    -- temporadas. Cada tour tiene obligatoriamente una temporada por defecto
+    -- (fecha_inicio='1900-01-01', fecha_fin='2999-12-31') que actúa como
+    -- precio base. Las temporadas reales sobreescriben ese precio por rango.
     estado ENUM('activo','agotado','pausado','eliminado') NOT NULL DEFAULT 'activo',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_tours_agencia FOREIGN KEY (agencia_id) REFERENCES agencias(id),
@@ -206,13 +201,19 @@ CREATE TABLE temporadas (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     agencia_id INT UNSIGNED NOT NULL,
     tour_id INT UNSIGNED NOT NULL,
+    -- nombre='Base' con fecha_inicio='1900-01-01' y fecha_fin='2999-12-31'
+    -- actua como precio por defecto del tour. Las demas temporadas
+    -- definen rangos especificos que prevalecen sobre la base cuando
+    -- la fecha_servicio de una reserva cae dentro de su rango.
     nombre VARCHAR(80) NOT NULL,
     fecha_inicio DATE NOT NULL,
     fecha_fin DATE NOT NULL,
     precio_nacional DECIMAL(10,2) NOT NULL,
     precio_extranjero DECIMAL(10,2) NOT NULL,
     CONSTRAINT fk_temporadas_agencia FOREIGN KEY (agencia_id) REFERENCES agencias(id),
-    CONSTRAINT fk_temporadas_tour FOREIGN KEY (tour_id) REFERENCES tours(id)
+    CONSTRAINT fk_temporadas_tour FOREIGN KEY (tour_id) REFERENCES tours(id),
+    CONSTRAINT chk_temporada_fechas CHECK (fecha_inicio <= fecha_fin),
+    UNIQUE KEY uq_temporada_tour_nombre (tour_id, nombre)
 ) ENGINE=InnoDB;
 
 CREATE TABLE cupones (
@@ -562,3 +563,17 @@ INSERT INTO parametros_globales (clave, valor, descripcion) VALUES
 ('reserva_bloqueo_min', '10', 'Minutos de bloqueo cupo online');
 
 SET FOREIGN_KEY_CHECKS = 1;
+-- ─────────────────────────────────────────────────────────────────────────────
+-- NOTA DE USO: Consulta del precio vigente de un tour para una fecha dada
+-- Usar esta lógica en el backend/frontend al crear una reserva:
+--
+--   SELECT precio_nacional, precio_extranjero
+--   FROM temporadas
+--   WHERE tour_id = ?
+--     AND fecha_inicio <= :fecha_servicio
+--     AND fecha_fin    >= :fecha_servicio
+--   ORDER BY fecha_inicio DESC   -- la temporada más específica gana
+--   LIMIT 1;
+--
+-- La temporada 'Base' (1900-01-01 a 2999-12-31) siempre hace de fallback.
+-- ─────────────────────────────────────────────────────────────────────────────

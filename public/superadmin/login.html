@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SuperAdmin Login - Sistema Estándar de Gestión Turística</title>
-    <link rel="stylesheet" href="../css/styles.css?v=3">
+    <link rel="stylesheet" href="../css/styles.css?v=4">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -16,6 +16,14 @@
             align-items: center;
             justify-content: center;
             padding: 1rem;
+        }
+        @media (max-height: 600px) {
+            .superadmin-bg {
+                align-items: flex-start;
+                padding-top: 2rem;
+                padding-bottom: 2rem;
+                overflow-y: auto;
+            }
         }
         .login-card {
             background: rgba(255, 255, 255, 0.95);
