@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facturación Electrónica — TuriTours Panel</title>
+    <link rel="stylesheet" href="../css/admin.css?v=3">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/responsive.css?v=3">
+    <style id="responsive-inline">
+        @media (max-width: 1023px) {
+            .admin-layout { width: 100% !important; max-width: 100vw !important; overflow-x: hidden !important; }
+            .admin-sidebar { transform: translateX(-100%) !important; }
+            .admin-sidebar.open { transform: translateX(0) !important; }
+            .sidebar-overlay.open { display: block !important; }
+            .admin-main { margin-left: 0 !important; width: 100% !important; max-width: 100vw !important; }
+            .menu-toggle-admin { display: flex !important; }
+        }
+        @media (max-width: 768px) {
+            .admin-header { padding: 0 0.75rem !important; min-height: 56px; }
+            .admin-header-title { font-size: 1rem !important; }
+            .admin-content { padding: 0.75rem !important; }
+            .a-table-wrap { overflow-x: auto !important; width: 100% !important; }
+            .a-table { min-width: 800px; }
+        }
+    </style>
+</head>
+<body class="admin-body">
+    <div class="admin-layout">
+        <aside class="admin-sidebar" id="adminSidebar"></aside>
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <main class="admin-main">
+            <header class="admin-header">
+                <div class="admin-header-left">
+                    <button class="menu-toggle-admin" id="menuToggleAdmin">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <div>
+                        <h1 class="admin-header-title">Facturación Electrónica</h1>
+                        <p class="admin-header-subtitle">Historial de comprobantes emitidos (Facturas y Boletas)</p>
+                    </div>
+                </div>
+            </header>
+
+            <div class="admin-content">
+                <div class="a-card">
+                    <div class="a-card-header">
+                        <h3 class="a-card-title">Comprobantes</h3>
+                    </div>
+                    <div class="a-card-body-flush">
+                        <div class="a-table-wrap">
+                            <table class="a-table">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha Emisión</th>
+                                        <th>Tipo</th>
+                                        <th>Serie/Corr.</th>
+                                        <th>Cliente</th>
+                                        <th>Doc. Identidad</th>
+                                        <th class="text-right">Total</th>
+                                        <th>Estado SUNAT</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="comprobantesTableBody">
+                                    <tr><td colspan="8"><div class="a-loading"><div class="a-spinner"></div></div></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/data.js"></script>
+    <script src="../js/schema.js"></script>
+    <script src="../js/admin-data.js"></script>
+    <script src="../js/admin-api.js"></script>
+    <script src="../js/admin-app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!AdminApp.init('facturacion')) return;
+            loadComprobantes();
+        });
+
+        async function loadComprobantes() {
+            try {
+                const db = getMockDb();
+                const comprobantes = db.comprobantes_electronicos || [];
+                const tbody = document.getElementById('comprobantesTableBody');
+                
+                if (comprobantes.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8"><div class="a-empty"><p class="a-empty-text">No hay comprobantes emitidos aún.</p></div></td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = comprobantes.map(c => `
+                    <tr>
+                        <td>${AdminApp.formatFechaHora(c.fecha_emision)}</td>
+                        <td>${c.tipo_comprobante === '01' ? 'Factura' : 'Boleta'}</td>
+                        <td style="font-weight:600;">${c.serie}-${String(c.correlativo).padStart(6, '0')}</td>
+                        <td>${c.cliente_nombre}</td>
+                        <td>${c.cliente_tipo_doc === '6' ? 'RUC' : 'DNI'} ${c.cliente_num_doc}</td>
+                        <td class="text-right" style="font-weight:700;">${c.moneda} ${AdminApp.formatMoney(c.total).replace('S/ ','')}</td>
+                        <td>
+                            <span class="a-badge a-badge-${c.estado_sunat === 'aceptado' ? 'green' : c.estado_sunat === 'anulado' ? 'red' : 'amber'}">
+                                ${c.estado_sunat.toUpperCase()}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="a-btn a-btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="descargarPDF()">PDF</button>
+                            ${c.estado_sunat === 'aceptado' ? `<button class="a-btn a-btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="anularComprobante(${c.id})">Anular</button>` : ''}
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                AdminApp.toast('Error cargando comprobantes', 'error');
+            }
+        }
+
+        function descargarPDF() {
+            AdminApp.toast('Generando PDF simulado...');
+        }
+
+        function anularComprobante(id) {
+            if (confirm('¿Estás seguro de anular este comprobante en SUNAT?')) {
+                const db = getMockDb();
+                const comp = db.comprobantes_electronicos.find(c => c.id === id);
+                if (comp) {
+                    comp.estado_sunat = 'anulado';
+                    saveMockDb(db);
+                    loadComprobantes();
+                    AdminApp.toast('Comprobante anulado (Simulación)');
+                }
+            }
+        }
+    </script>
+</body>
+</html>

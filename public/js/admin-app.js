@@ -49,6 +49,7 @@ const AdminApp = (function () {
         { id: 'reservas', label: 'Reservas', icon: 'reservas', href: 'reservas.html', modulo: 'reservas' },
         { id: 'turistas', label: 'Turistas', icon: 'turistas', href: 'turistas.html', modulo: 'turistas' },
         { id: 'caja', label: 'Caja', icon: 'caja', href: 'caja.html', modulo: 'caja' },
+        { id: 'facturacion', label: 'Facturacion', icon: 'reportes', href: 'facturacion.html', modulo: 'facturacion' },
         { section: 'Operaciones' },
         { id: 'operaciones', label: 'Operaciones', icon: 'operaciones', href: 'operaciones.html', modulo: 'operaciones' },
         { id: 'inventario', label: 'Inventario', icon: 'inventario', href: 'inventario.html', modulo: 'inventario' },

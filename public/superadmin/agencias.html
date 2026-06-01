@@ -313,6 +313,7 @@
                         <label><input type="checkbox" id="modCaja" checked> Caja</label>
                         <label><input type="checkbox" id="modOperaciones" checked> Operaciones</label>
                         <label><input type="checkbox" id="modReportes"> Reportes</label>
+                        <label><input type="checkbox" id="modFacturacion"> Facturación</label>
                     </div>
                 </div>
                 <div class="modal-actions">
@@ -348,7 +349,8 @@
                     <td>${ag.usuarios_max || 'Ilimitado'}</td>
                     <td>
                         <small>Caja: ${ag.mod_caja!==false?'✅':'❌'}</small><br>
-                        <small>Op: ${ag.mod_operaciones!==false?'✅':'❌'}</small>
+                        <small>Op: ${ag.mod_operaciones!==false?'✅':'❌'}</small><br>
+                        <small>Fact: ${ag.mod_facturacion===true?'✅':'❌'}</small>
                     </td>
                     <td><span class="badge ${badgeClass}">${ag.estado.toUpperCase()}</span></td>
                     <td>
@@ -376,6 +378,7 @@
                 mod_caja: document.getElementById('modCaja').checked,
                 mod_operaciones: document.getElementById('modOperaciones').checked,
                 mod_reportes: document.getElementById('modReportes').checked,
+                mod_facturacion: document.getElementById('modFacturacion').checked,
                 estado: 'activa',
                 fecha_alta: new Date().toISOString().split('T')[0]
             };

@@ -212,6 +212,30 @@ const Schema = (function() {
         return 'QR-TPT-' + Date.now().toString(36).toUpperCase();
     }
 
+    // Mapeo de tipos de documento a códigos SUNAT Catálogo 06
+    function getTipoDocCodigo(tipoDocNombre) {
+        const MAPA_TIPO_DOC_SUNAT = {
+            'DNI': '1',
+            'CE': '4',
+            'RUC': '6',
+            'Pasaporte': '7',
+            'OtroDoc': '0'
+        };
+        return MAPA_TIPO_DOC_SUNAT[tipoDocNombre] || '1';
+    }
+
+    // Función inversa: obtener nombre del documento a partir del código SUNAT
+    function getTipoDocNombre(codigoSunat) {
+        const MAPA_CODIGO_SUNAT_TIPO_DOC = {
+            '1': 'DNI',
+            '4': 'CE',
+            '6': 'RUC',
+            '7': 'Pasaporte',
+            '0': 'OtroDoc'
+        };
+        return MAPA_CODIGO_SUNAT_TIPO_DOC[codigoSunat] || 'DNI';
+    }
+
     return {
         AGENCIA_DEFAULT_ID: 1,
         parseItinerario: parseItinerario,
@@ -223,7 +247,9 @@ const Schema = (function() {
         enrichTour: enrichTour,
         enrichTurista: enrichTurista,
         enrichReserva: enrichReserva,
-        generarCodigoQr: generarCodigoQr
+        generarCodigoQr: generarCodigoQr,
+        getTipoDocCodigo: getTipoDocCodigo,
+        getTipoDocNombre: getTipoDocNombre
     };
 })();
 

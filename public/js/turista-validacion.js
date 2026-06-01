@@ -1,47 +1,61 @@
 /**
- * Validacion de turistas — restricciones tabla turistas (BD)
- * tipo_doc ENUM, documento VARCHAR(20), nombre VARCHAR(60), apellidos VARCHAR(80),
- * email VARCHAR(120) NULL, celular VARCHAR(20) NULL, pais_id NULL
+ * Validacion de turistas — alineado con Catálogo 06 SUNAT
+ * tipo_doc: DNI (1) | CE (4) | RUC (6) | Pasaporte (7) | OtroDoc (0 - emergencia)
+ * documento: VARCHAR(15) según especificación SUNAT
  */
 const TuristaValidacion = (function() {
     const LIMITS = {
-        documento: 20,
+        documento: 15,
         nombre: 60,
         apellidos: 80,
         email: 120,
         celular: 20
     };
 
-    const TIPOS_DOC = ['DNI', 'Pasaporte', 'CE', 'RUC'];
+    // Tipos de documento según Catálogo 06 SUNAT
+    const TIPOS_DOC = ['DNI', 'CE', 'RUC', 'Pasaporte', 'OtroDoc'];
 
+    // Reglas exactas según SUNAT Catálogo 06
     const REGLAS_DOCUMENTO = {
         DNI: {
             pattern: /^\d{8}$/,
-            mensaje: 'El DNI debe tener exactamente 8 digitos numericos.',
+            mensaje: 'El DNI debe tener exactamente 8 dígitos numéricos.',
             inputmode: 'numeric',
             maxlength: 8,
-            placeholder: '12345678'
+            placeholder: '12345678',
+            catalogo06: '1'
         },
         RUC: {
             pattern: /^\d{11}$/,
-            mensaje: 'El RUC debe tener exactamente 11 digitos numericos.',
+            mensaje: 'El RUC debe tener exactamente 11 dígitos numéricos. Comienza con 10, 15, 17 o 20.',
             inputmode: 'numeric',
             maxlength: 11,
-            placeholder: '20123456789'
+            placeholder: '20123456789',
+            catalogo06: '6'
         },
         CE: {
-            pattern: /^[A-Za-z0-9]{9,12}$/,
-            mensaje: 'El CE debe tener entre 9 y 12 caracteres alfanumericos.',
+            pattern: /^[A-Za-z0-9]{1,12}$/,
+            mensaje: 'El Carné de Extranjería debe tener hasta 12 caracteres alfanuméricos.',
             inputmode: 'text',
             maxlength: 12,
-            placeholder: '001234567'
+            placeholder: '001234567',
+            catalogo06: '4'
         },
         Pasaporte: {
-            pattern: /^[A-Za-z0-9]{6,20}$/,
-            mensaje: 'El pasaporte debe tener entre 6 y 20 caracteres alfanumericos.',
+            pattern: /^[A-Za-z0-9]{1,12}$/,
+            mensaje: 'El Pasaporte debe tener hasta 12 caracteres alfanuméricos.',
             inputmode: 'text',
-            maxlength: 20,
-            placeholder: 'AB1234567'
+            maxlength: 12,
+            placeholder: 'AB1234567',
+            catalogo06: '7'
+        },
+        OtroDoc: {
+            pattern: /^[A-Za-z0-9]{1,15}$/,
+            mensaje: 'Documento Tributario No Domiciliado: hasta 15 caracteres. Usar solo si no tiene otro documento.',
+            inputmode: 'text',
+            maxlength: 15,
+            placeholder: 'XXXXX',
+            catalogo06: '0'
         }
     };
 

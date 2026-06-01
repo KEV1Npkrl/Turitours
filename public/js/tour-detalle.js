@@ -64,7 +64,7 @@ function renderTourDetalle(tour, resenas, container) {
                         <button onclick="moveCarousel(-1)" style="position:absolute; top:50%; left:10px; transform:translateY(-50%); background:rgba(0,0,0,0.6); color:#fff; border:none; width:44px; height:44px; border-radius:50%; cursor:pointer; font-size:24px; display:flex; align-items:center; justify-content:center; transition:background 0.2s; z-index:10;">&#10094;</button>
                         <button onclick="moveCarousel(1)" style="position:absolute; top:50%; right:10px; transform:translateY(-50%); background:rgba(0,0,0,0.6); color:#fff; border:none; width:44px; height:44px; border-radius:50%; cursor:pointer; font-size:24px; display:flex; align-items:center; justify-content:center; transition:background 0.2s; z-index:10;">&#10095;</button>
                         <div style="position:absolute; bottom:15px; left:0; width:100%; text-align:center; z-index:10;">
-                            ${tour.imagenes.map((_, i) => `<span id="dot-${i}" style="display:inline-block; width:10px; height:10px; background:${i===0?'#fff':'rgba(255,255,255,0.4)'}; border-radius:50%; margin:0 5px; transition:background 0.3s; cursor:pointer;" onclick="goToSlide(${i})"></span>`).join('')}
+                            ${tour.imagenes.map((_, i) => `<span id="dot-${i}" style="display:inline-block; width:10px; height:10px; background:${i === 0 ? '#fff' : 'rgba(255,255,255,0.4)'}; border-radius:50%; margin:0 5px; transition:background 0.3s; cursor:pointer;" onclick="goToSlide(${i})"></span>`).join('')}
                         </div>
                     ` : ''}
                 </div>
@@ -82,23 +82,23 @@ function renderTourDetalle(tour, resenas, container) {
                 <div class="tour-itinerary">
                     <h3>Itinerario</h3>
                     <div class="itinerary-list">
-                        ${(tour.itinerario_detalle || []).map(function(item, index) {
-                            return '<div class="itinerary-item"><div class="itinerary-number">' + (index + 1) +
-                                '</div><div class="itinerary-content"><h4>' + item.hora + ' - ' + item.titulo +
-                                '</h4><p>' + item.descripcion + '</p></div></div>';
-                        }).join('')}
+                        ${(tour.itinerario_detalle || []).map(function (item, index) {
+        return '<div class="itinerary-item"><div class="itinerary-number">' + (index + 1) +
+            '</div><div class="itinerary-content"><h4>' + item.hora + ' - ' + item.titulo +
+            '</h4><p>' + item.descripcion + '</p></div></div>';
+    }).join('')}
                     </div>
                 </div>
                 <div class="tour-includes">
                     <h3>El tour incluye</h3>
-                    <div class="includes-grid">${tour.incluye.map(function(item) {
-                        return '<div class="include-item">' + item + '</div>';
-                    }).join('')}</div>
+                    <div class="includes-grid">${tour.incluye.map(function (item) {
+        return '<div class="include-item">' + item + '</div>';
+    }).join('')}</div>
                 </div>
                 <div class="tour-reviews" id="tourReviews">
                     <h3>Opiniones de viajeros</h3>
                     ${resenas.length ? resenas.map(renderResenaItem).join('') :
-                        '<p class="reviews-empty">Aun no hay reseñas publicas para este tour.</p>'}
+            '<p class="reviews-empty">Aun no hay reseñas publicas para este tour.</p>'}
                 </div>
             </div>
             <aside>
@@ -154,17 +154,17 @@ function renderTourDetalle(tour, resenas, container) {
         </div>
     `;
 
-      const personasSelect = document.getElementById('bookingPersonas');
-      for (let n = 1; n <= tour.capacidad_maxima; n++) {
-          const opt = document.createElement('option');
-          opt.value = n;
-          opt.textContent = n + ' persona' + (n > 1 ? 's' : '');
-          personasSelect.appendChild(opt);
-      }
+    const personasSelect = document.getElementById('bookingPersonas');
+    for (let n = 1; n <= tour.capacidad_maxima; n++) {
+        const opt = document.createElement('option');
+        opt.value = n;
+        opt.textContent = n + ' persona' + (n > 1 ? 's' : '');
+        personasSelect.appendChild(opt);
+    }
 
-      totalCarouselItems = tour.imagenes.length;
-      currentCarouselIndex = 0;
-  }
+    totalCarouselItems = tour.imagenes.length;
+    currentCarouselIndex = 0;
+}
 
 function renderResenaItem(r) {
     const stars = '★'.repeat(r.calificacion) + '☆'.repeat(5 - r.calificacion);
@@ -176,14 +176,14 @@ function setupBookingForm() {
     const form = document.getElementById('bookingForm');
     if (!form || !currentTour) return;
 
-    ['tipoTurista', 'bookingDate', 'bookingPersonas'].forEach(function(id) {
+    ['tipoTurista', 'bookingDate', 'bookingPersonas'].forEach(function (id) {
         document.getElementById(id).addEventListener('change', refreshCotizador);
     });
 
     document.getElementById('btnAplicarCupon').addEventListener('click', aplicarCupon);
     document.getElementById('bookingDate').addEventListener('change', refreshCotizador);
 
-    form.addEventListener('submit', async function(e) {
+    form.addEventListener('submit', async function (e) {
         e.preventDefault();
         if (!cotizacion || !cotizacion.fecha) {
             mostrarAlerta('Selecciona una fecha valida', 'warning');
@@ -266,7 +266,7 @@ async function refreshCotizador() {
         }
 
         const personasSelect = document.getElementById('bookingPersonas');
-        Array.from(personasSelect.options).forEach(function(opt) {
+        Array.from(personasSelect.options).forEach(function (opt) {
             opt.disabled = parseInt(opt.value, 10) > disp.cupos_disponibles;
         });
     } catch (error) {
@@ -334,7 +334,7 @@ function applyFechaFromUrl() {
 function setupPaymentModal() {
     const modal = document.getElementById('paymentModal');
     if (!modal) return;
-    modal.querySelectorAll('[data-close-payment]').forEach(function(el) {
+    modal.querySelectorAll('[data-close-payment]').forEach(function (el) {
         el.addEventListener('click', closePaymentModal);
     });
 }
@@ -356,14 +356,14 @@ function openPaymentModal() {
     modal.hidden = false;
     document.body.style.overflow = 'hidden';
 
-    document.getElementById('btnPagoAdelanto').onclick = function() { procesarPago('adelanto', adelanto); };
-    document.getElementById('btnPagoCompleto').onclick = function() { procesarPago('completo', cotizacion.total); };
+    document.getElementById('btnPagoAdelanto').onclick = function () { procesarPago('adelanto', adelanto); };
+    document.getElementById('btnPagoCompleto').onclick = function () { procesarPago('completo', cotizacion.total); };
 }
 
 function startBloqueoTimer(expiraAt) {
     clearInterval(bloqueoTimer);
     const timerEl = document.getElementById('paymentTimer');
-    bloqueoTimer = setInterval(function() {
+    bloqueoTimer = setInterval(function () {
         const diff = new Date(expiraAt).getTime() - Date.now();
         if (diff <= 0) {
             clearInterval(bloqueoTimer);
@@ -394,6 +394,40 @@ async function closePaymentModal(expired) {
 
 async function procesarPago(tipo, monto) {
     if (!bloqueoActivo || !cotizacion) return;
+
+    const compTipo = document.getElementById('clienteComprobanteTipo')?.value;
+    if (compTipo) {
+        const docNum = document.getElementById('clienteNumDoc')?.value;
+        const nombre = document.getElementById('clienteNombre')?.value;
+        if (!docNum || !nombre) {
+            mostrarAlerta('Debes ingresar tu documento y nombre para el comprobante.', 'error');
+            return;
+        }
+        // Validar documento según tipo de comprobante
+        // Factura (01) requiere RUC, Boleta (03) acepta DNI/CE
+        if (compTipo === '01') {
+            // Factura: requiere RUC exactamente 11 dígitos
+            if (!/^\d{11}$/.test(docNum)) {
+                mostrarAlerta('Para factura, ingresa un RUC válido (11 dígitos).', 'error');
+                return;
+            }
+        } else if (compTipo === '03') {
+            // Boleta: valida según tipo de documento seleccionado
+            const tipoDocSeleccionado = document.getElementById('clienteTipoDoc')?.value;
+            if (tipoDocSeleccionado) {
+                const errorDoc = TuristaValidacion.validarDocumento(tipoDocSeleccionado, docNum);
+                if (errorDoc) {
+                    mostrarAlerta(errorDoc, 'error');
+                    return;
+                }
+            } else if (!/^\d{8}$/.test(docNum) && !/^\d{11}$/.test(docNum)) {
+                // Fallback: acepta DNI (8) o RUC (11)
+                mostrarAlerta('El documento debe ser un DNI (8 dígitos) o RUC (11 dígitos).', 'error');
+                return;
+            }
+        }
+    }
+
     const btnA = document.getElementById('btnPagoAdelanto');
     const btnC = document.getElementById('btnPagoCompleto');
     btnA.disabled = true;
@@ -401,6 +435,10 @@ async function procesarPago(tipo, monto) {
 
     try {
         const payload = getBookingPayload();
+        // Obtener tipo de documento en código SUNAT
+        const tipoDocNombre = document.getElementById('clienteTipoDoc')?.value || 'DNI';
+        const tipoDocCodigo = Schema.getTipoDocCodigo(tipoDocNombre);
+        
         const resultado = await API.crearReserva({
             tour_id: currentTour.id,
             fecha_servicio: payload.fecha,
@@ -413,7 +451,12 @@ async function procesarPago(tipo, monto) {
             descuento: cotizacion.descuento,
             bloqueo_id: bloqueoActivo.bloqueo_id,
             tipo_pago: tipo,
-            monto_adelanto: monto
+            monto_adelanto: monto,
+            comprobante_tipo: document.getElementById('clienteComprobanteTipo')?.value || null,
+            cliente_tipo_doc: tipoDocCodigo,
+            cliente_num_doc: document.getElementById('clienteNumDoc')?.value || null,
+            cliente_nombre: document.getElementById('clienteNombre')?.value || null,
+            cliente_direccion: document.getElementById('clienteDireccion')?.value || null
         });
         bloqueoActivo = null;
         clearInterval(bloqueoTimer);
@@ -448,10 +491,10 @@ let currentCarouselIndex = 0;
 let totalCarouselItems = 0;
 
 function moveCarousel(direction) {
-    if(totalCarouselItems <= 1) return;
+    if (totalCarouselItems <= 1) return;
     currentCarouselIndex += direction;
-    if(currentCarouselIndex < 0) currentCarouselIndex = totalCarouselItems - 1;
-    if(currentCarouselIndex >= totalCarouselItems) currentCarouselIndex = 0;
+    if (currentCarouselIndex < 0) currentCarouselIndex = totalCarouselItems - 1;
+    if (currentCarouselIndex >= totalCarouselItems) currentCarouselIndex = 0;
     updateCarouselUI();
 }
 
@@ -462,12 +505,12 @@ function goToSlide(index) {
 
 function updateCarouselUI() {
     const track = document.getElementById('carouselTrack');
-    if(track) {
+    if (track) {
         track.style.transform = `translateX(-${currentCarouselIndex * (100 / totalCarouselItems)}%)`;
     }
-    for(let i=0; i<totalCarouselItems; i++) {
+    for (let i = 0; i < totalCarouselItems; i++) {
         const dot = document.getElementById('dot-' + i);
-        if(dot) {
+        if (dot) {
             dot.style.background = i === currentCarouselIndex ? '#fff' : 'rgba(255,255,255,0.4)';
         }
     }

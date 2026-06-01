@@ -26,12 +26,14 @@ const ADMIN_MOCK_DB = {
         { id: 8,  rol_id: 1, modulo: 'personal',     puede_ver: 1, puede_crear: 1, puede_editar: 1, puede_eliminar: 1 },
         { id: 9,  rol_id: 1, modulo: 'reportes',     puede_ver: 1, puede_crear: 0, puede_editar: 0, puede_eliminar: 0 },
         { id: 10, rol_id: 1, modulo: 'auditoria',    puede_ver: 1, puede_crear: 0, puede_editar: 0, puede_eliminar: 0 },
+        { id: 20, rol_id: 1, modulo: 'facturacion',  puede_ver: 1, puede_crear: 1, puede_editar: 1, puede_eliminar: 1 },
         // Vendedor (incluye caja)
         { id: 11, rol_id: 2, modulo: 'dashboard',   puede_ver: 1, puede_crear: 0, puede_editar: 0, puede_eliminar: 0 },
         { id: 12, rol_id: 2, modulo: 'reservas',    puede_ver: 1, puede_crear: 1, puede_editar: 1, puede_eliminar: 0 },
         { id: 13, rol_id: 2, modulo: 'turistas',    puede_ver: 1, puede_crear: 1, puede_editar: 1, puede_eliminar: 0 },
         { id: 14, rol_id: 2, modulo: 'tours',       puede_ver: 1, puede_crear: 0, puede_editar: 0, puede_eliminar: 0 },
         { id: 15, rol_id: 2, modulo: 'caja',        puede_ver: 1, puede_crear: 1, puede_editar: 1, puede_eliminar: 0 },
+        { id: 21, rol_id: 2, modulo: 'facturacion', puede_ver: 1, puede_crear: 1, puede_editar: 1, puede_eliminar: 0 },
         // Guia (incluye operaciones)
         { id: 16, rol_id: 3, modulo: 'dashboard',    puede_ver: 1, puede_crear: 0, puede_editar: 0, puede_eliminar: 0 },
         { id: 17, rol_id: 3, modulo: 'operaciones',  puede_ver: 1, puede_crear: 1, puede_editar: 1, puede_eliminar: 0 },
@@ -238,7 +240,7 @@ const ADMIN_MOCK_DB = {
     ]
 };
 
-const ADMIN_MOCK_VERSION = 3;
+const ADMIN_MOCK_VERSION = 4;
 
 function getAdminDb() {
     const storedVersion = localStorage.getItem('turitours_admin_mock_version');

@@ -14,7 +14,8 @@ const MOCK_DB = {
         telefono: '+51 942 123 456',
         email: 'info@turitours.com',
         logo_url: null,
-        plan_id: 2,
+        max_usuarios: 10,
+        modulos: ["caja", "operaciones", "reportes", "facturacion"],
         estado: 'activa',
         fecha_alta: '2024-01-15',
         created_at: '2024-01-15T08:00:00'
@@ -24,8 +25,17 @@ const MOCK_DB = {
         tipo_cambio_usd: 3.75,
         moneda_default: 'PEN',
         iva_porcentaje: 18,
-        reserva_bloqueo_min: 10
     },
+
+    sunat_series_agencia: [
+        { id: 1, agencia_id: 1, tipo_comprobante: '03', serie: 'B001', correlativo_actual: 14, activo: true },
+        { id: 2, agencia_id: 1, tipo_comprobante: '01', serie: 'F001', correlativo_actual: 5, activo: true }
+    ],
+
+    comprobantes_electronicos: [
+        { id: 1, agencia_id: 1, reserva_id: 1, pago_id: 1, tipo_comprobante: '03', serie: 'B001', correlativo: 14, fecha_emision: '2024-03-15T10:30:00', cliente_tipo_doc: '1', cliente_num_doc: '74859612', cliente_nombre: 'Maria Garcia', moneda: 'PEN', ope_gravadas: 0, ope_exoneradas: 250.00, igv: 0, total: 250.00, estado_sunat: 'aceptado', pdf_url: '#' },
+        { id: 2, agencia_id: 1, reserva_id: null, pago_id: 2, tipo_comprobante: '01', serie: 'F001', correlativo: 5, fecha_emision: '2024-03-16T14:20:00', cliente_tipo_doc: '6', cliente_num_doc: '20123456789', cliente_nombre: 'Empresa de Turismo SAC', moneda: 'PEN', ope_gravadas: 400.00, ope_exoneradas: 0, igv: 72.00, total: 472.00, estado_sunat: 'aceptado', pdf_url: '#' }
+    ],
 
     paises: [
         { id: 1, nombre: 'Peru', codigo_iso: 'PE' },
@@ -690,7 +700,7 @@ const MOCK_DB = {
 // Compatibilidad: alias legacy usado por scripts antiguos
 const MOCK_DATA = MOCK_DB;
 
-const MOCK_DB_VERSION = 18;
+const MOCK_DB_VERSION = 20;
 
 function getMockDb() {
     const storedVersion = localStorage.getItem('turismo_tarapoto_mock_version');

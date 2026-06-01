@@ -6,16 +6,6 @@ USE turismo_tarapoto;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
-CREATE TABLE planes (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(60) NOT NULL,
-    max_usuarios SMALLINT NOT NULL DEFAULT 5,
-    modulos JSON NOT NULL,
-    precio_mes DECIMAL(8,2) NOT NULL DEFAULT 0.00,
-    activo TINYINT(1) NOT NULL DEFAULT 1,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB;
-
 CREATE TABLE agencias (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(120) NOT NULL,
@@ -25,12 +15,12 @@ CREATE TABLE agencias (
     telefono VARCHAR(20) NULL,
     email VARCHAR(120) NULL,
     logo_url VARCHAR(300) NULL,
-    plan_id INT UNSIGNED NOT NULL,
+    max_usuarios SMALLINT NOT NULL DEFAULT 3,
+    modulos JSON NOT NULL,
     estado ENUM('activa','suspendida','baja') NOT NULL DEFAULT 'activa',
     fecha_alta DATE NOT NULL,
     fecha_baja DATE NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_agencias_plan FOREIGN KEY (plan_id) REFERENCES planes(id)
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
 CREATE TABLE superadmins (
@@ -544,10 +534,77 @@ CREATE TABLE notificaciones (
     CONSTRAINT fk_notif_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 ) ENGINE=InnoDB;
 
-INSERT INTO planes (nombre, max_usuarios, modulos, precio_mes) VALUES
-('Básico', 3, '["reservas","caja","clientes"]', 0.00),
-('Estándar', 10, '["reservas","caja","clientes","inventario","reportes"]', 150.00),
-('Premium', 999, '["all"]', 300.00);
+CREATE TABLE sunat_tipos_comprobante (
+    codigo CHAR(2) PRIMARY KEY,
+    descripcion VARCHAR(100) NOT NULL,
+    activo TINYINT(1) NOT NULL DEFAULT 1
+) ENGINE=InnoDB;
+
+CREATE TABLE sunat_tipos_documento (
+    codigo CHAR(1) PRIMARY KEY,
+    descripcion VARCHAR(100) NOT NULL,
+    activo TINYINT(1) NOT NULL DEFAULT 1
+) ENGINE=InnoDB;
+
+CREATE TABLE sunat_series_agencia (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    agencia_id INT UNSIGNED NOT NULL,
+    tipo_comprobante CHAR(2) NOT NULL,
+    serie CHAR(4) NOT NULL,
+    correlativo_actual INT UNSIGNED NOT NULL DEFAULT 0,
+    activo TINYINT(1) NOT NULL DEFAULT 1,
+    CONSTRAINT fk_series_agencia FOREIGN KEY (agencia_id) REFERENCES agencias(id),
+    CONSTRAINT fk_series_tipocomp FOREIGN KEY (tipo_comprobante) REFERENCES sunat_tipos_comprobante(codigo),
+    UNIQUE KEY uq_serie_agencia (agencia_id, tipo_comprobante, serie)
+) ENGINE=InnoDB;
+
+CREATE TABLE comprobantes_electronicos (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    agencia_id INT UNSIGNED NOT NULL,
+    reserva_id INT UNSIGNED NULL,
+    pago_id INT UNSIGNED NULL,
+    tipo_comprobante CHAR(2) NOT NULL,
+    serie CHAR(4) NOT NULL,
+    correlativo INT UNSIGNED NOT NULL,
+    fecha_emision DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    cliente_tipo_doc CHAR(1) NOT NULL,
+    cliente_num_doc VARCHAR(20) NOT NULL,
+    cliente_nombre VARCHAR(150) NOT NULL,
+    cliente_direccion VARCHAR(200) NULL,
+    moneda CHAR(3) NOT NULL DEFAULT 'PEN',
+    ope_gravadas DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    ope_exoneradas DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    ope_inafectas DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    igv DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    total DECIMAL(10,2) NOT NULL,
+    estado_sunat ENUM('pendiente','aceptado','rechazado','anulado') NOT NULL DEFAULT 'pendiente',
+    xml_url VARCHAR(300) NULL,
+    cdr_url VARCHAR(300) NULL,
+    pdf_url VARCHAR(300) NULL,
+    observaciones TEXT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_comprobante_agencia FOREIGN KEY (agencia_id) REFERENCES agencias(id),
+    CONSTRAINT fk_comprobante_reserva FOREIGN KEY (reserva_id) REFERENCES reservas(id),
+    CONSTRAINT fk_comprobante_pago FOREIGN KEY (pago_id) REFERENCES pagos(id),
+    CONSTRAINT fk_comprobante_tipocomp FOREIGN KEY (tipo_comprobante) REFERENCES sunat_tipos_comprobante(codigo),
+    CONSTRAINT fk_comprobante_tipodoc FOREIGN KEY (cliente_tipo_doc) REFERENCES sunat_tipos_documento(codigo),
+    UNIQUE KEY uq_comprobante_serie_correlativo (agencia_id, tipo_comprobante, serie, correlativo)
+) ENGINE=InnoDB;
+
+CREATE TABLE comprobante_detalles (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    comprobante_id INT UNSIGNED NOT NULL,
+    cantidad DECIMAL(10,2) NOT NULL DEFAULT 1.00,
+    unidad_medida CHAR(3) NOT NULL DEFAULT 'ZZ',
+    descripcion VARCHAR(250) NOT NULL,
+    precio_unitario DECIMAL(10,2) NOT NULL,
+    valor_unitario DECIMAL(10,2) NOT NULL,
+    igv DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    subtotal DECIMAL(10,2) NOT NULL,
+    tipo_afectacion_igv VARCHAR(10) NOT NULL DEFAULT '10',
+    CONSTRAINT fk_cdetalle_comprobante FOREIGN KEY (comprobante_id) REFERENCES comprobantes_electronicos(id)
+) ENGINE=InnoDB;
+
 
 INSERT INTO paises (nombre, codigo_iso) VALUES
 ('Perú','PE'),('Estados Unidos','US'),('Francia','FR'),('Alemania','DE'),
@@ -561,6 +618,18 @@ INSERT INTO parametros_globales (clave, valor, descripcion) VALUES
 ('moneda_default', 'PEN', 'Moneda predeterminada'),
 ('iva_porcentaje', '18', 'IGV aplicable'),
 ('reserva_bloqueo_min', '10', 'Minutos de bloqueo cupo online');
+
+INSERT INTO sunat_tipos_comprobante (codigo, descripcion) VALUES
+('01', 'Factura Electrónica'),
+('03', 'Boleta de Venta Electrónica'),
+('07', 'Nota de Crédito Electrónica'),
+('08', 'Nota de Débito Electrónica');
+
+INSERT INTO sunat_tipos_documento (codigo, descripcion) VALUES
+('1', 'DNI - Documento Nacional de Identidad'),
+('4', 'CE - Carné de Extranjería'),
+('6', 'RUC - Registro Único de Contribuyentes'),
+('7', 'Pasaporte');
 
 SET FOREIGN_KEY_CHECKS = 1;
 -- ─────────────────────────────────────────────────────────────────────────────
