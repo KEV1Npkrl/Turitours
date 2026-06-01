@@ -96,7 +96,7 @@
                         style="display:block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem;">Tipo de Documento</label>
                     <select id="clienteTipoDoc" class="form-input"
                         style="width: 100%; margin-bottom: 0.75rem; padding: 0.5rem;"
-                        onchange="updateClienteDocLabel()">
+                        onchange="alert('Select cambió a: ' + this.value); updateClienteDocLabel();">
                         <option value="DNI">DNI</option>
                         <option value="RUC">RUC</option>
                         <option value="CE">CE - Carné Extranjería</option>
