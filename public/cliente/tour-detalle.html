@@ -95,7 +95,8 @@
                     <label for="clienteTipoDoc"
                         style="display:block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem;">Tipo de Documento</label>
                     <select id="clienteTipoDoc" class="form-input"
-                        style="width: 100%; margin-bottom: 0.75rem; padding: 0.5rem;">
+                        style="width: 100%; margin-bottom: 0.75rem; padding: 0.5rem;"
+                        onchange="updateClienteDocLabel()">
                         <option value="DNI">DNI</option>
                         <option value="RUC">RUC</option>
                         <option value="CE">CE - Carné Extranjería</option>
@@ -194,7 +195,6 @@
         function toggleClienteFacturacion(tipo) {
             const campos = document.getElementById('clienteCamposFacturacion');
             const selectTipoDoc = document.getElementById('clienteTipoDoc');
-            const lblDoc = document.getElementById('lblClienteDoc');
             const lblNombre = document.getElementById('lblClienteNombre');
             const grupoDir = document.getElementById('clienteGrupoDir');
             const numDoc = document.getElementById('clienteNumDoc');
@@ -209,13 +209,13 @@
                     selectTipoDoc.disabled = true;
                     updateClienteDocLabel();
                     grupoDir.style.display = 'block';
+                    lblNombre.textContent = 'Razón Social';
+                    numDoc.setAttribute('placeholder', 'RUC (11 dígitos)');
                 } else {
                     // Boleta: permite seleccionar tipo de documento
                     selectTipoDoc.disabled = false;
                     grupoDir.style.display = 'none';
-                    // Establecer listener para cambios en tipo de documento
-                    selectTipoDoc.removeEventListener('change', updateClienteDocLabel);
-                    selectTipoDoc.addEventListener('change', updateClienteDocLabel);
+                    lblNombre.textContent = 'Nombre Completo';
                     updateClienteDocLabel();
                 }
             }
@@ -223,7 +223,7 @@
 
         function updateClienteDocLabel() {
             if (typeof TuristaValidacion === 'undefined') {
-                console.error('TuristaValidacion no está definido');
+                console.warn('TuristaValidacion aún no disponible');
                 return;
             }
             
@@ -233,19 +233,10 @@
             const regla = TuristaValidacion.getReglaDocumento(tipoDoc);
 
             if (regla) {
-                // Actualizar label
                 lblDoc.textContent = tipoDoc;
-                
-                // Actualizar input: placeholder, maxlength, inputmode
-                numDoc.placeholder = regla.placeholder;
+                numDoc.setAttribute('placeholder', regla.placeholder);
                 numDoc.setAttribute('maxlength', regla.maxlength);
-                numDoc.setAttribute('inputmode', regla.inputmode);
-                
-                // Limpiar el valor anterior
                 numDoc.value = '';
-                
-                // Log para debugging
-                console.log('Actualizado a:', tipoDoc, 'Maxlength:', regla.maxlength, 'Placeholder:', regla.placeholder);
             }
         }
     </script>
