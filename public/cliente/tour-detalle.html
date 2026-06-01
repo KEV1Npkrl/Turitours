@@ -207,33 +207,45 @@
                     // Factura: requiere RUC obligatoriamente
                     selectTipoDoc.value = 'RUC';
                     selectTipoDoc.disabled = true;
-                    lblDoc.textContent = 'RUC';
-                    lblNombre.textContent = 'Razón Social';
+                    updateClienteDocLabel();
                     grupoDir.style.display = 'block';
-                    numDoc.placeholder = 'RUC (11 dígitos)';
-                    numDoc.maxLength = 11;
-                    numDoc.pattern = '[0-9]{11}';
                 } else {
                     // Boleta: permite seleccionar tipo de documento
                     selectTipoDoc.disabled = false;
-                    updateClienteDocLabel();
                     grupoDir.style.display = 'none';
+                    // Establecer listener para cambios en tipo de documento
+                    selectTipoDoc.removeEventListener('change', updateClienteDocLabel);
+                    selectTipoDoc.addEventListener('change', updateClienteDocLabel);
+                    updateClienteDocLabel();
                 }
-                selectTipoDoc.onchange = updateClienteDocLabel;
             }
         }
 
         function updateClienteDocLabel() {
+            if (typeof TuristaValidacion === 'undefined') {
+                console.error('TuristaValidacion no está definido');
+                return;
+            }
+            
             const tipoDoc = document.getElementById('clienteTipoDoc').value;
             const lblDoc = document.getElementById('lblClienteDoc');
             const numDoc = document.getElementById('clienteNumDoc');
             const regla = TuristaValidacion.getReglaDocumento(tipoDoc);
 
             if (regla) {
+                // Actualizar label
                 lblDoc.textContent = tipoDoc;
+                
+                // Actualizar input: placeholder, maxlength, inputmode
                 numDoc.placeholder = regla.placeholder;
-                numDoc.maxLength = regla.maxlength;
-                numDoc.inputMode = regla.inputmode;
+                numDoc.setAttribute('maxlength', regla.maxlength);
+                numDoc.setAttribute('inputmode', regla.inputmode);
+                
+                // Limpiar el valor anterior
+                numDoc.value = '';
+                
+                // Log para debugging
+                console.log('Actualizado a:', tipoDoc, 'Maxlength:', regla.maxlength, 'Placeholder:', regla.placeholder);
             }
         }
     </script>
