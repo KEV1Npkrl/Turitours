@@ -106,14 +106,18 @@ async function initHomePage() {
     
     // Solo ejecutar en la pÃ¡gina principal
     if (!categoriesGrid && !destinosGrid && !toursGrid) return;
-    
+    let categorias = null, destinos = null, tours = null;
     try {
         // Cargar datos en paralelo
-        const [categorias, destinos, tours] = await Promise.all([
+        const results = await Promise.all([
             categoriesGrid ? API.getCategorias() : null,
             destinosGrid ? API.getDestinos() : null,
             toursGrid ? API.getToursDestacados() : null
         ]);
+        
+        categorias = results[0];
+        destinos = results[1];
+        tours = results[2];
         
         if (categorias && categoriesGrid) {
             renderCategorias(categorias, categoriesGrid);
@@ -128,6 +132,66 @@ async function initHomePage() {
         }
     } catch (error) {
         console.error('Error cargando datos:', error);
+    } finally {
+        initSearchForm(destinos);
+    }
+}
+
+/**
+ * Inicializar formulario de busqueda
+ */
+function initSearchForm(destinos) {
+    const searchForm = document.querySelector('.search-form');
+    const inputDestino = document.getElementById('destino');
+    const inputFecha = document.getElementById('fecha');
+    const inputPersonas = document.getElementById('personas');
+    
+    if (inputFecha) {
+        const d = new Date();
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        inputFecha.min = `${year}-${month}-${day}`;
+    }
+
+    if (searchForm) {
+        searchForm.addEventListener('submit', function(e) {
+            if (!inputDestino.value.trim() || !inputFecha.value || !inputPersonas.value) {
+                e.preventDefault();
+                alert('Por favor completa todos los campos de búsqueda (destino, fecha y cantidad de personas).');
+                return false;
+            }
+            
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            const localToday = `${year}-${month}-${day}`;
+            
+            if (inputFecha.value < localToday) {
+                e.preventDefault();
+                alert('La fecha seleccionada no puede ser en el pasado.');
+                return false;
+            }
+        });
+    }
+
+    if (!inputDestino) return;
+
+    if (destinos && destinos.length > 0) {
+        // Crear datalist dinámico
+        let datalist = document.getElementById('destinos-datalist');
+        if (!datalist) {
+            datalist = document.createElement('datalist');
+            datalist.id = 'destinos-datalist';
+            document.body.appendChild(datalist);
+            inputDestino.setAttribute('list', 'destinos-datalist');
+        }
+
+        // Llenar datalist
+        datalist.innerHTML = destinos.map(dest => 
+            `<option value="${dest.nombre}">${dest.nombre}, Perú</option>`
+        ).join('');
     }
 }
 
@@ -153,11 +217,24 @@ function renderCategorias(categorias, container) {
     container.innerHTML = categorias.map(cat => `
         <a href="tours.html?categoria=${cat.id}" class="category-card">
             <div class="category-icon">
-                ${iconos[cat.icono] || iconos.nature}
+                ${cat.icono_svg || iconos[cat.icono] || iconos.nature}
             </div>
             <span class="category-name">${cat.nombre}</span>
         </a>
     `).join('');
+
+    setTimeout(() => {
+        const carousel = container.closest('.carousel-container');
+        if (carousel) {
+            const hasScroll = container.scrollWidth > container.clientWidth;
+            carousel.querySelectorAll('.carousel-btn').forEach(btn => {
+                btn.style.display = hasScroll ? 'flex' : 'none';
+            });
+            if (!hasScroll) {
+                container.style.justifyContent = 'center';
+            }
+        }
+    }, 100);
 }
 
 /**
@@ -170,7 +247,7 @@ function renderDestinos(destinos, container) {
             <div class="destino-overlay">
                 <div class="destino-info">
                     <h3 class="destino-name">${dest.nombre} ${dest.bandera}</h3>
-                    <p class="destino-count">${dest.tours_count} tours disponibles</p>
+                    <p class="destino-count">${dest.tours_count || 0} tours disponibles</p>
                 </div>
             </div>
         </a>

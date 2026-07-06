@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil de Empresa - TuriTours</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        .profile-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 32px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
+        .form-group input { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; }
+        .form-group input[readonly] { background-color: #f8fafc; cursor: not-allowed; }
+        .full-width { grid-column: span 2; }
+        .toast {
+            position: fixed; bottom: 20px; right: 20px;
+            background: #10b981; color: white;
+            padding: 12px 24px; border-radius: 6px;
+            transform: translateY(100px); opacity: 0;
+            transition: all 0.3s;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+    </style>
+</head>
+<body class="admin-body">
+    <aside class="sidebar">
+        <div class="logo">
+            <span class="icon">🌴</span> TuriTours
+        </div>
+        <nav class="nav-links">
+            <a href="index.html">Dashboard</a>
+            <a href="reservas.html">Reservas</a>
+            <a href="tours.html">Gestión de Tours</a>
+            <a href="destinos.html">Destinos</a>
+            <a href="turistas.html">Turistas</a>
+            <a href="caja.html">Caja y Finanzas</a>
+            <a href="operaciones.html">Operaciones</a>
+            <a href="personal.html">Personal</a>
+            <a href="inventario.html">Inventario</a>
+            <a href="auditoria.html">Auditoría</a>
+            <a href="perfil.html" class="active">Perfil de Empresa</a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-nav">
+            <h2>Perfil de Empresa</h2>
+            <div class="user-menu">
+                <span id="userName">Usuario</span>
+                <button class="btn btn-outline" id="btnLogout">Cerrar Sesión</button>
+            </div>
+        </header>
+
+        <div class="dashboard-content">
+            <div class="profile-container">
+                <form id="perfilForm">
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label>Nombre Comercial</label>
+                            <input type="text" id="pNombre" required>
+                        </div>
+                        <div class="form-group">
+                            <label>RUC</label>
+                            <input type="text" id="pRuc" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Teléfono</label>
+                            <input type="text" id="pTelefono">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Dirección</label>
+                            <input type="text" id="pDireccion">
+                        </div>
+                        <div class="form-group">
+                            <label>Email de Contacto</label>
+                            <input type="email" id="pEmail">
+                        </div>
+                        <div class="form-group">
+                            <label>Estado de Suscripción</label>
+                            <input type="text" id="pEstado" readonly>
+                        </div>
+                    </div>
+                    <div style="margin-top: 24px; text-align: right;">
+                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+    
+    <div id="toast" class="toast">Perfil actualizado correctamente</div>
+
+    <script>
+        const userStr = localStorage.getItem('admin_session');
+        if (!userStr) window.location.href = 'login.html';
+        const user = JSON.parse(userStr);
+        document.getElementById('userName').textContent = user.nombre;
+
+        document.getElementById('btnLogout').addEventListener('click', () => {
+            localStorage.removeItem('admin_session');
+            window.location.href = 'login.html';
+        });
+
+        async function cargarPerfil() {
+            try {
+                const res = await fetch('http://localhost:3000/api/agencia/perfil', {
+                    headers: { 'Authorization': `Bearer ${user.token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('pNombre').value = data.nombre || '';
+                    document.getElementById('pRuc').value = data.ruc || '';
+                    document.getElementById('pTelefono').value = data.telefono || '';
+                    document.getElementById('pDireccion').value = data.direccion || '';
+                    document.getElementById('pEmail').value = data.email || '';
+                    document.getElementById('pEstado').value = (data.estado || '').toUpperCase();
+                } else if (res.status === 403) {
+                    alert("Su agencia se encuentra suspendida. No tiene acceso.");
+                    window.location.href = 'login.html';
+                }
+            } catch (err) {
+                console.error("Error cargando perfil", err);
+            }
+        }
+
+        cargarPerfil();
+
+        document.getElementById('perfilForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const dto = {
+                nombre: document.getElementById('pNombre').value,
+                ruc: document.getElementById('pRuc').value,
+                telefono: document.getElementById('pTelefono').value,
+                direccion: document.getElementById('pDireccion').value,
+                email: document.getElementById('pEmail').value
+            };
+
+            try {
+                const res = await fetch('http://localhost:3000/api/agencia/perfil', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${user.token}`
+                    },
+                    body: JSON.stringify(dto)
+                });
+                if (res.ok) {
+                    const toast = document.getElementById('toast');
+                    toast.classList.add('show');
+                    setTimeout(() => toast.classList.remove('show'), 3000);
+                } else {
+                    alert("Error guardando perfil");
+                }
+            } catch (err) {
+                console.error("Error guardando perfil", err);
+            }
+        });
+    </script>
+</body>
+</html>

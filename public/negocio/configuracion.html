@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración - TuriTours</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        .config-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 32px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+        .section-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; }
+        .toast {
+            position: fixed; bottom: 20px; right: 20px;
+            background: #10b981; color: white;
+            padding: 12px 24px; border-radius: 6px;
+            transform: translateY(100px); opacity: 0;
+            transition: all 0.3s;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .table-admin { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        .table-admin th, .table-admin td { padding: 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left; }
+    </style>
+</head>
+<body class="admin-body">
+    <aside class="sidebar" id="adminSidebar">
+        <!-- JS populated by components.js or admin-app.js -->
+    </aside>
+
+    <main class="main-content">
+        <header class="top-nav">
+            <h2>Configuración de la Empresa</h2>
+            <div class="user-menu">
+                <span id="userName">Usuario</span>
+                <button class="btn btn-outline" id="btnLogout">Cerrar Sesión</button>
+            </div>
+        </header>
+
+        <div class="dashboard-content">
+            <div class="config-container">
+                <h3 class="section-title">Categorías de Tours</h3>
+                <form id="catForm" style="display: flex; gap: 10px; margin-bottom: 1rem;">
+                    <input type="text" id="catNombre" placeholder="Nueva Categoría" required style="flex:1; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;">
+                    <button type="submit" class="btn btn-primary">Añadir</button>
+                </form>
+                <table class="table-admin">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="catTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+    
+    <div id="toast" class="toast">Guardado exitosamente</div>
+
+    <script>
+        const userStr = localStorage.getItem('admin_session');
+        if (!userStr) window.location.href = 'login.html';
+        const user = JSON.parse(userStr);
+        document.getElementById('userName').textContent = user.nombre;
+
+        document.getElementById('btnLogout').addEventListener('click', () => {
+            localStorage.removeItem('admin_session');
+            window.location.href = 'login.html';
+        });
+
+        // Add to sidebar manually since we are not using components.js globally everywhere correctly yet
+        const sidebarHtml = `
+            <div class="logo"><span class="icon">🌴</span> TuriTours</div>
+            <nav class="nav-links">
+                <a href="index.html">Dashboard</a>
+                <a href="reservas.html">Reservas</a>
+                <a href="tours.html">Tours</a>
+                <a href="destinos.html">Destinos</a>
+                <a href="turistas.html">Turistas</a>
+                <a href="caja.html">Caja y Finanzas</a>
+                <a href="operaciones.html">Operaciones</a>
+                <a href="personal.html">Personal</a>
+                <a href="inventario.html">Inventario</a>
+                <a href="auditoria.html">Auditoría</a>
+                <a href="perfil.html">Perfil</a>
+                <a href="configuracion.html" class="active">Configuración</a>
+            </nav>
+        `;
+        document.getElementById('adminSidebar').innerHTML = sidebarHtml;
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        async function cargarCategorias() {
+            try {
+                const res = await fetch('http://localhost:3000/api/agencia/categorias', {
+                    headers: { 'Authorization': `Bearer ${user.token}` }
+                });
+                if (res.ok) {
+                    const cats = await res.json();
+                    const tbody = document.getElementById('catTableBody');
+                    tbody.innerHTML = cats.map(c => `
+                        <tr>
+                            <td>${c.id}</td>
+                            <td>${c.nombre}</td>
+                            <td><button class="btn btn-outline" style="color:red; border-color:red;" onclick="deleteCat(${c.id})">Eliminar</button></td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        document.getElementById('catForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nombre = document.getElementById('catNombre').value;
+            try {
+                const res = await fetch('http://localhost:3000/api/agencia/categorias', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` },
+                    body: JSON.stringify({ nombre })
+                });
+                if (res.ok) {
+                    document.getElementById('catNombre').value = '';
+                    cargarCategorias();
+                    showToast('Categoría añadida');
+                }
+            } catch (err) { console.error(err); }
+        });
+
+        window.deleteCat = async (id) => {
+            if(!confirm('¿Eliminar categoría?')) return;
+            try {
+                const res = await fetch(`http://localhost:3000/api/agencia/categorias/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${user.token}` }
+                });
+                if (res.ok) {
+                    cargarCategorias();
+                    showToast('Categoría eliminada');
+                }
+            } catch (err) { console.error(err); }
+        };
+
+        cargarCategorias();
+    </script>
+</body>
+</html>

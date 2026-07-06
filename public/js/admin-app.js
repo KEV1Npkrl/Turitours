@@ -49,13 +49,14 @@ const AdminApp = (function () {
         { id: 'reservas', label: 'Reservas', icon: 'reservas', href: 'reservas.html', modulo: 'reservas' },
         { id: 'turistas', label: 'Turistas', icon: 'turistas', href: 'turistas.html', modulo: 'turistas' },
         { id: 'caja', label: 'Caja', icon: 'caja', href: 'caja.html', modulo: 'caja' },
-        { id: 'facturacion', label: 'Facturacion', icon: 'reportes', href: 'facturacion.html', modulo: 'facturacion' },
         { section: 'Operaciones' },
         { id: 'operaciones', label: 'Operaciones', icon: 'operaciones', href: 'operaciones.html', modulo: 'operaciones' },
         { id: 'inventario', label: 'Inventario', icon: 'inventario', href: 'inventario.html', modulo: 'inventario' },
         { section: 'Administración' },
         { id: 'personal', label: 'Personal', icon: 'personal', href: 'personal.html', modulo: 'personal' },
-        { id: 'auditoria', label: 'Auditoria', icon: 'auditoria', href: 'auditoria.html', modulo: 'auditoria' }
+        { id: 'auditoria', label: 'Auditoria', icon: 'auditoria', href: 'auditoria.html', modulo: 'auditoria' },
+        { id: 'perfil', label: 'Perfil de Empresa', icon: 'reportes', href: 'perfil.html' },
+        { id: 'configuracion', label: 'Configuración', icon: 'reportes', href: 'configuracion.html' }
     ];
 
     /* ═══════════════════════════════════════
@@ -83,8 +84,15 @@ const AdminApp = (function () {
         const modulos = AdminAPI.getModulosPermitidos();
         const initials = session ? session.nombre.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase() : '??';
         const rolState = getAdminDb();
-        const rol = rolState.roles.find(r => r.id === session.rol_id);
-        const rolNombre = rol ? rol.nombre : 'Usuario';
+        const rolesArray = rolState.roles || [];
+        const rol = rolesArray.find(r => r.id === session.rol_id);
+        
+        let rolNombre = 'Usuario';
+        if (session && session.rol_id === 99) {
+            rolNombre = 'SUPERADMINISTRADOR';
+        } else if (rol) {
+            rolNombre = rol.nombre;
+        }
 
         let navHtml = '';
         MENU.forEach(item => {

@@ -46,7 +46,10 @@
                     </div>
                     <div class="form-group">
                         <label for="documento">Numero de documento <span class="label-required" aria-hidden="true">*</span></label>
-                        <input type="text" id="documento" name="documento" class="form-input" placeholder="12345678" autocomplete="off" maxlength="20" required>
+                        <div style="display:flex; gap:0.5rem;">
+                            <input type="text" id="documento" name="documento" class="form-input" placeholder="12345678" autocomplete="off" maxlength="20" required>
+                            <button type="button" class="btn" id="btnBuscarDoc" style="padding: 0 1rem; flex-shrink: 0; min-height: 48px; border: 1px solid var(--color-border); background: var(--color-background); color: var(--color-text);">Buscar</button>
+                        </div>
                         <span class="field-hint" id="documentoHint"></span>
                         <span class="field-error" id="documentoError" role="alert"></span>
                     </div>
@@ -55,12 +58,12 @@
                 <div class="auth-form-grid">
                     <div class="form-group">
                         <label for="nombre">Nombres <span class="label-required" aria-hidden="true">*</span></label>
-                        <input type="text" id="nombre" name="nombre" class="form-input" placeholder="Tu nombre" autocomplete="given-name" maxlength="60" required>
+                        <input type="text" id="nombre" name="nombre" class="form-input" placeholder="Tu nombre" autocomplete="given-name" maxlength="60" required readonly>
                         <span class="field-error" id="nombreError" role="alert"></span>
                     </div>
                     <div class="form-group">
                         <label for="apellidos">Apellidos <span class="label-required" aria-hidden="true">*</span></label>
-                        <input type="text" id="apellidos" name="apellidos" class="form-input" placeholder="Tus apellidos" autocomplete="family-name" maxlength="80" required>
+                        <input type="text" id="apellidos" name="apellidos" class="form-input" placeholder="Tus apellidos" autocomplete="family-name" maxlength="80" required readonly>
                         <span class="field-error" id="apellidosError" role="alert"></span>
                     </div>
                 </div>
@@ -165,5 +168,69 @@
     <script src="../js/api.js"></script>
     <script src="../js/app.js"></script>
     <script src="../js/auth.js"></script>
+    
+    <script>
+        document.getElementById('tipo_doc').addEventListener('change', (e) => {
+            const val = e.target.value;
+            const isApi = (val === 'DNI' || val === 'RUC' || val === '');
+            document.getElementById('nombre').readOnly = isApi;
+            document.getElementById('apellidos').readOnly = isApi;
+            document.getElementById('nombre').style.backgroundColor = isApi ? '#f3f4f6' : '';
+            document.getElementById('apellidos').style.backgroundColor = isApi ? '#f3f4f6' : '';
+            const btnBuscar = document.getElementById('btnBuscarDoc');
+            if (btnBuscar) btnBuscar.disabled = !isApi;
+        });
+
+        document.getElementById('btnBuscarDoc').addEventListener('click', async () => {
+            const val = document.getElementById('documento').value.trim();
+            const tipoDoc = document.getElementById('tipo_doc').value;
+            const inputNombres = document.getElementById('nombre');
+            const inputApellidos = document.getElementById('apellidos');
+            
+            if (!val || (val.length !== 8 && val.length !== 11)) return;
+
+            let tipo = val.length === 8 ? 'dni' : 'ruc';
+            
+            // Validar que coincida el select con lo ingresado
+            if (tipo === 'dni' && tipoDoc !== 'DNI') return;
+            if (tipo === 'ruc' && tipoDoc !== 'RUC') return;
+
+            inputNombres.placeholder = 'Consultando...';
+            inputApellidos.placeholder = 'Consultando...';
+            
+            try {
+                const res = await fetch(`http://localhost:3000/api/externo/${tipo}/${val}`);
+                const data = await res.json();
+                
+                if (res.ok && data.success) {
+                    if (tipo === 'dni') {
+                        inputNombres.value = data.raw.nombres;
+                        inputApellidos.value = `${data.raw.apellidoPaterno} ${data.raw.apellidoMaterno}`.trim();
+                    } else {
+                        inputNombres.value = data.raw.razonSocial;
+                        inputApellidos.value = '-'; // RUC no tiene apellidos divididos
+                    }
+                    
+                    inputNombres.readOnly = true;
+                    inputApellidos.readOnly = true;
+                    inputNombres.style.backgroundColor = '#f3f4f6';
+                    inputApellidos.style.backgroundColor = '#f3f4f6';
+                } else {
+                    inputNombres.value = '';
+                    inputApellidos.value = '';
+                    inputNombres.readOnly = false;
+                    inputApellidos.readOnly = false;
+                    inputNombres.style.backgroundColor = '';
+                    inputApellidos.style.backgroundColor = '';
+                }
+            } catch (err) {
+                inputNombres.readOnly = false;
+                inputApellidos.readOnly = false;
+            } finally {
+                inputNombres.placeholder = 'Tu nombre';
+                inputApellidos.placeholder = 'Tus apellidos';
+            }
+        });
+    </script>
 </body>
 </html>

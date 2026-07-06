@@ -259,6 +259,39 @@
         </div>
     </div>
 
+    <!-- Modal: Confirmar Pago Web -->
+    <div class="a-modal-overlay" id="modalConfirmarPago">
+        <div class="a-modal">
+            <div class="a-modal-header">
+                <h3 class="a-modal-title">Confirmar Pago Web</h3>
+                <button class="a-modal-close" data-close-modal="modalConfirmarPago">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="a-modal-body">
+                <p style="margin-bottom:1rem;font-size:0.875rem">Registrar el pago recibido para confirmar esta reserva.</p>
+                <input type="hidden" id="cpReservaId">
+                <div class="a-form-group">
+                    <label class="a-form-label">Monto Recibido</label>
+                    <input type="number" step="0.01" class="a-form-input" id="cpMonto" required>
+                </div>
+                <div class="a-form-group">
+                    <label class="a-form-label">Método de Pago</label>
+                    <select class="a-form-input" id="cpMetodo">
+                        <option value="efectivo">Efectivo</option>
+                        <option value="yape">Yape</option>
+                        <option value="plin">Plin</option>
+                        <option value="transferencia">Transferencia</option>
+                    </select>
+                </div>
+            </div>
+            <div class="a-modal-footer">
+                <button class="a-btn a-btn-outline" data-close-modal="modalConfirmarPago">Cancelar</button>
+                <button class="a-btn a-btn-primary" id="confirmarPagoWebBtn">Confirmar y Registrar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal: Nueva Reserva -->
     <div class="a-modal-overlay" id="modalNuevaReserva">
         <div class="a-modal a-modal-lg">
@@ -270,7 +303,7 @@
             </div>
             <form id="formNuevaReserva">
                 <div class="a-modal-body">
-                    <h4 style="margin-bottom:0.75rem;font-size:1rem;font-weight:600">Datos del Turista</h4>
+                    <h4 style="margin-bottom:0.75rem;font-size:1rem;font-weight:600">Datos del Titular / Facturación</h4>
                     <div class="a-form-row">
                         <div class="a-form-group">
                             <label class="a-form-label">Tipo Documento</label>
@@ -285,27 +318,32 @@
                         </div>
                         <div class="a-form-group">
                             <label class="a-form-label">Documento</label>
-                            <input type="text" class="a-form-input" id="nrDoc" required>
+                            <div style="display:flex; gap:8px;">
+                                <input type="text" class="a-form-input" id="nrDoc" required style="flex-grow:1">
+                                <button type="button" class="a-btn a-btn-outline" id="nrBtnBuscar" title="Buscar RENIEC/SUNAT" style="padding:0 12px">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div class="a-form-row">
                         <div class="a-form-group">
                             <label class="a-form-label">Nombre</label>
-                            <input type="text" class="a-form-input" id="nrNombre" required>
+                            <input type="text" class="a-form-input" id="nrNombre" required readonly>
                         </div>
                         <div class="a-form-group">
                             <label class="a-form-label">Apellidos</label>
-                            <input type="text" class="a-form-input" id="nrApellidos" required>
+                            <input type="text" class="a-form-input" id="nrApellidos" required readonly>
                         </div>
                     </div>
                     <div class="a-form-row">
                         <div class="a-form-group">
-                            <label class="a-form-label">Email</label>
+                            <label class="a-form-label">Email (Opcional)</label>
                             <input type="email" class="a-form-input" id="nrEmail">
                         </div>
                         <div class="a-form-group">
                             <label class="a-form-label">Teléfono</label>
-                            <input type="text" class="a-form-input" id="nrTelefono">
+                            <input type="text" class="a-form-input" id="nrTelefono" required>
                         </div>
                     </div>
 
@@ -336,10 +374,37 @@
                             <input type="time" class="a-form-input" id="nrHora">
                         </div>
                     </div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin:1.5rem 0 0.75rem;">
+                        <h4 style="font-size:1rem;font-weight:600;margin:0">Pasajeros (<span id="countPasajeros">1</span>)</h4>
+                        <button type="button" class="a-btn a-btn-ghost a-btn-sm" id="btnCopiarTitular" style="color:var(--a-primary); font-size:0.75rem;">+ Copiar Titular al Pasajero 1</button>
+                    </div>
+                    <div id="pasajerosContainer">
+                        <!-- Generado dinámicamente -->
+                    </div>
                     
                     <div style="margin-top:1.5rem;padding:1rem;background:var(--a-bg);border-radius:4px;display:flex;justify-content:space-between;align-items:center">
                         <span style="font-weight:600">Total a cobrar:</span>
                         <span id="nrTotal" style="font-size:1.25rem;font-weight:800;color:var(--a-primary)">S/ 0.00</span>
+                    </div>
+
+                    <h4 style="margin:1.5rem 0 0.75rem;font-size:1rem;font-weight:600">Cobro Inmediato (Opcional)</h4>
+                    <div class="a-form-row">
+                        <div class="a-form-group">
+                            <label class="a-form-label">Monto a pagar ahora</label>
+                            <input type="number" step="0.01" class="a-form-input" id="nrPagoMonto" placeholder="0.00">
+                            <small style="color:var(--a-text-muted);font-size:0.75rem">Dejar en 0 o vacío si no se paga ahora.</small>
+                        </div>
+                        <div class="a-form-group">
+                            <label class="a-form-label">Método de pago</label>
+                            <select class="a-form-input" id="nrPagoMetodo">
+                                <option value="efectivo">Efectivo</option>
+                                <option value="yape">Yape</option>
+                                <option value="plin">Plin</option>
+                                <option value="transferencia">Transferencia</option>
+                                <option value="tarjeta">Tarjeta (POS)</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="a-modal-footer">
@@ -449,10 +514,17 @@
                         <button class="a-btn a-btn-ghost a-btn-sm" title="Ver detalle" onclick="verDetalle(${r.id})">
                             ${AdminApp.icon('eye')}
                         </button>
-                        ${r.estado === 'pendiente' ? `
+                        ${r.estado === 'pendiente' && r.canal === 'web' ? `
+                        <button class="a-btn a-btn-ghost a-btn-sm" style="color:var(--a-primary)" title="Registrar Pago Web" onclick="abrirConfirmarPago(${r.id}, ${r.total})">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                        </button>` : ''}
+                        ${r.estado === 'pendiente' && r.canal !== 'web' ? `
                         <button class="a-btn a-btn-ghost a-btn-sm" style="color:var(--a-success)" title="Confirmar" onclick="confirmarRes(${r.id})">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg>
                         </button>` : ''}
+                        <button class="a-btn a-btn-ghost a-btn-sm" style="color:var(--a-text)" title="Imprimir Ticket" onclick="imprimirTicket(${r.id})">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                        </button>
                         ${r.estado !== 'anulada' && r.estado !== 'completada' ? `
                         <button class="a-btn a-btn-ghost a-btn-sm" title="Anular" onclick="iniciarAnular(${r.id}, '${r.codigo_qr}')">
                             ${AdminApp.icon('trash')}
@@ -535,7 +607,6 @@
                         <p>${AdminApp.formatMoney(r.descuento)}</p>
                     </div>
                 </div>
-                <div class="a-form-row">
                     <div class="a-form-group">
                         <p class="a-form-label">Total</p>
                         <p style="font-size:1.125rem;font-weight:800;color:var(--a-primary)">${AdminApp.formatMoney(r.total)}</p>
@@ -544,6 +615,20 @@
                         <p class="a-form-label">Saldo Pendiente</p>
                         <p style="font-weight:700;color:${r.saldo_pendiente > 0 ? 'var(--a-danger)' : 'var(--a-success)'}">${r.saldo_pendiente > 0 ? AdminApp.formatMoney(r.saldo_pendiente) : 'Pagado'}</p>
                     </div>
+                </div>
+                ${(r.pasajeros && r.pasajeros.length > 0) ? `
+                <hr style="border:none;border-top:1px solid var(--a-border);margin:1rem 0">
+                <h4 style="font-size:0.875rem;font-weight:600;margin-bottom:0.5rem">Pasajeros:</h4>
+                <div style="background:rgba(0,0,0,0.02); padding:0.5rem; border-radius:4px; font-size:0.8125rem">
+                    ${r.pasajeros.map((p, idx) => `
+                        <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
+                            <span>${idx+1}. ${p.nombre} ${p.apellidos}</span>
+                            <span style="color:var(--a-text-muted)">${p.tipo_doc}: ${p.documento}</span>
+                        </div>
+                    `).join('')}
+                </div>` : ''}
+                <hr style="border:none;border-top:1px solid var(--a-border);margin:1rem 0">
+                <div class="a-form-row">
                     <div class="a-form-group">
                         <p class="a-form-label">Canal</p>
                         <p>${r.vendedor_nombre}</p>
@@ -601,6 +686,8 @@
             tomorrow.setDate(tomorrow.getDate() + 1);
             document.getElementById('nrFecha').value = tomorrow.toISOString().split('T')[0];
 
+            generarCamposPasajeros(); // Inicializar pasajeros (1 por defecto)
+            
             AdminApp.openModal('modalNuevaReserva');
         }
 
@@ -617,13 +704,148 @@
         }
 
         document.getElementById('nrTour').addEventListener('change', calcularTotalReserva);
-        document.getElementById('nrPersonas').addEventListener('input', calcularTotalReserva);
+        document.getElementById('nrPersonas').addEventListener('input', () => {
+            calcularTotalReserva();
+            generarCamposPasajeros();
+        });
+
+        function generarCamposPasajeros() {
+            const num = parseInt(document.getElementById('nrPersonas').value || 1, 10);
+            const container = document.getElementById('pasajerosContainer');
+            document.getElementById('countPasajeros').textContent = num;
+            
+            // Guardar valores actuales
+            const actuales = [];
+            for (let i = 1; i <= container.children.length; i++) {
+                const doc = document.getElementById(`p_doc_${i}`);
+                if (doc) {
+                    actuales.push({
+                        tipo_doc: document.getElementById(`p_tipo_${i}`).value,
+                        doc: doc.value,
+                        nombres: document.getElementById(`p_nom_${i}`).value
+                    });
+                }
+            }
+
+            let html = '';
+            for (let i = 1; i <= num; i++) {
+                const prev = actuales[i - 1] || { tipo_doc: 'DNI', doc: '', nombres: '' };
+                html += `
+                    <div class="a-form-row" style="margin-bottom:0.5rem; padding:0.5rem; background:rgba(0,0,0,0.02); border-radius:4px; border:1px solid var(--a-border);">
+                        <div class="a-form-group" style="margin-bottom:0">
+                            <label class="a-form-label" style="font-size:0.7rem">Tipo Doc P${i}</label>
+                            <select class="a-form-input" id="p_tipo_${i}" required>
+                                <option value="DNI" ${prev.tipo_doc==='DNI'?'selected':''}>DNI</option>
+                                <option value="CE" ${prev.tipo_doc==='CE'?'selected':''}>CE</option>
+                                <option value="Pasaporte" ${prev.tipo_doc==='Pasaporte'?'selected':''}>Pasaporte</option>
+                                <option value="Otro" ${prev.tipo_doc==='Otro'?'selected':''}>Otro</option>
+                            </select>
+                        </div>
+                        <div class="a-form-group" style="margin-bottom:0">
+                            <label class="a-form-label" style="font-size:0.7rem">Documento P${i}</label>
+                            <input type="text" class="a-form-input" id="p_doc_${i}" value="${prev.doc}" required>
+                        </div>
+                        <div class="a-form-group" style="margin-bottom:0; grid-column:span 2">
+                            <label class="a-form-label" style="font-size:0.7rem">Nombres Completos P${i}</label>
+                            <input type="text" class="a-form-input" id="p_nom_${i}" value="${prev.nombres}" required>
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        document.getElementById('btnCopiarTitular').addEventListener('click', () => {
+            const tipo = document.getElementById('nrTipoDoc').value;
+            const doc = document.getElementById('nrDoc').value;
+            const nom = document.getElementById('nrNombre').value;
+            const ape = document.getElementById('nrApellidos').value;
+            
+            if (tipo === 'RUC') {
+                return AdminApp.toast('No puedes copiar una empresa (RUC) como pasajero. Ingresa los datos de la persona física que viajará.', 'warning');
+            }
+
+            const pTipo = document.getElementById('p_tipo_1');
+            const pDoc = document.getElementById('p_doc_1');
+            const pNom = document.getElementById('p_nom_1');
+            
+            if (pTipo && pDoc && pNom) {
+                pTipo.value = tipo || 'DNI'; 
+                pDoc.value = doc;
+                pNom.value = (nom + ' ' + ape).trim();
+            }
+        });
+
+        document.getElementById('nrTipoDoc').addEventListener('change', (e) => {
+            const val = e.target.value;
+            const isApi = (val === 'DNI' || val === 'RUC' || val === '');
+            document.getElementById('nrNombre').readOnly = isApi;
+            document.getElementById('nrApellidos').readOnly = isApi;
+            const btnBuscar = document.getElementById('nrBtnBuscar');
+            if (btnBuscar) btnBuscar.disabled = !isApi;
+        });
+
+        document.getElementById('nrBtnBuscar').addEventListener('click', async () => {
+            const tipo = document.getElementById('nrTipoDoc').value;
+            const doc = document.getElementById('nrDoc').value.trim();
+            if (!doc) return AdminApp.toast('Ingresa un documento', 'warning');
+            
+            let tipoEndpoint = '';
+            if (tipo === 'DNI' && doc.length === 8) tipoEndpoint = 'dni';
+            else if (tipo === 'RUC' && doc.length === 11) tipoEndpoint = 'ruc';
+            else return AdminApp.toast('Documento no válido para consulta', 'warning');
+
+            const btn = document.getElementById('nrBtnBuscar');
+            btn.style.opacity = '0.5';
+            
+            try {
+                const res = await fetch(`http://localhost:3000/api/externo/${tipoEndpoint}/${doc}`);
+                const data = await res.json();
+                
+                if (data.success) {
+                    if (tipoEndpoint === 'dni') {
+                        document.getElementById('nrNombre').value = data.raw.nombres;
+                        document.getElementById('nrApellidos').value = data.raw.apellidoPaterno + ' ' + data.raw.apellidoMaterno;
+                    } else {
+                        document.getElementById('nrNombre').value = data.raw.razonSocial;
+                        document.getElementById('nrApellidos').value = ''; // RUC no tiene apellidos
+                    }
+                    AdminApp.toast('Datos obtenidos');
+                } else {
+                    AdminApp.toast(data.error || 'No encontrado', 'error');
+                }
+            } catch(e) {
+                AdminApp.toast('Error al consultar', 'error');
+            } finally {
+                btn.style.opacity = '1';
+            }
+        });
 
         document.getElementById('formNuevaReserva').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = e.target.querySelector('button[type="submit"]');
             btn.disabled = true;
             btn.textContent = 'Guardando...';
+
+            const select = document.getElementById('nrTour');
+            const opt = select.options[select.selectedIndex];
+            const precio = parseFloat(opt.getAttribute('data-precio') || 0);
+            const personas = parseInt(document.getElementById('nrPersonas').value || 1, 10);
+            const total = precio * personas;
+
+            const pasajeros = [];
+            for (let i = 1; i <= personas; i++) {
+                const nomCompleto = document.getElementById(`p_nom_${i}`)?.value || '';
+                const parts = nomCompleto.split(' ');
+                const ape = parts.length > 1 ? parts.pop() : ''; // Separar rudimentariamente el último apellido si existe
+                const nom = parts.join(' ') || nomCompleto;
+                pasajeros.push({
+                    tipo_doc: document.getElementById(`p_tipo_${i}`)?.value || 'DNI',
+                    documento: document.getElementById(`p_doc_${i}`)?.value || '',
+                    nombre: nom,
+                    apellidos: ape
+                });
+            }
 
             const datos = {
                 tipo_doc: document.getElementById('nrTipoDoc').value,
@@ -636,7 +858,12 @@
                 fecha_servicio: document.getElementById('nrFecha').value,
                 num_personas: document.getElementById('nrPersonas').value,
                 lugar_recojo: document.getElementById('nrLugar').value,
-                hora_recojo: document.getElementById('nrHora').value
+                hora_recojo: document.getElementById('nrHora').value,
+                precio_unitario: precio,
+                total: total,
+                pago_monto: document.getElementById('nrPagoMonto').value,
+                pago_metodo: document.getElementById('nrPagoMetodo').value,
+                pasajeros: pasajeros
             };
 
             try {
@@ -653,7 +880,7 @@
         });
 
         async function confirmarRes(id) {
-            if (!confirm('¿Estás seguro de confirmar esta reserva?')) return;
+            if (!confirm('¿Estás seguro de confirmar esta reserva sin registrar pago?')) return;
             try {
                 await AdminAPI.confirmarReserva(id);
                 AdminApp.toast('Reserva confirmada');
@@ -661,6 +888,82 @@
             } catch (err) {
                 AdminApp.toast(err.message, 'error');
             }
+        }
+
+        function abrirConfirmarPago(id, total) {
+            document.getElementById('cpReservaId').value = id;
+            document.getElementById('cpMonto').value = total || '';
+            document.getElementById('cpMetodo').value = 'efectivo';
+            AdminApp.openModal('modalConfirmarPago');
+        }
+
+        document.getElementById('confirmarPagoWebBtn').addEventListener('click', async () => {
+            const id = document.getElementById('cpReservaId').value;
+            const monto = document.getElementById('cpMonto').value;
+            const metodo = document.getElementById('cpMetodo').value;
+
+            if (!monto || parseFloat(monto) <= 0) {
+                AdminApp.toast('Debe ingresar un monto válido', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('confirmarPagoWebBtn');
+            btn.disabled = true;
+            btn.textContent = 'Procesando...';
+
+            try {
+                await AdminAPI.confirmarPagoReservaWeb(id, monto, metodo);
+                AdminApp.closeModal('modalConfirmarPago');
+                AdminApp.toast('Pago registrado y reserva confirmada');
+                loadReservas();
+            } catch (err) {
+                AdminApp.toast(err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Confirmar y Registrar';
+            }
+        });
+
+        function imprimirTicket(id) {
+            const width = 300;
+            const height = 500;
+            const left = (screen.width - width) / 2;
+            const top = (screen.height - height) / 2;
+            
+            const ticketHtml = `
+                <html>
+                <head>
+                    <title>Ticket de Reserva</title>
+                    <style>
+                        body { font-family: monospace; font-size: 12px; margin: 0; padding: 10px; width: 280px; }
+                        h2 { text-align: center; margin: 5px 0; font-size: 16px; }
+                        p { margin: 2px 0; }
+                        .center { text-align: center; }
+                        .line { border-bottom: 1px dashed #000; margin: 10px 0; }
+                        .flex-between { display: flex; justify-content: space-between; }
+                        .bold { font-weight: bold; }
+                    </style>
+                </head>
+                <body>
+                    <h2>TURISMO TARAPOTO</h2>
+                    <p class="center">RUC: 20123456789</p>
+                    <p class="center">Jr. San Martín 123, Tarapoto</p>
+                    <div class="line"></div>
+                    <p class="center bold">TICKET DE RESERVA</p>
+                    <p class="center bold">ID: #${id}</p>
+                    <p class="center">${new Date().toLocaleString()}</p>
+                    <div class="line"></div>
+                    <p>Estimado turista, gracias por su reserva.</p>
+                    <div class="line"></div>
+                    <p class="center bold">¡GRACIAS POR SU PREFERENCIA!</p>
+                </body>
+                <script>window.onload = function() { window.print(); window.close(); }<\/script>
+                </html>
+            `;
+            const win = window.open('', '_blank', `width=${width},height=${height},left=${left},top=${top}`);
+            win.document.open();
+            win.document.write(ticketHtml);
+            win.document.close();
         }
 
         function debounce(fn, ms) {

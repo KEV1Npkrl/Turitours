@@ -78,7 +78,11 @@ function renderTourDetalle(tour, resenas, container) {
                         <div class="meta-item">Max. ${tour.capacidad_maxima} personas</div>
                     </div>
                 </div>
-                <div class="tour-description"><h3>Descripcion</h3><p>${tour.descripcion}</p></div>
+                <div class="tour-description">
+                    <h3>Descripcion</h3>
+                    <p class="expandable-text" id="descText_${tour.id_tour}">${tour.descripcion}</p>
+                    ${tour.descripcion && tour.descripcion.length > 150 ? `<button class="btn-link" style="padding:0; margin-top:0.5rem; text-decoration:underline; font-weight:600; cursor:pointer; background:none; border:none; color:var(--primary);" onclick="document.getElementById('descText_${tour.id_tour}').classList.toggle('expanded'); this.innerText = this.innerText === 'Leer más' ? 'Leer menos' : 'Leer más'">Leer más</button>` : ''}
+                </div>
                 <div class="tour-itinerary">
                     <h3>Itinerario</h3>
                     <div class="itinerary-list">
@@ -119,7 +123,7 @@ function renderTourDetalle(tour, resenas, container) {
                         </div>
                         <div class="form-group">
                             <label for="bookingDate">Fecha del tour <span class="label-required">*</span></label>
-                            <input type="date" id="bookingDate" name="fecha" class="form-input" required min="${getTomorrowDate()}">
+                            <input type="date" id="bookingDate" name="fecha" class="form-input" required min="${getTodayDate()}">
                         </div>
                         <div class="form-group">
                             <label for="bookingPersonas">Numero de personas</label>
@@ -356,8 +360,7 @@ function openPaymentModal() {
     modal.hidden = false;
     document.body.style.overflow = 'hidden';
 
-    document.getElementById('btnPagoAdelanto').onclick = function () { procesarPago('adelanto', adelanto); };
-    document.getElementById('btnPagoCompleto').onclick = function () { procesarPago('completo', cotizacion.total); };
+    document.getElementById('btnWhatsAppConfirmar').onclick = function () { procesarPago(); };
 }
 
 function startBloqueoTimer(expiraAt) {
@@ -392,52 +395,14 @@ async function closePaymentModal(expired) {
     bloqueoActivo = null;
 }
 
-async function procesarPago(tipo, monto) {
+async function procesarPago() {
     if (!bloqueoActivo || !cotizacion) return;
 
-    const compTipo = document.getElementById('clienteComprobanteTipo')?.value;
-    if (compTipo) {
-        const docNum = document.getElementById('clienteNumDoc')?.value;
-        const nombre = document.getElementById('clienteNombre')?.value;
-        if (!docNum || !nombre) {
-            mostrarAlerta('Debes ingresar tu documento y nombre para el comprobante.', 'error');
-            return;
-        }
-        // Validar documento según tipo de comprobante
-        // Factura (01) requiere RUC, Boleta (03) acepta DNI/CE
-        if (compTipo === '01') {
-            // Factura: requiere RUC exactamente 11 dígitos
-            if (!/^\d{11}$/.test(docNum)) {
-                mostrarAlerta('Para factura, ingresa un RUC válido (11 dígitos).', 'error');
-                return;
-            }
-        } else if (compTipo === '03') {
-            // Boleta: valida según tipo de documento seleccionado
-            const tipoDocSeleccionado = document.getElementById('clienteTipoDoc')?.value;
-            if (tipoDocSeleccionado) {
-                const errorDoc = TuristaValidacion.validarDocumento(tipoDocSeleccionado, docNum);
-                if (errorDoc) {
-                    mostrarAlerta(errorDoc, 'error');
-                    return;
-                }
-            } else if (!/^\d{8}$/.test(docNum) && !/^\d{11}$/.test(docNum)) {
-                // Fallback: acepta DNI (8) o RUC (11)
-                mostrarAlerta('El documento debe ser un DNI (8 dígitos) o RUC (11 dígitos).', 'error');
-                return;
-            }
-        }
-    }
-
-    const btnA = document.getElementById('btnPagoAdelanto');
-    const btnC = document.getElementById('btnPagoCompleto');
-    btnA.disabled = true;
-    btnC.disabled = true;
+    const btn = document.getElementById('btnWhatsAppConfirmar');
+    btn.disabled = true;
 
     try {
         const payload = getBookingPayload();
-        // Obtener tipo de documento en código SUNAT
-        const tipoDocNombre = document.getElementById('clienteTipoDoc')?.value || 'DNI';
-        const tipoDocCodigo = Schema.getTipoDocCodigo(tipoDocNombre);
         
         const resultado = await API.crearReserva({
             tour_id: currentTour.id,
@@ -450,22 +415,27 @@ async function procesarPago(tipo, monto) {
             cupon_id: cuponAplicado ? cuponAplicado.cupon_id : null,
             descuento: cotizacion.descuento,
             bloqueo_id: bloqueoActivo.bloqueo_id,
-            tipo_pago: tipo,
-            monto_adelanto: monto,
-            comprobante_tipo: document.getElementById('clienteComprobanteTipo')?.value || null,
-            cliente_tipo_doc: tipoDocCodigo,
-            cliente_num_doc: document.getElementById('clienteNumDoc')?.value || null,
-            cliente_nombre: document.getElementById('clienteNombre')?.value || null,
-            cliente_direccion: document.getElementById('clienteDireccion')?.value || null
+            tipo_pago: 'pendiente',
+            monto_adelanto: 0,
+            comprobante_tipo: null,
+            cliente_tipo_doc: null,
+            cliente_num_doc: null,
+            cliente_nombre: null,
+            cliente_direccion: null
         });
         bloqueoActivo = null;
         clearInterval(bloqueoTimer);
-        mostrarAlerta('Pago simulado correctamente. Reserva creada.', 'success');
+        mostrarAlerta('Reserva creada. Redirigiendo a WhatsApp...', 'success');
+        
+        // Redirigir a WhatsApp
+        const numeroWhatsApp = '51942123456';
+        const mensaje = encodeURIComponent(`Hola TuriTours, acabo de reservar el tour ${currentTour.nombre}. Adjunto mi voucher de pago.`);
+        window.open(`https://wa.me/${numeroWhatsApp}?text=${mensaje}`, '_blank');
+        
         window.location.href = 'mis-reservas.html?id=' + resultado.reserva.id;
     } catch (error) {
         mostrarAlerta(error.message || 'Error al procesar el pago', 'error');
-        btnA.disabled = false;
-        btnC.disabled = false;
+        btn.disabled = false;
     }
 }
 
@@ -474,10 +444,12 @@ function changeMainImage(src) {
     if (img) img.src = src;
 }
 
-function getTomorrowDate() {
+function getTodayDate() {
     const d = new Date();
-    d.setDate(d.getDate() + 1);
-    return d.toISOString().split('T')[0];
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
 
 function escapeHtml(text) {
@@ -497,6 +469,85 @@ function moveCarousel(direction) {
     if (currentCarouselIndex >= totalCarouselItems) currentCarouselIndex = 0;
     updateCarouselUI();
 }
+
+// ==========================================
+// Integración API RENIEC / SUNAT
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    const docInput = document.getElementById('clienteNumDoc');
+    const nombreInput = document.getElementById('clienteNombre');
+    const btnBuscar = document.createElement('button');
+    
+    if(!docInput || !nombreInput) return;
+
+    nombreInput.readOnly = true;
+
+    // Decoramos el input de documento para que tenga un botón de buscar
+    docInput.parentElement.style.position = 'relative';
+    btnBuscar.innerHTML = `
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display:block; margin:auto;">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+    `;
+    btnBuscar.type = "button";
+    btnBuscar.style.position = 'absolute';
+    btnBuscar.style.right = '4px';
+    btnBuscar.style.top = '50%';
+    btnBuscar.style.transform = 'translateY(-50%)';
+    btnBuscar.style.background = 'transparent';
+    btnBuscar.style.border = 'none';
+    btnBuscar.style.cursor = 'pointer';
+    btnBuscar.style.color = '#718096';
+    btnBuscar.style.padding = '8px';
+    
+    // Agregar el botón al DOM justo después del input
+    docInput.parentNode.insertBefore(btnBuscar, docInput.nextSibling);
+
+    const buscarDocumento = async () => {
+        const val = docInput.value.trim();
+        let tipo = null;
+        if(val.length === 8) tipo = 'dni';
+        else if(val.length === 11) tipo = 'ruc';
+        
+        if(!tipo) {
+            mostrarAlerta('Ingresa 8 dígitos para DNI o 11 para RUC', 'error');
+            return;
+        }
+
+        nombreInput.placeholder = 'Buscando...';
+        btnBuscar.style.opacity = '0.5';
+        btnBuscar.disabled = true;
+
+        try {
+            const res = await fetch(`http://localhost:3000/api/externo/${tipo}/${val}`);
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                nombreInput.value = data.nombre;
+                nombreInput.readOnly = true;
+                nombreInput.style.backgroundColor = '#f3f4f6';
+                mostrarAlerta('Datos encontrados', 'success');
+            } else {
+                nombreInput.value = '';
+                nombreInput.readOnly = false;
+                nombreInput.style.backgroundColor = '#fff';
+                mostrarAlerta(data.error || 'No encontrado. Ingresa el nombre manualmente.', 'error');
+            }
+        } catch (error) {
+            nombreInput.value = '';
+            nombreInput.readOnly = false;
+            nombreInput.style.backgroundColor = '#fff';
+            mostrarAlerta('Error de conexión con RENIEC/SUNAT', 'error');
+        } finally {
+            nombreInput.placeholder = 'Nombre Completo o Razón Social';
+            btnBuscar.style.opacity = '1';
+            btnBuscar.disabled = false;
+        }
+    };
+
+    btnBuscar.addEventListener('click', buscarDocumento);
+});
 
 function goToSlide(index) {
     currentCarouselIndex = index;

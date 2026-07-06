@@ -289,41 +289,6 @@
                     <label class="a-form-label" for="pagoConcepto">Concepto</label>
                     <input type="text" id="pagoConcepto" class="a-form-input" placeholder="Descripcion del pago...">
                 </div>
-                <div class="a-form-group">
-                    <label class="a-form-label" for="pagoComprobanteTipo">Emitir Comprobante</label>
-                    <select id="pagoComprobanteTipo" class="a-form-input"
-                        onchange="toggleCamposFacturacion(this.value)">
-                        <option value="">No emitir (Solo Ticket Interno)</option>
-                        <option value="03">Boleta Electrónica</option>
-                        <option value="01">Factura Electrónica</option>
-                    </select>
-                </div>
-                <div id="camposFacturacion"
-                    style="display:none; background:var(--a-primary-50); padding:1rem; border-radius:var(--a-radius); margin-bottom:1rem;">
-                    <div class="a-form-group">
-                        <label class="a-form-label" for="clienteTipoDoc">Tipo de Documento</label>
-                        <select id="clienteTipoDoc" class="a-form-input">
-                            <option value="">-- Seleccionar --</option>
-                            <option value="1">DNI (cód. 1)</option>
-                            <option value="6">RUC (cód. 6)</option>
-                            <option value="4">CE - Carné Extranjería (cód. 4)</option>
-                            <option value="7">Pasaporte (cód. 7)</option>
-                            <option value="0">Otro Documento (cód. 0 - emergencia)</option>
-                        </select>
-                    </div>
-                    <div class="a-form-group">
-                        <label class="a-form-label" for="clienteNumDoc">Número de Documento</label>
-                        <input type="text" id="clienteNumDoc" class="a-form-input" placeholder="DNI o RUC">
-                    </div>
-                    <div class="a-form-group">
-                        <label class="a-form-label" for="clienteNombre">Nombre o Razón Social</label>
-                        <input type="text" id="clienteNombre" class="a-form-input"
-                            placeholder="Nombre completo o Razón Social">
-                    </div>
-                    <div class="a-form-group" id="grupoDireccion" style="display:none;">
-                        <label class="a-form-label" for="clienteDireccion">Dirección</label>
-                        <input type="text" id="clienteDireccion" class="a-form-input" placeholder="Dirección fiscal">
-                    </div>
                 </div>
             </div>
             <div class="a-modal-footer">
@@ -559,11 +524,7 @@
             document.getElementById('pagoMonto').value = '';
             document.getElementById('pagoRecibido').value = '';
             document.getElementById('pagoConcepto').value = '';
-            document.getElementById('pagoComprobanteTipo').value = '';
-            document.getElementById('clienteNumDoc').value = '';
-            document.getElementById('clienteNombre').value = '';
-            document.getElementById('clienteDireccion').value = '';
-            toggleCamposFacturacion('');
+            document.getElementById('pagoConcepto').value = '';
             document.getElementById('vueltoDisplay').style.display = 'none';
             document.getElementById('grupoRecibido').style.display = '';
             document.getElementById('modalPagoTitle').textContent = 'Registrar Ingreso';
@@ -595,25 +556,9 @@
                 monto: document.getElementById('pagoMonto').value,
                 monto_recibido: document.getElementById('pagoRecibido').value || null,
                 concepto: document.getElementById('pagoConcepto').value,
-                comprobante_tipo: document.getElementById('pagoComprobanteTipo').value,
-                cliente_tipo_doc: document.getElementById('clienteTipoDoc').value,
-                cliente_num_doc: document.getElementById('clienteNumDoc').value,
-                cliente_nombre: document.getElementById('clienteNombre').value,
-                cliente_direccion: document.getElementById('clienteDireccion').value
+                concepto: document.getElementById('pagoConcepto').value
             };
             if (!datos.monto || parseFloat(datos.monto) <= 0) { AdminApp.toast('Ingresa un monto válido', 'error'); return; }
-
-            if (datos.comprobante_tipo) {
-                if (!datos.cliente_num_doc || !datos.cliente_nombre) {
-                    AdminApp.toast('Debe ingresar el número y nombre del documento', 'error'); return;
-                }
-                if (datos.comprobante_tipo === '01' && datos.cliente_num_doc.length !== 11) {
-                    AdminApp.toast('El RUC debe tener exactamente 11 dígitos', 'error'); return;
-                }
-                if (datos.comprobante_tipo === '03' && datos.cliente_tipo_doc === '1' && datos.cliente_num_doc.length !== 8) {
-                    AdminApp.toast('El DNI debe tener exactamente 8 dígitos', 'error'); return;
-                }
-            }
 
             try {
                 const result = await AdminAPI.registrarPago(datos);
@@ -636,31 +581,6 @@
                 else AdminApp.toast('Caja cerrada. Diferencia: S/ ' + diff.toFixed(2), diff < 0 ? 'warning' : 'info');
                 await loadCaja();
             } catch (err) { AdminApp.toast(err.message, 'error'); }
-        }
-
-        function toggleCamposFacturacion(tipo) {
-            const campos = document.getElementById('camposFacturacion');
-            const doc = document.getElementById('clienteTipoDoc');
-            const dir = document.getElementById('grupoDireccion');
-            const numDocInput = document.getElementById('clienteNumDoc');
-
-            if (!tipo) {
-                campos.style.display = 'none';
-            } else {
-                campos.style.display = 'block';
-                doc.innerHTML = '';
-                if (tipo === '01') { // Factura
-                    doc.innerHTML = '<option value="6">RUC</option>';
-                    dir.style.display = 'block';
-                    numDocInput.placeholder = 'RUC (11 dígitos)';
-                    numDocInput.maxLength = 11;
-                } else {
-                    doc.innerHTML = '<option value="1">DNI</option><option value="4">CE</option><option value="7">Pasaporte</option>';
-                    dir.style.display = 'none';
-                    numDocInput.placeholder = 'DNI (8 dígitos)';
-                    numDocInput.maxLength = 12;
-                }
-            }
         }
     </script>
 </body>

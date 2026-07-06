@@ -243,7 +243,7 @@
         <nav class="sa-nav">
             <a href="index.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg> Dashboard Global</a>
             <a href="agencias.html" class="sa-nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg> Agencias y Planes</a>
-            <a href="reportes.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg> Reportes Sectoriales</a>
+            
             <a href="auditoria.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg> Auditoría</a>
             <a href="soporte.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg> Soporte Técnico</a>
             <a href="maestros.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> Usuarios Maestros</a>
@@ -292,8 +292,9 @@
     <!-- Modal Nueva Agencia -->
     <div id="agenciaModal" class="modal">
         <div class="modal-content">
-            <h3 style="margin-bottom: 1.5rem;">Alta de Nueva Agencia</h3>
+            <h3 id="modalTitle" style="margin-bottom: 1.5rem;">Alta de Nueva Agencia</h3>
             <form id="agenciaForm">
+                <input type="hidden" id="aId">
                 <div class="form-group">
                     <label class="form-label">Nombre Comercial</label>
                     <input type="text" id="aNombre" class="form-input" required>
@@ -301,6 +302,10 @@
                 <div class="form-group">
                     <label class="form-label">RUC (11 dígitos)</label>
                     <input type="text" id="aRuc" class="form-input" pattern="[0-9]{11}" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email de Contacto</label>
+                    <input type="email" id="aEmail" class="form-input" required>
                 </div>
 
                 <div class="form-group">
@@ -324,10 +329,9 @@
         </div>
     </div>
 
-    <script src="../js/data.js"></script>
     <script>
         const saUser = JSON.parse(localStorage.getItem('sa_user'));
-        if (!saUser) window.location.href = 'login.html';
+        if (!saUser || !saUser.token) window.location.href = 'login.html';
         document.getElementById('saUserName').textContent = saUser.nombre;
 
         document.getElementById('btnLogout').addEventListener('click', () => {
@@ -335,25 +339,59 @@
             window.location.href = 'login.html';
         });
 
-        let db = getMockDb();
         const tbody = document.getElementById('agenciasTableBody');
+        let currentAgencias = [];
 
-        function renderTable() {
+        async function fetchAgencias() {
+            try {
+                const response = await fetch('http://localhost:3000/api/superadmin/agencias', {
+                    headers: { 'Authorization': `Bearer ${saUser.token}` }
+                });
+                if (!response.ok) throw new Error('Error fetching');
+                currentAgencias = await response.json();
+                renderTable(currentAgencias);
+            } catch (err) {
+                console.error(err);
+                tbody.innerHTML = '<tr><td colspan="6">Error cargando datos de BD.</td></tr>';
+            }
+        }
+
+        function renderTable(agencias) {
             tbody.innerHTML = '';
-            db.agencias.forEach(ag => {
+            agencias.forEach(ag => {
                 const badgeClass = ag.estado === 'activa' ? 'active' : ag.estado === 'suspendida' ? 'suspended' : 'pending';
+                
+                let modsHtml = '';
+                if (ag.modulos) {
+                    try {
+                        const mods = typeof ag.modulos === 'string' ? JSON.parse(ag.modulos) : ag.modulos;
+                        if (Array.isArray(mods)) {
+                            modsHtml = mods.map(m => `<span class="badge" style="background:#e2e8f0; color:#475569; margin-right:4px;">${m}</span>`).join('');
+                        } else if (typeof mods === 'object') {
+                            modsHtml = Object.keys(mods).map(m => `<span class="badge" style="background:#e2e8f0; color:#475569; margin-right:4px;">${m}</span>`).join('');
+                        } else {
+                            modsHtml = mods;
+                        }
+                    } catch(e) {
+                        modsHtml = ag.modulos;
+                    }
+                } else {
+                    modsHtml = '-';
+                }
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td><strong>${ag.nombre}</strong><br><small style="color:#64748b">${ag.email}</small></td>
-                    <td>${ag.ruc}</td>
-                    <td>${ag.usuarios_max || 'Ilimitado'}</td>
                     <td>
-                        <small>Caja: ${ag.mod_caja!==false?'✅':'❌'}</small><br>
-                        <small>Op: ${ag.mod_operaciones!==false?'✅':'❌'}</small><br>
-                        <small>Fact: ${ag.mod_facturacion===true?'✅':'❌'}</small>
+                        <strong>${ag.nombre}</strong>
+                        ${ag.email ? `<br><small style="color:#64748b">${ag.email}</small>` : ''}
+                        ${ag.telefono ? `<br><small style="color:#94a3b8">Tel: ${ag.telefono}</small>` : ''}
                     </td>
-                    <td><span class="badge ${badgeClass}">${ag.estado.toUpperCase()}</span></td>
+                    <td>${ag.ruc}</td>
+                    <td>${ag.usuariosMax || ag.maxUsuarios || 'Ilimitado'}</td>
+                    <td>${modsHtml}</td>
+                    <td><span class="badge ${badgeClass}">${(ag.estado || 'activa').toUpperCase()}</span></td>
                     <td>
+                        <button class="btn btn-outline btn-sm" onclick="editAgencia(${ag.id})">Editar</button>
                         <button class="btn btn-outline btn-sm" onclick="toggleEstado(${ag.id})">Cambiar Estado</button>
                     </td>
                 `;
@@ -361,39 +399,92 @@
             });
         }
 
-        renderTable();
+        fetchAgencias();
 
-        function openModal() { document.getElementById('agenciaModal').classList.add('show'); }
-        function closeModal() { document.getElementById('agenciaModal').classList.remove('show'); document.getElementById('agenciaForm').reset(); }
+        function openModal(isEdit = false) { 
+            document.getElementById('modalTitle').textContent = isEdit ? 'Editar Agencia' : 'Alta de Nueva Agencia';
+            document.getElementById('agenciaModal').classList.add('show'); 
+        }
+        function closeModal() { 
+            document.getElementById('agenciaModal').classList.remove('show'); 
+            document.getElementById('agenciaForm').reset(); 
+            document.getElementById('aId').value = '';
+        }
 
-        document.getElementById('agenciaForm').addEventListener('submit', (e) => {
+        window.editAgencia = function(id) {
+            const ag = currentAgencias.find(x => x.id === id);
+            if(ag) {
+                document.getElementById('aId').value = ag.id;
+                document.getElementById('aNombre').value = ag.nombre;
+                document.getElementById('aRuc').value = ag.ruc;
+                document.getElementById('aEmail').value = ag.email || '';
+                document.getElementById('aUsuariosMax').value = ag.usuariosMax || ag.maxUsuarios || 3;
+                
+                // Parse modulos if any
+                if (ag.modulos) {
+                    try {
+                        const mods = typeof ag.modulos === 'string' ? JSON.parse(ag.modulos) : ag.modulos;
+                        document.getElementById('modCaja').checked = mods.includes('Caja');
+                        document.getElementById('modOperaciones').checked = mods.includes('Operaciones');
+                        document.getElementById('modReportes').checked = mods.includes('Reportes');
+                        document.getElementById('modFacturacion').checked = mods.includes('Facturación');
+                    } catch (e) {}
+                }
+                openModal(true);
+            }
+        };
+
+        document.getElementById('agenciaForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const nueva = {
-                id: db.agencias.length + 1,
+            const mods = [];
+            if(document.getElementById('modCaja').checked) mods.push('Caja');
+            if(document.getElementById('modOperaciones').checked) mods.push('Operaciones');
+            if(document.getElementById('modReportes').checked) mods.push('Reportes');
+            if(document.getElementById('modFacturacion').checked) mods.push('Facturación');
+
+            const payload = {
                 nombre: document.getElementById('aNombre').value,
                 ruc: document.getElementById('aRuc').value,
-                plan_id: 1,
-                email: 'admin@' + document.getElementById('aNombre').value.toLowerCase().replace(/\s+/g,'') + '.com',
-                usuarios_max: parseInt(document.getElementById('aUsuariosMax').value),
-                mod_caja: document.getElementById('modCaja').checked,
-                mod_operaciones: document.getElementById('modOperaciones').checked,
-                mod_reportes: document.getElementById('modReportes').checked,
-                mod_facturacion: document.getElementById('modFacturacion').checked,
-                estado: 'activa',
-                fecha_alta: new Date().toISOString().split('T')[0]
+                email: document.getElementById('aEmail').value,
+                maxUsuarios: parseInt(document.getElementById('aUsuariosMax').value),
+                modulos: JSON.stringify(mods)
             };
-            db.agencias.push(nueva);
-            saveMockDb(db);
-            renderTable();
-            closeModal();
+
+            const aId = document.getElementById('aId').value;
+            const url = aId ? `http://localhost:3000/api/superadmin/agencias/${aId}` : 'http://localhost:3000/api/superadmin/agencias';
+            const method = aId ? 'PUT' : 'POST';
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${saUser.token}` 
+                    },
+                    body: JSON.stringify(payload)
+                });
+                if (response.ok) {
+                    fetchAgencias();
+                    closeModal();
+                } else {
+                    alert("Error guardando agencia");
+                }
+            } catch (err) {
+                console.error(err);
+            }
         });
 
-        window.toggleEstado = function(id) {
-            const ag = db.agencias.find(a => a.id === id);
-            if (ag) {
-                ag.estado = ag.estado === 'activa' ? 'suspendida' : 'activa';
-                saveMockDb(db);
-                renderTable();
+        window.toggleEstado = async function(id) {
+            try {
+                const response = await fetch(`http://localhost:3000/api/superadmin/agencias/${id}/toggle-estado`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${saUser.token}` }
+                });
+                if (response.ok) {
+                    fetchAgencias();
+                }
+            } catch (err) {
+                console.error(err);
             }
         };
     </script>

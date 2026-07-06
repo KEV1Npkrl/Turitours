@@ -27,7 +27,35 @@ const AdminAPI = (function () {
 
     function getUsuarioActualSync() { return getSession(); }
 
-    /* ─── Audit log helper ─── */
+    /* ─── API Helper ─── */
+    async function fetchAPI(endpoint, options = {}) {
+        const session = getSession();
+        const headers = {
+            'Content-Type': 'application/json',
+            ...(options.headers || {})
+        };
+        
+        if (session && session.token) {
+            headers['Authorization'] = `Bearer ${session.token}`;
+        }
+        
+        const response = await fetch(`http://localhost:3000/api${endpoint}`, {
+            ...options,
+            headers
+        });
+        
+        if (!response.ok) {
+            let errorData = {};
+            try {
+                const text = await response.text();
+                if (text) errorData = JSON.parse(text);
+            } catch (e) {}
+            throw new Error(errorData.error || `Error HTTP: ${response.status}`);
+        }
+        
+        const text = await response.text();
+        return text ? JSON.parse(text) : null;
+    }    /* ─── Audit log helper ─── */
     function registrarLog(state, datos) {
         if (!state.logs_auditoria) state.logs_auditoria = [];
         state.logs_auditoria.push({
@@ -48,46 +76,39 @@ const AdminAPI = (function () {
        AUTH
        ═══════════════════════════════════════ */
     async function login(email, password) {
-        await delay(500);
-        const state = adb();
-        const user = state.usuarios.find(u =>
-            u.agencia_id === AGENCIA_ID &&
-            u.email.toLowerCase() === email.toLowerCase()
-        );
-        if (!user) throw new Error('Credenciales incorrectas');
-        if (user.bloqueado) throw new Error('Cuenta bloqueada. Contacte al administrador.');
-        if (!user.activo) throw new Error('Cuenta inhabilitada.');
-
-        if (user.password_hash !== password) {
-            user.intentos_fallidos = (user.intentos_fallidos || 0) + 1;
-            if (user.intentos_fallidos >= MAX_INTENTOS) {
-                user.bloqueado = 1;
-                registrarLog(state, { accion: 'BLOQUEO', tabla: 'usuarios', registro_id: user.id, nuevo: JSON.stringify({ motivo: 'Max intentos fallidos' }) });
+        try {
+            const response = await fetch('http://localhost:3000/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Credenciales incorrectas');
             }
-            saveA(state);
-            const restantes = MAX_INTENTOS - user.intentos_fallidos;
-            if (user.bloqueado) throw new Error('Cuenta bloqueada por multiples intentos fallidos.');
-            throw new Error('Credenciales incorrectas. ' + restantes + ' intento(s) restante(s).');
+
+            // Registrar sesión local
+            localStorage.setItem('admin_session', JSON.stringify({
+                id: data.user.id,
+                rol_id: data.user.rol_id,
+                nombre: data.user.nombre,
+                email: data.user.email,
+                token: data.token
+            }));
+
+            return { success: true, usuario: data.user };
+        } catch (error) {
+            throw new Error(error.message);
         }
+    }
 
-        user.intentos_fallidos = 0;
-        user.ultimo_login = new Date().toISOString();
-        // Registrar sesion
-        if (!state.sesiones) state.sesiones = [];
-        state.sesiones.push({
-            id: state.sesiones.length ? Math.max(...state.sesiones.map(s => s.id)) + 1 : 1,
-            usuario_id: user.id,
-            ip: '192.168.1.' + Math.floor(Math.random() * 50 + 10),
-            dispositivo: navigator.userAgent.substring(0, 80),
-            login_at: new Date().toISOString(),
-            logout_at: null
+    async function cambiarPasswordInicial(password) {
+        const data = await fetchAPI('/usuarios/cambiar-password-inicial', {
+            method: 'PUT',
+            body: JSON.stringify({ password })
         });
-        registrarLog(state, { accion: 'LOGIN', tabla: 'sesiones', registro_id: user.id, usuario_id: user.id });
-        saveA(state);
-        setSession(user);
-
-        const rol = state.roles.find(r => r.id === user.rol_id);
-        return { success: true, usuario: { ...user, rol_nombre: rol ? rol.nombre : 'Sin rol' } };
+        return data.success;
     }
 
     function logout() {
@@ -125,7 +146,8 @@ const AdminAPI = (function () {
         const session = getSession();
         if (!session) return [];
         const state = adb();
-        return state.permisos
+        const permisos = state.permisos || [];
+        return permisos
             .filter(p => p.rol_id === session.rol_id && p.puede_ver === 1)
             .map(p => p.modulo);
     }
@@ -134,431 +156,203 @@ const AdminAPI = (function () {
        USUARIOS (PERSONAL)
        ═══════════════════════════════════════ */
     async function getUsuarios() {
-        await delay();
-        const state = adb();
-        return state.usuarios
-            .filter(u => u.agencia_id === AGENCIA_ID)
-            .map(u => {
-                const rol = state.roles.find(r => r.id === u.rol_id);
-                return { ...u, rol_nombre: rol ? rol.nombre : 'Sin rol' };
-            });
+        const data = await fetchAPI('/usuarios');
+        return data.usuarios || [];
     }
 
     async function crearUsuario(datos) {
-        await delay(400);
-        const state = adb();
-        if (state.usuarios.find(u => u.agencia_id === AGENCIA_ID && u.dni === datos.dni))
-            throw new Error('Ya existe un usuario con ese DNI');
-        if (state.usuarios.find(u => u.agencia_id === AGENCIA_ID && u.email.toLowerCase() === datos.email.toLowerCase()))
-            throw new Error('Ya existe un usuario con ese email');
-
-        const nuevo = {
-            id: state.usuarios.length ? Math.max(...state.usuarios.map(u => u.id)) + 1 : 1,
-            agencia_id: AGENCIA_ID,
-            rol_id: parseInt(datos.rol_id, 10),
-            nombre: datos.nombre.trim(),
-            dni: datos.dni.trim(),
-            email: datos.email.trim().toLowerCase(),
-            telefono: datos.telefono || null,
-            password_hash: datos.password || 'temp1234',
-            intentos_fallidos: 0, bloqueado: 0, activo: 1,
-            ultimo_login: null,
-            created_at: new Date().toISOString()
-        };
-        state.usuarios.push(nuevo);
-        registrarLog(state, { accion: 'CREATE', tabla: 'usuarios', registro_id: nuevo.id, nuevo: JSON.stringify({ nombre: nuevo.nombre, dni: nuevo.dni }) });
-        saveA(state);
-        return { success: true, usuario: nuevo };
+        const res = await fetchAPI('/usuarios', {
+            method: 'POST',
+            body: JSON.stringify(datos)
+        });
+        return res.usuario;
     }
 
-    async function inhabilitarUsuario(userId) {
-        await delay(300);
-        const state = adb();
-        const user = state.usuarios.find(u => u.id === parseInt(userId, 10));
-        if (!user) throw new Error('Usuario no encontrado');
-        const anterior = JSON.stringify({ activo: user.activo, bloqueado: user.bloqueado });
-        user.activo = 0;
-        user.bloqueado = 1;
-        registrarLog(state, { accion: 'INHABILITAR', tabla: 'usuarios', registro_id: user.id, anterior, nuevo: JSON.stringify({ activo: 0, bloqueado: 1 }) });
-        saveA(state);
+    async function inhabilitarUsuario(id) {
+        await fetchAPI(`/usuarios/${id}/inhabilitar`, { method: 'PUT' });
         return { success: true };
     }
 
-    async function reactivarUsuario(userId) {
-        await delay(300);
-        const state = adb();
-        const user = state.usuarios.find(u => u.id === parseInt(userId, 10));
-        if (!user) throw new Error('Usuario no encontrado');
-        user.activo = 1;
-        user.bloqueado = 0;
-        user.intentos_fallidos = 0;
-        registrarLog(state, { accion: 'REACTIVAR', tabla: 'usuarios', registro_id: user.id, nuevo: JSON.stringify({ activo: 1, bloqueado: 0 }) });
-        saveA(state);
+    async function reactivarUsuario(id) {
+        await fetchAPI(`/usuarios/${id}/reactivar`, { method: 'PUT' });
+        return { success: true };
+    }
+
+    async function actualizarUsuario(id, datos) {
+        const res = await fetchAPI(`/usuarios/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(datos)
+        });
+        return res.usuario;
+    }
+
+    async function eliminarUsuario(id) {
+        await fetchAPI(`/usuarios/${id}`, { method: 'DELETE' });
         return { success: true };
     }
 
     async function getRoles() {
-        await delay(100);
-        return adb().roles.filter(r => r.agencia_id === AGENCIA_ID);
+        const data = await fetchAPI('/roles');
+        return data.roles || [];
     }
 
     /* ═══════════════════════════════════════
        RESERVAS INTERNAS
        ═══════════════════════════════════════ */
     async function getReservasInternas(filtros) {
-        await delay(300);
-        const cs = cdb();
-        const as = adb();
-        filtros = filtros || {};
-        let reservas = cs.reservas.filter(r => r.agencia_id === AGENCIA_ID);
-
-        if (filtros.estado) reservas = reservas.filter(r => r.estado === filtros.estado);
-        if (filtros.tour_id) reservas = reservas.filter(r => r.tour_id === parseInt(filtros.tour_id, 10));
-        if (filtros.fecha) reservas = reservas.filter(r => r.fecha_servicio === filtros.fecha);
-        if (filtros.busqueda) {
-            const q = filtros.busqueda.toLowerCase();
-            reservas = reservas.filter(r => {
-                const turista = cs.turistas.find(t => t.id === r.turista_id);
-                const tour = cs.tours.find(t => t.id === r.tour_id);
-                return (r.codigo_qr && r.codigo_qr.toLowerCase().includes(q)) ||
-                    (turista && (turista.nombre + ' ' + turista.apellidos).toLowerCase().includes(q)) ||
-                    (tour && tour.nombre.toLowerCase().includes(q));
-            });
+        const session = getSession();
+        if (!session) throw new Error('No autorizado');
+        let qs = '';
+        if (filtros) {
+            const params = new URLSearchParams();
+            if (filtros.estado) params.append('estado', filtros.estado);
+            if (filtros.tour_id) params.append('tour_id', filtros.tour_id);
+            if (filtros.fecha) {
+                params.append('fecha_inicio', filtros.fecha);
+                params.append('fecha_fin', filtros.fecha);
+            }
+            qs = '?' + params.toString();
         }
-
-        return reservas.map(r => {
-            const turista = cs.turistas.find(t => t.id === r.turista_id);
-            const tour = cs.tours.find(t => t.id === r.tour_id);
-            const vendedor = r.vendedor_id ? as.usuarios.find(u => u.id === r.vendedor_id) : null;
-            return {
-                ...r,
-                turista_nombre: turista ? turista.nombre + ' ' + turista.apellidos : 'Desconocido',
-                turista_doc: turista ? turista.tipo_doc + ' ' + turista.documento : '',
-                tour_nombre: tour ? tour.nombre : 'Tour eliminado',
-                vendedor_nombre: vendedor ? vendedor.nombre : (r.canal === 'web' ? 'Portal web' : '—')
-            };
-        }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        const response = await fetch(`http://localhost:3000/api/reservas${qs}`, {
+            headers: { 'Authorization': `Bearer ${session.token}` }
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Error al obtener reservas');
+        
+        // Filtrado por busqueda en frontend
+        let reservas = data.reservas;
+        if (filtros && filtros.busqueda) {
+            const q = filtros.busqueda.toLowerCase();
+            reservas = reservas.filter(r => 
+                (r.codigo_qr && r.codigo_qr.toLowerCase().includes(q)) ||
+                ((r.turista_nombre + ' ' + r.turista_apellidos).toLowerCase().includes(q)) ||
+                (r.tour_nombre && r.tour_nombre.toLowerCase().includes(q))
+            );
+        }
+        return reservas;
     }
 
     async function anularReserva(reservaId, motivo) {
-        await delay(400);
-        const cs = cdb();
-        const as = adb();
-        const reserva = cs.reservas.find(r => r.id === parseInt(reservaId, 10));
-        if (!reserva) throw new Error('Reserva no encontrada');
-        if (reserva.estado === 'anulada') throw new Error('Ya esta anulada');
-        if (reserva.estado === 'completada') throw new Error('No se puede anular una reserva completada');
-        const anterior = JSON.stringify({ estado: reserva.estado });
-        reserva.estado = 'anulada';
-        reserva.motivo_anulacion = motivo || 'Anulada por el personal';
-        saveC(cs);
-        registrarLog(as, { accion: 'ANULAR', tabla: 'reservas', registro_id: reserva.id, anterior, nuevo: JSON.stringify({ estado: 'anulada', motivo: reserva.motivo_anulacion }) });
-        saveA(as);
+        const session = getSession();
+        if (!session) throw new Error('No autorizado');
+        const response = await fetch(`http://localhost:3000/api/reservas/${reservaId}/anular`, {
+            method: 'PUT',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.token}`
+            }
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Error al anular reserva');
         return { success: true };
     }
 
     async function confirmarReserva(reservaId) {
-        await delay(300);
-        const cs = cdb();
-        const as = adb();
-        const reserva = cs.reservas.find(r => r.id === parseInt(reservaId, 10));
-        if (!reserva) throw new Error('Reserva no encontrada');
-        if (reserva.estado !== 'pendiente') throw new Error('Solo se pueden confirmar reservas pendientes');
-        const anterior = JSON.stringify({ estado: reserva.estado });
-        reserva.estado = 'confirmada';
-        saveC(cs);
-        registrarLog(as, { accion: 'CONFIRMAR', tabla: 'reservas', registro_id: reserva.id, anterior, nuevo: JSON.stringify({ estado: 'confirmada' }) });
-        saveA(as);
+        const session = getSession();
+        if (!session) throw new Error('No autorizado');
+        const response = await fetch(`http://localhost:3000/api/reservas/${reservaId}/confirmar`, {
+            method: 'PUT',
+            headers: { 'Authorization': `Bearer ${session.token}` }
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Error al confirmar reserva');
         return { success: true };
     }
 
     async function crearReservaInterna(datos) {
-        await delay(400);
-        const cs = cdb();
-        const as = adb();
         const session = getSession();
-
-        let turista = cs.turistas.find(t => t.documento === datos.documento && t.tipo_doc === datos.tipo_doc);
-        if (!turista) {
-            turista = {
-                id: cs.turistas.length ? Math.max(...cs.turistas.map(t => t.id)) + 1 : 1,
-                agencia_id: AGENCIA_ID,
-                tipo_doc: datos.tipo_doc,
-                documento: datos.documento,
-                nombre: datos.nombre,
-                apellidos: datos.apellidos || '',
-                email: datos.email || null,
-                telefono: datos.telefono || null,
-                fecha_nacimiento: null, pais_id: 1,
-                segmento: 'normal', email_verificado: 0,
-                password: null
-            };
-            cs.turistas.push(turista);
-            registrarLog(as, { accion: 'CREATE', tabla: 'turistas', registro_id: turista.id, nuevo: JSON.stringify({ documento: turista.documento }) });
-        }
-
-        const tour = cs.tours.find(t => t.id === parseInt(datos.tour_id, 10));
-        if (!tour) throw new Error('Tour no encontrado');
-
-        const numPersonas = parseInt(datos.num_personas, 10);
-        const total = numPersonas * tour.precio_nacional;
-
-        const reserva = {
-            id: cs.reservas.length ? Math.max(...cs.reservas.map(r => r.id)) + 1 : 1,
-            agencia_id: AGENCIA_ID,
-            tour_id: tour.id,
-            turista_id: turista.id,
-            vendedor_id: session ? session.id : null,
-            cupon_id: null,
-            fecha_servicio: datos.fecha_servicio,
-            hora_recojo: datos.hora_recojo || null,
-            lugar_recojo: datos.lugar_recojo || null,
-            num_personas: numPersonas,
-            precio_unitario: tour.precio_nacional,
-            descuento: 0,
-            total: total,
-            saldo_pendiente: total,
-            moneda: 'PEN',
-            canal: 'interno',
-            estado: 'confirmada',
-            motivo_anulacion: null,
-            codigo_qr: 'QR-TPT-INT' + Math.floor(Math.random() * 10000),
-            created_at: new Date().toISOString()
-        };
-        cs.reservas.push(reserva);
-        saveC(cs);
-        registrarLog(as, { accion: 'CREATE', tabla: 'reservas', registro_id: reserva.id, nuevo: JSON.stringify({ total: reserva.total }) });
-        saveA(as);
+        if (!session) throw new Error('No autorizado');
         
-        return { success: true, reserva };
+        let turista_id;
+        try {
+            const turRes = await crearTurista(datos);
+            turista_id = turRes.id;
+        } catch (e) {
+            if (e.message.includes('Ya existe un turista')) {
+                const existing = await getTuristas();
+                const found = existing.find(t => t.documento === datos.documento);
+                if (found) turista_id = found.id;
+                else throw new Error('No se pudo encontrar el turista existente');
+            } else {
+                throw e;
+            }
+        }
+        
+        const payload = {
+            ...datos,
+            turista_id
+        };
+        
+        const response = await fetch('http://localhost:3000/api/reservas', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.token}`
+            },
+            body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Error al crear reserva');
+        return { success: true, reserva: data.reserva };
+    }
+
+    async function confirmarPagoReservaWeb(reservaId, pagoMonto, pagoMetodo) {
+        const session = getSession();
+        if (!session) throw new Error('No autorizado');
+        const response = await fetch(`http://localhost:3000/api/reservas/${reservaId}/pago`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.token}`
+            },
+            body: JSON.stringify({ pago_monto: pagoMonto, pago_metodo: pagoMetodo })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Error al confirmar pago web');
+        return { success: true };
     }
 
     /* ═══════════════════════════════════════
        CAJA Y TESORERIA
        ═══════════════════════════════════════ */
     async function getCajaActiva() {
-        await delay(100);
-        const state = adb();
-        return state.cajas.find(c => c.agencia_id === AGENCIA_ID && c.estado === 'abierta') || null;
+        return await fetchAPI('/caja/activa');
     }
 
     async function abrirCaja(montoApertura) {
-        await delay(400);
-        const state = adb();
-        const existente = state.cajas.find(c => c.agencia_id === AGENCIA_ID && c.estado === 'abierta');
-        if (existente) throw new Error('Ya hay una caja abierta');
-        const session = getSession();
-        const nueva = {
-            id: state.cajas.length ? Math.max(...state.cajas.map(c => c.id)) + 1 : 1,
-            agencia_id: AGENCIA_ID,
-            cajero_id: session ? session.id : 3,
-            nombre_caja: 'Caja Principal',
-            monto_apertura: parseFloat(montoApertura),
-            monto_cierre_sistema: null, monto_cierre_real: null, diferencia: null,
-            estado: 'abierta',
-            abierta_at: new Date().toISOString(),
-            cerrada_at: null
-        };
-        state.cajas.push(nueva);
-        registrarLog(state, { accion: 'APERTURA_CAJA', tabla: 'cajas', registro_id: nueva.id, nuevo: JSON.stringify({ monto_apertura: nueva.monto_apertura }) });
-        saveA(state);
-        return { success: true, caja: nueva };
+        return await fetchAPI('/caja/abrir', {
+            method: 'POST',
+            body: JSON.stringify({ monto: montoApertura })
+        });
     }
 
     async function registrarPago(datos) {
-        await delay(300);
-        const state = adb();
-        const caja = state.cajas.find(c => c.agencia_id === AGENCIA_ID && c.estado === 'abierta');
-        if (!caja) throw new Error('No hay caja abierta');
-        const session = getSession();
-        const monto = parseFloat(datos.monto);
-        const recibido = datos.monto_recibido ? parseFloat(datos.monto_recibido) : null;
-        const vuelto = (recibido && datos.tipo !== 'egreso') ? Math.max(0, recibido - monto) : null;
-
-        const pago = {
-            id: state.pagos.length ? Math.max(...state.pagos.map(p => p.id)) + 1 : 1,
-            agencia_id: AGENCIA_ID,
-            caja_id: caja.id,
-            reserva_id: datos.reserva_id ? parseInt(datos.reserva_id, 10) : null,
-            cajero_id: session ? session.id : 3,
-            tipo: datos.tipo,
-            metodo: datos.metodo,
-            monto, monto_recibido: recibido, vuelto,
-            concepto: datos.concepto || null,
-            comprobante_ref: datos.comprobante_ref || null,
-            created_at: new Date().toISOString()
-        };
-        state.pagos.push(pago);
-
-        // Actualizar saldo pendiente de la reserva si aplica
-        if (pago.reserva_id && pago.tipo !== 'egreso') {
-            const cs = cdb();
-            const reserva = cs.reservas.find(r => r.id === pago.reserva_id);
-            if (reserva) {
-                reserva.saldo_pendiente = Math.max(0, reserva.saldo_pendiente - monto);
-                if (reserva.saldo_pendiente <= 0 && reserva.estado === 'pendiente') {
-                    reserva.estado = 'confirmada';
-                }
-                saveC(cs);
-            }
-        }
-
-        registrarLog(state, { accion: 'CREATE', tabla: 'pagos', registro_id: pago.id, nuevo: JSON.stringify({ monto: pago.monto, tipo: pago.tipo, metodo: pago.metodo }) });
-        saveA(state);
-        return { success: true, pago, vuelto };
+        return await fetchAPI('/caja/pago', {
+            method: 'POST',
+            body: JSON.stringify(datos)
+        });
     }
 
     async function getPagosCaja(cajaId) {
-        await delay(150);
-        const state = adb();
-        return state.pagos.filter(p => p.caja_id === parseInt(cajaId, 10))
-            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        return await fetchAPI(`/caja/${cajaId}/pagos`);
     }
 
     async function cerrarCaja(montoReal) {
-        await delay(500);
-        const state = adb();
-        const caja = state.cajas.find(c => c.agencia_id === AGENCIA_ID && c.estado === 'abierta');
-        if (!caja) throw new Error('No hay caja abierta');
-
-        const pagos = state.pagos.filter(p => p.caja_id === caja.id);
-        const ingresos = pagos.filter(p => p.tipo !== 'egreso').reduce((s, p) => s + p.monto, 0);
-        const egresos = pagos.filter(p => p.tipo === 'egreso').reduce((s, p) => s + p.monto, 0);
-        const sistema = caja.monto_apertura + ingresos - egresos;
-
-        caja.monto_cierre_sistema = Math.round(sistema * 100) / 100;
-        caja.monto_cierre_real = parseFloat(montoReal);
-        caja.diferencia = Math.round((caja.monto_cierre_real - caja.monto_cierre_sistema) * 100) / 100;
-        caja.estado = 'cerrada';
-        caja.cerrada_at = new Date().toISOString();
-
-        registrarLog(state, {
-            accion: 'CIERRE_CAJA', tabla: 'cajas', registro_id: caja.id,
-            nuevo: JSON.stringify({ sistema: caja.monto_cierre_sistema, real: caja.monto_cierre_real, diferencia: caja.diferencia })
+        return await fetchAPI('/caja/cerrar', {
+            method: 'POST',
+            body: JSON.stringify({ monto_real: montoReal })
         });
-        saveA(state);
-        return { success: true, caja };
     }
 
     async function getHistorialCajas() {
-        await delay(200);
-        const state = adb();
-        return state.cajas
-            .filter(c => c.agencia_id === AGENCIA_ID)
-            .map(c => {
-                const cajero = state.usuarios.find(u => u.id === c.cajero_id);
-                return { ...c, cajero_nombre: cajero ? cajero.nombre : '—' };
-            })
-            .sort((a, b) => new Date(b.abierta_at) - new Date(a.abierta_at));
+        return await fetchAPI('/caja/historial');
     }
 
     /* ═══════════════════════════════════════
        DASHBOARD KPIs
        ═══════════════════════════════════════ */
     async function getDashboardKPIs() {
-        await delay(300);
-        const cs = cdb();
-        const as = adb();
-        const hoy = new Date().toISOString().slice(0, 10);
-
-        // Ventas del dia
-        const reservasHoy = cs.reservas.filter(r => r.agencia_id === AGENCIA_ID && r.created_at && r.created_at.slice(0, 10) === hoy);
-        const ventasHoy = reservasHoy.reduce((s, r) => s + (r.total || 0), 0);
-
-        // Pagos del dia en caja
-        const pagosHoy = as.pagos.filter(p => p.created_at && p.created_at.slice(0, 10) === hoy);
-        const ingresosHoy = pagosHoy.filter(p => p.tipo !== 'egreso').reduce((s, p) => s + p.monto, 0);
-        const egresosHoy = pagosHoy.filter(p => p.tipo === 'egreso').reduce((s, p) => s + p.monto, 0);
-
-        // Cupos proximos tours (proximos 7 dias)
-        const hoyDate = new Date();
-        const en7dias = new Date(hoyDate.getTime() + 7 * 86400000).toISOString().slice(0, 10);
-        const reservasProximas = cs.reservas.filter(r =>
-            r.agencia_id === AGENCIA_ID &&
-            r.estado !== 'anulada' &&
-            r.fecha_servicio >= hoy &&
-            r.fecha_servicio <= en7dias
-        );
-        const personasProximas = reservasProximas.reduce((s, r) => s + r.num_personas, 0);
-
-        // Saldos pendientes
-        const saldosPendientes = cs.reservas
-            .filter(r => r.agencia_id === AGENCIA_ID && r.estado !== 'anulada' && r.saldo_pendiente > 0)
-            .reduce((s, r) => s + r.saldo_pendiente, 0);
-
-        // Alertas
-        const alertas = [];
-        // Vehiculos con SOAT proximo a vencer
-        as.vehiculos.filter(v => v.activo && v.soat_vence).forEach(v => {
-            const dias = Math.ceil((new Date(v.soat_vence) - hoyDate) / 86400000);
-            if (dias <= 7 && dias >= 0)
-                alertas.push({ tipo: 'danger', texto: 'SOAT de ' + v.placa + ' vence en ' + dias + ' dia(s)', fecha: v.soat_vence });
-            else if (dias > 7 && dias <= 30)
-                alertas.push({ tipo: 'warn', texto: 'SOAT de ' + v.placa + ' vence el ' + v.soat_vence, fecha: v.soat_vence });
-        });
-        // Equipos con stock bajo
-        as.equipos.filter(e => e.cantidad_disponible <= e.stock_minimo).forEach(e => {
-            alertas.push({ tipo: 'warn', texto: e.nombre + ': stock bajo (' + e.cantidad_disponible + '/' + e.cantidad_total + ')', fecha: hoy });
-        });
-        // Saldos pendientes
-        if (saldosPendientes > 0) {
-            alertas.push({ tipo: 'info', texto: 'Saldos pendientes por cobrar: S/ ' + saldosPendientes.toFixed(2), fecha: hoy });
-        }
-
-        // Tours proximos con info
-        const toursProximos = [];
-        const reservasPorTourFecha = {};
-        reservasProximas.forEach(r => {
-            const key = r.tour_id + '_' + r.fecha_servicio;
-            if (!reservasPorTourFecha[key]) {
-                const tour = cs.tours.find(t => t.id === r.tour_id);
-                reservasPorTourFecha[key] = {
-                    tour_id: r.tour_id,
-                    tour_nombre: tour ? tour.nombre : '?',
-                    fecha: r.fecha_servicio,
-                    personas: 0,
-                    cupo_max: tour ? tour.cupo_maximo : 0,
-                    asignado: false
-                };
-            }
-            reservasPorTourFecha[key].personas += r.num_personas;
-        });
-        Object.values(reservasPorTourFecha).forEach(t => {
-            const asig = as.asignaciones_tour.find(a => {
-                const res = cs.reservas.find(r => r.id === a.reserva_id);
-                return res && res.tour_id === t.tour_id && res.fecha_servicio === t.fecha;
-            });
-            t.asignado = !!asig;
-            toursProximos.push(t);
-        });
-        toursProximos.sort((a, b) => a.fecha.localeCompare(b.fecha));
-
-        // Ventas ultimos 7 dias para grafico
-        const ventasSemana = [];
-        for (let i = 6; i >= 0; i--) {
-            const d = new Date(hoyDate.getTime() - i * 86400000);
-            const dStr = d.toISOString().slice(0, 10);
-            const label = d.toLocaleDateString('es-PE', { weekday: 'short' });
-            const total = cs.reservas
-                .filter(r => r.agencia_id === AGENCIA_ID && r.created_at && r.created_at.slice(0, 10) === dStr && r.estado !== 'anulada')
-                .reduce((s, r) => s + r.total, 0);
-            ventasSemana.push({ label, fecha: dStr, total });
-        }
-
-        return {
-            ventas_hoy: ventasHoy,
-            reservas_hoy: reservasHoy.length,
-            ingresos_caja: ingresosHoy,
-            egresos_caja: egresosHoy,
-            personas_proximas: personasProximas,
-            saldos_pendientes: saldosPendientes,
-            alertas,
-            tours_proximos: toursProximos,
-            ventas_semana: ventasSemana,
-            total_tours_activos: cs.tours.filter(t => t.agencia_id === AGENCIA_ID && t.estado === 'activo').length,
-            total_turistas: cs.turistas.filter(t => t.agencia_id === AGENCIA_ID).length,
-            caja_abierta: as.cajas.some(c => c.agencia_id === AGENCIA_ID && c.estado === 'abierta')
-        };
+        return await fetchAPI('/dashboard');
     }
 
     /* 
@@ -577,167 +371,78 @@ const AdminAPI = (function () {
     }
 
     async function crearRol(nombre, descripcion) {
-        await delay(300);
-        const state = adb();
-        const id = state.roles.length ? Math.max(...state.roles.map(r => r.id)) + 1 : 1;
-        const nuevoRol = { id, agencia_id: AGENCIA_ID, nombre, descripcion };
-        state.roles.push(nuevoRol);
-        saveA(state);
-        return nuevoRol;
+        const data = await fetchAPI('/roles', {
+            method: 'POST',
+            body: JSON.stringify({ nombre, descripcion })
+        });
+        return data.rol;
     }
 
     async function actualizarRol(id, nombre, descripcion) {
-        await delay(300);
         if (id === 1) throw new Error('El rol de Administrador principal no puede ser modificado');
-        const state = adb();
-        const rol = state.roles.find(r => r.id === id && r.agencia_id === AGENCIA_ID);
-        if (!rol) throw new Error('Rol no encontrado');
-        rol.nombre = nombre;
-        rol.descripcion = descripcion;
-        saveA(state);
-        return rol;
+        const data = await fetchAPI(`/roles/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ nombre, descripcion })
+        });
+        return data.rol;
     }
 
     async function eliminarRol(id, migrarAId = null) {
-        await delay(400);
-        if (id === 1) throw new Error('El rol de Administrador principal no puede ser eliminado');
-        const state = adb();
-        const idx = state.roles.findIndex(r => r.id === id && r.agencia_id === AGENCIA_ID);
-        if (idx === -1) throw new Error('Rol no encontrado');
-        
-        // Manejar usuarios
-        const usuariosAfectados = state.usuarios.filter(u => u.rol_id === id);
-        if (usuariosAfectados.length > 0) {
-            if (migrarAId) {
-                // Migrar usuarios al nuevo rol
-                const nuevoRol = state.roles.find(r => r.id === migrarAId);
-                if (!nuevoRol) throw new Error('El rol destino no existe');
-                usuariosAfectados.forEach(u => u.rol_id = migrarAId);
-            } else {
-                // Eliminar usuarios asociados a este rol (baja lgica)
-                usuariosAfectados.forEach(u => {
-                    u.activo = 0;
-                    u.bloqueado = 1;
-                });
-            }
-        }
-        
-        // Eliminar permisos del rol
-        state.permisos = state.permisos.filter(p => p.rol_id !== id);
-        // Eliminar el rol
-        state.roles.splice(idx, 1);
-        saveA(state);
-        return true;
+        const data = await fetchAPI(`/roles/${id}/desactivar-migrar`, {
+            method: 'POST',
+            body: JSON.stringify(migrarAId ? { nuevo_rol_id: migrarAId } : {})
+        });
+        return data.success;
     }
 
     async function actualizarPermisoRol(rolId, modulo, campo, valor) {
-        await delay(200);
-        if (rolId === 1) throw new Error('Los permisos del Administrador principal no pueden ser alterados');
-        const state = adb();
-        let permiso = state.permisos.find(p => p.rol_id === rolId && p.modulo === modulo);
-        if (!permiso) {
-            // Crear registro si no existe
-            const pid = state.permisos.length ? Math.max(...state.permisos.map(x => x.id)) + 1 : 1;
-            permiso = { id: pid, rol_id: rolId, modulo: modulo, puede_ver: 0, puede_crear: 0, puede_editar: 0, puede_eliminar: 0 };
-            state.permisos.push(permiso);
-        }
-        permiso[campo] = valor ? 1 : 0;
-        
-        // Si no puede ver, no debería poder crear/editar/eliminar
-        if (campo === 'puede_ver' && !valor) {
-            permiso.puede_crear = 0;
-            permiso.puede_editar = 0;
-            permiso.puede_eliminar = 0;
-        }
-        saveAdminDb(state);
+        await fetchAPI(`/roles/${rolId}/permisos/${modulo}`, {
+            method: 'PUT',
+            body: JSON.stringify({ [campo]: valor ? 1 : 0 })
+        });
     }
 
     async function actualizarPermisosBulk(cambios) {
-        await delay(300);
-        const state = adb();
-        for (const item of cambios) {
-            const { rolId, modulo, valor } = item;
-            if (rolId === 1) continue;
-            let permiso = state.permisos.find(p => p.rol_id === rolId && p.modulo === modulo);
-            if (!permiso) {
-                const pid = state.permisos.length ? Math.max(...state.permisos.map(x => x.id)) + 1 : 1;
-                permiso = { id: pid, rol_id: rolId, modulo: modulo, puede_ver: 0, puede_crear: 0, puede_editar: 0, puede_eliminar: 0 };
-                state.permisos.push(permiso);
-            }
-            const val = valor ? 1 : 0;
-            permiso.puede_ver = val;
-            permiso.puede_crear = val;
-            permiso.puede_editar = val;
-            permiso.puede_eliminar = val;
+        // Group by rolId
+        const rolesMap = {};
+        for(const c of cambios) {
+            if(!rolesMap[c.rolId]) rolesMap[c.rolId] = {};
+            rolesMap[c.rolId][c.modulo] = c.valor;
         }
-        saveAdminDb(state);
+        
+        for(const [rolId, modulos] of Object.entries(rolesMap)) {
+            await fetchAPI(`/roles/${rolId}/permisos`, {
+                method: 'PUT',
+                body: JSON.stringify(modulos)
+            });
+        }
+        return true;
     }
 
 
     /* 
     ================================================================================
-       AUDITORIA
-    ================================================================================
     */
     async function getLogsAuditoria(filtros) {
-        await delay(200);
-        const state = adb();
-        filtros = filtros || {};
-        let logs = state.logs_auditoria.filter(l => l.agencia_id === AGENCIA_ID);
-
-        if (filtros.usuario_id) logs = logs.filter(l => l.usuario_id === parseInt(filtros.usuario_id, 10));
-        if (filtros.accion) logs = logs.filter(l => l.accion === filtros.accion);
-        if (filtros.tabla) logs = logs.filter(l => l.tabla_afectada === filtros.tabla);
-        if (filtros.fecha_desde) logs = logs.filter(l => l.created_at >= filtros.fecha_desde);
-        if (filtros.fecha_hasta) logs = logs.filter(l => l.created_at <= filtros.fecha_hasta + 'T23:59:59');
-
-        return logs.map(l => {
-            const user = state.usuarios.find(u => u.id === l.usuario_id);
-            return { ...l, usuario_nombre: user ? user.nombre : 'Sistema' };
-        }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        const data = await fetchAPI('/auditoria/logs');
+        let logs = data.logs_auditoria || [];
+        
+        if (filtros) {
+            if (filtros.usuario_id) logs = logs.filter(l => l.usuario_id == filtros.usuario_id);
+            if (filtros.accion) logs = logs.filter(l => l.accion === filtros.accion);
+            if (filtros.tabla) logs = logs.filter(l => l.tabla_afectada === filtros.tabla);
+            if (filtros.fecha_desde) logs = logs.filter(l => l.created_at >= filtros.fecha_desde);
+            if (filtros.fecha_hasta) logs = logs.filter(l => l.created_at.slice(0, 10) <= filtros.fecha_hasta);
+        }
+        
+        return logs;
     }
 
     /* ═══════════════════════════════════════
        OPERACIONES (GUÍA)
        ═══════════════════════════════════════ */
     async function getMisToursOperativos() {
-        await delay(300);
-        const as = adb();
-        const cs = cdb();
-        const session = getSession();
-        if (!session) return [];
-
-        const hoyDate = new Date();
-        const hoyStr = hoyDate.toISOString().slice(0, 10);
-        
-        // Find all reservations linked to tours
-        const reservas = cs.reservas.filter(r => r.agencia_id === AGENCIA_ID && r.estado !== 'anulada' && r.fecha_servicio >= hoyStr);
-        
-        // Group by tour_id + fecha
-        const toursOperativosMap = {};
-        reservas.forEach(r => {
-            const asig = as.asignaciones_tour.find(a => a.reserva_id === r.id);
-            // Si el guia logueado está asignado (o si es Admin, los mostramos todos para que pueda probar)
-            if (session.rol_id === 1 || (asig && asig.guia_id === session.id)) {
-                const key = r.tour_id + '_' + r.fecha_servicio;
-                if (!toursOperativosMap[key]) {
-                    const tour = cs.tours.find(t => t.id === r.tour_id);
-                    toursOperativosMap[key] = {
-                        tour_id: r.tour_id,
-                        tour_nombre: tour ? tour.nombre : 'Tour desconocido',
-                        fecha: r.fecha_servicio,
-                        hora_salida: tour ? tour.hora_salida : '00:00',
-                        personas: 0,
-                        cupo_max: tour ? tour.cupo : 0,
-                        estado: r.fecha_servicio === hoyStr ? 'hoy' : 'proximo',
-                        checklist_completado: !!(asig && asig.checklist_completado)
-                    };
-                }
-                toursOperativosMap[key].personas += r.personas;
-            }
-        });
-        
-        return Object.values(toursOperativosMap).sort((a, b) => a.fecha.localeCompare(b.fecha));
+        return await fetchAPI('/operaciones/mis-tours');
     }
 
     async function getManifiestoTour(tour_id, fecha) {
@@ -790,9 +495,8 @@ const AdminAPI = (function () {
        INVENTARIO Y PROVEEDORES
        ═══════════════════════════════════════ */
     async function getEquipos() {
-        await delay(200);
-        const state = adb();
-        return state.equipos.filter(e => e.agencia_id === AGENCIA_ID);
+        const data = await fetchAPI('/inventario/equipos');
+        return data.equipos || [];
     }
 
     async function crearEquipo(datos) {
@@ -862,19 +566,13 @@ const AdminAPI = (function () {
     }
 
     async function getCategoriasProveedor() {
-        await delay(100);
-        const state = adb();
-        return state.categorias_proveedor.filter(c => c.agencia_id === AGENCIA_ID);
+        const data = await fetchAPI('/inventario/categorias-proveedor');
+        return data.categorias_proveedor || [];
     }
 
     async function getProveedores() {
-        await delay(200);
-        const state = adb();
-        const cats = state.categorias_proveedor;
-        return state.proveedores.filter(p => p.agencia_id === AGENCIA_ID).map(p => {
-            const cat = cats.find(c => c.id === p.categoria_id);
-            return { ...p, categoria_nombre: cat ? cat.nombre : 'Sin Categoría' };
-        }).sort((a, b) => a.razon_social.localeCompare(b.razon_social));
+        const data = await fetchAPI('/inventario/proveedores');
+        return data.proveedores || [];
     }
 
     async function crearProveedor(datos) {
@@ -933,19 +631,46 @@ const AdminAPI = (function () {
 
     /* ----- TURISTAS (CRM) ----- */
     async function getTuristas() {
-        await delay(300);
-        const state = cdb();
-        return state.turistas.filter(t => t.agencia_id === AGENCIA_ID);
+        const session = getSession();
+        if (!session) throw new Error('No autorizado');
+        const response = await fetch('http://localhost:3000/api/turistas', {
+            headers: { 'Authorization': `Bearer ${session.token}` }
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Error al obtener turistas');
+        return data.turistas;
+    }
+
+    async function crearTurista(datos) {
+        const session = getSession();
+        if (!session) throw new Error('No autorizado');
+        const response = await fetch('http://localhost:3000/api/turistas', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.token}`
+            },
+            body: JSON.stringify(datos)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Error al crear turista');
+        return data.turista;
     }
 
     async function actualizarTurista(id, datos) {
-        await delay(300);
-        const state = cdb();
-        const index = state.turistas.findIndex(t => t.id === id && t.agencia_id === AGENCIA_ID);
-        if (index === -1) throw new Error('Turista no encontrado');
-        state.turistas[index] = { ...state.turistas[index], ...datos };
-        saveC(state);
-        return state.turistas[index];
+        const session = getSession();
+        if (!session) throw new Error('No autorizado');
+        const response = await fetch(`http://localhost:3000/api/turistas/${id}`, {
+            method: 'PUT',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.token}`
+            },
+            body: JSON.stringify(datos)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Error al actualizar turista');
+        return data.turista;
     }
 
     async function getHistorialTurista(turista_id) {
@@ -967,109 +692,169 @@ const AdminAPI = (function () {
 
     /* ----- TOURS (CATÁLOGO) ----- */
     async function getTours() {
-        await delay(300);
-        const state = cdb();
-        return state.tours.filter(t => t.agencia_id === AGENCIA_ID).map(t => {
-            const destino = state.destinos.find(d => d.id === t.destino_id);
-            const categoria = state.categorias_tour.find(c => c.id === t.categoria_id);
-            return {
-                ...t,
-                destino_nombre: destino ? destino.nombre : '',
-                categoria_nombre: categoria ? categoria.nombre : ''
-            };
+        const session = getSession();
+        if (!session) throw new Error('No autorizado');
+        const response = await fetch('http://localhost:3000/api/tours', {
+            headers: { 'Authorization': `Bearer ${session.token}` }
         });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Error al obtener tours');
+        
+        // Populate names manually since backend didn't populate them directly
+        const destinos = await getDestinos();
+        const categorias = await getCategoriasTour();
+        return data.tours.map(t => ({
+            ...t,
+            destino_nombre: (destinos.find(d => d.id === t.destino_id) || {}).nombre || '?',
+            categoria_nombre: (categorias.find(c => c.id === t.categoria_id) || {}).nombre || '?'
+        }));
     }
 
     async function getDestinos() {
-        await delay(200);
-        return cdb().destinos;
+        const session = getSession();
+        if (!session) throw new Error('No autorizado');
+        const response = await fetch('http://localhost:3000/api/destinos', {
+            headers: { 'Authorization': `Bearer ${session.token}` }
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Error al obtener destinos');
+        return data.destinos;
     }
 
     async function buscarOCrearDestino(nombre, latitud, longitud) {
-        await delay(300);
-        const state = cdb();
-        // Buscar si ya existe por nombre exacto (case-insensitive)
-        const existe = state.destinos.find(d => d.nombre.toLowerCase() === nombre.toLowerCase());
-        if (existe) return existe.id;
-
-        const nuevoId = state.destinos.length ? Math.max(...state.destinos.map(d => d.id)) + 1 : 1;
-        state.destinos.push({
-            id: nuevoId,
-            agencia_id: AGENCIA_ID,
-            nombre: nombre,
-            descripcion: 'Destino agregado automáticamente',
-            latitud: latitud || 0,
-            longitud: longitud || 0,
-            activo: 1
+        const session = getSession();
+        if (!session) throw new Error('No autorizado');
+        const response = await fetch('http://localhost:3000/api/destinos', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.token}`
+            },
+            body: JSON.stringify({ nombre, latitud, longitud })
         });
-        saveC(state);
-        return nuevoId;
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Error al crear destino');
+        return data.id;
     }
 
     async function actualizarDestino(id, payload) {
-        await delay(300);
-        const state = cdb();
-        const index = state.destinos.findIndex(d => d.id === parseInt(id));
-        if (index === -1) throw new Error('Destino no encontrado');
-        
-        state.destinos[index] = { ...state.destinos[index], ...payload };
-        saveC(state);
-        return state.destinos[index];
+        const session = getSession();
+        if (!session) throw new Error('No autorizado');
+        const response = await fetch(`http://localhost:3000/api/destinos/${id}`, {
+            method: 'PUT',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.token}`
+            },
+            body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Error al actualizar destino');
+        return data.destino;
     }
 
     async function eliminarDestino(id) {
+        // Mocked as requested, since we didn't build the endpoint
         await delay(300);
-        const state = cdb();
-        const index = state.destinos.findIndex(d => d.id === parseInt(id));
-        if (index === -1) throw new Error('Destino no encontrado');
-        
-        // Soft delete
-        state.destinos[index].activo = 0;
-        saveC(state);
         return { success: true };
     }
 
     async function getCategoriasTour() {
-        await delay(200);
-        return cdb().categorias_tour;
+        const session = getSession();
+        if (!session) throw new Error('No autorizado');
+        const response = await fetch('http://localhost:3000/api/destinos/categorias', {
+            headers: { 'Authorization': `Bearer ${session.token}` }
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Error al obtener categorías');
+        return data.categorias;
+    }
+
+    async function crearCategoriaTour(datos) {
+        const session = getSession();
+        if (!session) throw new Error('No autorizado');
+        const response = await fetch('http://localhost:3000/api/destinos/categorias', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.token}`
+            },
+            body: JSON.stringify(datos)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Error al crear categoría');
+        return data.categoria;
+    }
+
+    async function editarCategoriaTour(id, datos) {
+        const session = getSession();
+        if (!session) throw new Error('No autorizado');
+        const response = await fetch(`http://localhost:3000/api/destinos/categorias/${id}`, {
+            method: 'PUT',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.token}`
+            },
+            body: JSON.stringify(datos)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Error al editar categoría');
+        return data.categoria;
+    }
+
+    async function eliminarCategoriaTour(id) {
+        const session = getSession();
+        if (!session) throw new Error('No autorizado');
+        const response = await fetch(`http://localhost:3000/api/destinos/categorias/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${session.token}` }
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Error al eliminar categoría');
+        return { success: true };
     }
 
     async function crearTour(datos) {
-        await delay(300);
-        const state = cdb();
-        const nuevo = {
-            id: state.tours.length ? Math.max(...state.tours.map(t => t.id)) + 1 : 1,
-            agencia_id: AGENCIA_ID,
-            ...datos,
-            imagenes: datos.imagenes || [],
-            estado: 'activo',
-            created_at: new Date().toISOString()
-        };
-        state.tours.push(nuevo);
-        saveC(state);
-        return nuevo;
+        const session = getSession();
+        if (!session) throw new Error('No autorizado');
+        const response = await fetch('http://localhost:3000/api/tours', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.token}`
+            },
+            body: JSON.stringify(datos)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Error al crear tour');
+        return data.tour;
     }
 
     async function actualizarTour(id, datos) {
-        await delay(300);
-        const state = cdb();
-        const index = state.tours.findIndex(t => t.id === id && t.agencia_id === AGENCIA_ID);
-        if (index === -1) throw new Error('Tour no encontrado');
-        state.tours[index] = { ...state.tours[index], ...datos };
-        saveC(state);
-        return state.tours[index];
+        const session = getSession();
+        if (!session) throw new Error('No autorizado');
+        const response = await fetch(`http://localhost:3000/api/tours/${id}`, {
+            method: 'PUT',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.token}`
+            },
+            body: JSON.stringify(datos)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Error al actualizar tour');
+        return data.tour;
     }
 
     async function eliminarTour(id) {
-        await delay(300);
-        const state = cdb();
-        const index = state.tours.findIndex(t => t.id === id && t.agencia_id === AGENCIA_ID);
-        if (index === -1) throw new Error('Tour no encontrado');
-        if (state.reservas.some(r => r.tour_id === id)) {
-            throw new Error('No se puede eliminar un tour que tiene reservas asociadas. Cambia su estado a inactivo.');
-        }
-        state.tours.splice(index, 1);
-        saveC(state);
+        const session = getSession();
+        if (!session) throw new Error('No autorizado');
+        const response = await fetch(`http://localhost:3000/api/tours/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${session.token}` }
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Error al eliminar tour');
         return true;
     }
 
@@ -1077,17 +862,17 @@ const AdminAPI = (function () {
        PUBLIC API
        ═══════════════════════════════════════ */
     return {
-        login, logout, isAdminAuth, getSession: getUsuarioActualSync,
+        login, logout, isAdminAuth, getSession: getUsuarioActualSync, cambiarPasswordInicial,
         tienePermiso, getPermisosRol, getModulosPermitidos,
-        getUsuarios, crearUsuario, inhabilitarUsuario, reactivarUsuario, getRoles,
-        getReservasInternas, anularReserva, confirmarReserva, crearReservaInterna,
+        getUsuarios, crearUsuario, actualizarUsuario, eliminarUsuario, inhabilitarUsuario, reactivarUsuario, getRoles,
+        getReservasInternas, anularReserva, confirmarReserva, crearReservaInterna, confirmarPagoReservaWeb,
         getCajaActiva, abrirCaja, registrarPago, getPagosCaja, cerrarCaja, getHistorialCajas,
         getDashboardKPIs,
         getMisToursOperativos, getManifiestoTour, guardarChecklist,
         getEquipos, crearEquipo, actualizarEquipo, eliminarEquipo, ajustarStock, 
         getCategoriasProveedor, getProveedores, crearProveedor, actualizarProveedor, eliminarProveedor,
-        getTuristas, actualizarTurista, getHistorialTurista,
-        getTours, getDestinos, buscarOCrearDestino, actualizarDestino, eliminarDestino, getCategoriasTour, crearTour, actualizarTour, eliminarTour,
+        getTuristas, crearTurista, actualizarTurista, getHistorialTurista,
+        getTours, getDestinos, buscarOCrearDestino, actualizarDestino, eliminarDestino, getCategoriasTour, crearCategoriaTour, editarCategoriaTour, eliminarCategoriaTour, crearTour, actualizarTour, eliminarTour,
         getLogsAuditoria,
         verifyAdminPassword, crearRol, actualizarRol, eliminarRol, actualizarPermisoRol, actualizarPermisosBulk
     };

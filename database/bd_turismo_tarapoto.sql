@@ -65,8 +65,21 @@ CREATE TABLE roles (
     agencia_id INT UNSIGNED NOT NULL,
     nombre VARCHAR(60) NOT NULL,
     descripcion VARCHAR(200) NULL,
+    activo TINYINT(1) NOT NULL DEFAULT 1,
     CONSTRAINT fk_roles_agencia FOREIGN KEY (agencia_id) REFERENCES agencias(id),
     UNIQUE KEY uq_rol_agencia (agencia_id, nombre)
+) ENGINE=InnoDB;
+
+CREATE TABLE historial_roles (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT UNSIGNED NOT NULL,
+    rol_anterior_id INT UNSIGNED NULL,
+    rol_nuevo_id INT UNSIGNED NOT NULL,
+    fecha DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    realizado_por INT UNSIGNED NULL,
+    CONSTRAINT fk_hr_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+    CONSTRAINT fk_hr_rolant FOREIGN KEY (rol_anterior_id) REFERENCES roles(id),
+    CONSTRAINT fk_hr_rolnue FOREIGN KEY (rol_nuevo_id) REFERENCES roles(id)
 ) ENGINE=InnoDB;
 
 CREATE TABLE permisos (
@@ -306,6 +319,7 @@ CREATE TABLE reserva_pasajeros (
     reserva_id INT UNSIGNED NOT NULL,
     turista_id INT UNSIGNED NOT NULL,
     es_titular TINYINT(1) NOT NULL DEFAULT 0,
+    asistio TINYINT(1) NOT NULL DEFAULT 0,
     CONSTRAINT fk_rp_reserva FOREIGN KEY (reserva_id) REFERENCES reservas(id),
     CONSTRAINT fk_rp_turista FOREIGN KEY (turista_id) REFERENCES turistas(id)
 ) ENGINE=InnoDB;
@@ -500,7 +514,7 @@ CREATE TABLE asignacion_equipos (
     CONSTRAINT fk_ae_equipo FOREIGN KEY (equipo_id) REFERENCES equipos(id)
 ) ENGINE=InnoDB;
 
-CREATE TABLE reseñas (
+CREATE TABLE resenas (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     agencia_id INT UNSIGNED NOT NULL,
     tour_id INT UNSIGNED NOT NULL,

@@ -207,10 +207,16 @@
             <div class="admin-content">
                 <div class="a-toolbar">
                     <input type="text" class="a-search-input" placeholder="Buscar tour o destino..." onkeyup="filtrarTours(this.value)">
-                    <button class="a-btn a-btn-primary" onclick="abrirModalTour()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        Crear Tour
-                    </button>
+                    <div style="display:flex; gap:0.5rem">
+                        <button class="a-btn a-btn-outline" onclick="abrirModalCategorias()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                            Categorías
+                        </button>
+                        <button class="a-btn a-btn-primary" onclick="abrirModalTour()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Crear Tour
+                        </button>
+                    </div>
                 </div>
 
                 <div class="a-table-wrap">
@@ -323,6 +329,57 @@
         </div>
     </div>
 
+    <!-- Modal Categorías -->
+    <div class="a-modal-overlay" id="modalCategorias">
+        <div class="a-modal">
+            <div class="a-modal-header">
+                <h3 class="a-modal-title">Gestión de Categorías</h3>
+                <button class="a-modal-close" onclick="AdminApp.closeModal('modalCategorias')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="a-modal-body">
+                <div class="a-table-wrap" style="margin-bottom: 1.5rem">
+                    <table class="a-table" id="tablaCategorias">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th style="text-align:right">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="2" style="text-align:center">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h4 style="margin: 0 0 1rem 0; font-size: 1rem; color: var(--a-text-light);" id="tituloFormCategoria">Nueva Categoría</h4>
+                <form id="formCategoria" onsubmit="guardarCategoria(event)">
+                    <input type="hidden" id="categoriaId" value="">
+                    <div class="a-form-group">
+                        <label class="a-form-label">Nombre de Categoría <span style="color:var(--a-danger)">*</span></label>
+                        <input type="text" class="a-form-input" id="catNombre" required>
+                    </div>
+                    <div class="a-form-group">
+                        <label class="a-form-label">Descripción</label>
+                        <input type="text" class="a-form-input" id="catDescripcion">
+                    </div>
+                    <div class="a-form-group">
+                        <label class="a-form-label">Ícono SVG</label>
+                        <input type="hidden" id="catIconoSvg" value="">
+                        <div id="iconSelector" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 0.5rem; margin-top: 0.5rem;">
+                            <!-- Opciones generadas por JS -->
+                        </div>
+                    </div>
+                    <div style="display:flex; justify-content:flex-end; gap:0.5rem">
+                        <button type="button" class="a-btn a-btn-outline" onclick="limpiarFormCategoria()" style="display:none" id="btnCancelarEdicionCat">Cancelar Edición</button>
+                        <button type="submit" class="a-btn a-btn-primary" id="btnGuardarCat">Crear Categoría</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="../js/data.js"></script>
     <script src="../js/schema.js"></script>
     <script src="../js/admin-data.js"></script>
@@ -333,10 +390,108 @@
         let destinosMap = {};
         let categoriasMap = {};
 
+        const iconosPredefinidos = {
+            waterfall: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6M12 18v4M4.93 10.93l4.24 4.24M14.83 14.83l4.24 4.24M2 18h2M20 18h2M6.34 6.34L8.46 8.46M15.54 15.54l2.12 2.12M12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></svg>',
+            lake: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20M2 16h20M2 20h20M6 8c1.5-2 3-3 6-3s4.5 1 6 3"/></svg>',
+            adventure: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 10c-.83 0-1.5-.67-1.5-1.5v-5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5z"/><path d="M20.5 10H19V8.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/><path d="M9.5 14c.83 0 1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5S8 21.33 8 20.5v-5c0-.83.67-1.5 1.5-1.5z"/><path d="M3.5 14H5v1.5c0 .83-.67 1.5-1.5 1.5S2 16.33 2 15.5 2.67 14 3.5 14z"/><path d="M14 14.5c0-.83.67-1.5 1.5-1.5h5c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5h-5c-.83 0-1.5-.67-1.5-1.5z"/><path d="M15.5 19H14v1.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5-.67-1.5-1.5-1.5z"/><path d="M10 9.5c0 .83-.67 1.5-1.5 1.5h-5C2.67 11 2 10.33 2 9.5S2.67 8 3.5 8h5c.83 0 1.5.67 1.5 1.5z"/><path d="M8.5 5H10V3.5C10 2.67 9.33 2 8.5 2S7 2.67 7 3.5 7.67 5 8.5 5z"/></svg>',
+            cultural: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l8-4 8 4v14M9 21v-4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4M9 8h1M14 8h1M9 12h1M14 12h1"/></svg>',
+            nature: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L8 8h8l-4-6zM4 14l-2 6h20l-2-6H4zM12 14v8"/><path d="M8 8l-4 6M16 8l4 6"/></svg>',
+            fullday: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+            gastronomic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>',
+            urban: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22V6h4v16M8 22V2h4v20M12 22V8h4v14M16 22v-6h4v6M2 22h20"/><path d="M6 10h.01M6 14h.01M6 18h.01M10 6h.01M10 10h.01M10 14h.01M10 18h.01M14 12h.01M14 16h.01M18 18h.01"/></svg>',
+            beach: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20"/><path d="M12 12v10"/><path d="M12 2c5 0 10 5 10 10H2C2 7 7 2 12 2z"/></svg>',
+            trekking: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 10c-.83 0-1.5-.67-1.5-1.5v-5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5z"/><path d="M20.5 10H19V8.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/><path d="M3 22l6-6 4 4 8-8"/></svg>',
+            mystic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6.364 6.364 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg>',
+            night: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 22h18M12 11l-8 11h16l-8-11z"/><path d="M12 11v-4"/></svg>',
+            compass: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>',
+            map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>',
+            camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+            tent: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 20 10 4"/><path d="m5 20 9-16"/><path d="M3 20h18"/><path d="m12 15-3 5"/><path d="m12 15 3 5"/></svg>',
+            sun: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>',
+            bus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6v6"/><path d="M15 6v6"/><path d="M2 12h19.6"/><path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>',
+            star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+            car: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a2 2 0 0 0-1.6-.8H9.3a2 2 0 0 0-1.6.8L5 11l-5.16.86a1 1 0 0 0-.84.99V16h3m10 0a2 2 0 1 1-4 0m4 0a2 2 0 1 0-4 0m-10 0a2 2 0 1 1-4 0m4 0a2 2 0 1 0-4 0"/></svg>',
+            plane: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.2-1.1.6L3 8l6 5.5-3.5 3.5-2.2-.6-1.3 1.3 4 1.5 1.5 4 1.3-1.3-.6-2.2L12 16.5l5.5 6 1.2-.7c.4-.2.7-.6.6-1.1z"/></svg>',
+            bike: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>',
+            train: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="16" rx="2"/><path d="M4 11h16M12 3v8M8 19l-2 3M18 22l-2-3M8 15h0M16 15h0"/></svg>',
+            ship: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 21c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1 .6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1M19.38 20A11.6 11.6 0 0 0 21 14l-9-4-9 4c0 2.9.94 5.34 2.81 7.76M19 13V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6M12 10v4"/></svg>',
+            music: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
+            camera2: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>',
+            coffee: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>',
+            wine: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 22h8M12 15v7M12 15a5 5 0 0 0 5-5c0-2-.5-4-2-8H9c-1.5 4-2 6-2 8a5 5 0 0 0 5 5Z"/><line x1="7" y1="10" x2="17" y2="10"/></svg>',
+            utensils: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>',
+            tickets: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2M13 17v2M13 11v2"/></svg>',
+            palmtree: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 8c0-2.76-2.46-5-5.5-5S2 5.24 2 8h2l1-1c1.11 0 2 .89 2 2H5c0 2.21 1.79 4 4 4l1-1c1.11 0 2 .89 2 2h2c0-2.76-2.46-5-5.5-5zM12 22c0-2.76-2.46-5-5.5-5S1 19.24 1 22h2l1-1c1.11 0 2 .89 2 2H4c0 2.21 1.79 4 4 4l1-1c1.11 0 2 .89 2 2h2c0-2.76-2.46-5-5.5-5z" transform="matrix(1 0 0 -1 3.5 24)"/></svg>',
+            tree: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22V13M12 8v5M9 22h6M4 13l8-9 8 9M4 13h4M16 13h4M7 22h10"/></svg>',
+            mountain: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>',
+            snowflake: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/><path d="m20 16-4-4 4-4M4 8l4 4-4 4M16 4l-4 4-4-4M8 20l4-4 4 4"/></svg>',
+            flame: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>',
+            droplet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg>',
+            leaf: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 22l10-10"/></svg>',
+            bird: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 7h.01M3.4 18H12a8 8 0 0 0 8-8V7a4 4 0 0 0-7.28-2.3L2 20M20 7l2 .5-2 .5M10 18v3M14 17.75V21M7 18a6 6 0 0 0 3.84-10.61"/></svg>',
+            anchor: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="3"/><line x1="12" y1="22" x2="12" y2="8"/><line x1="5" y1="12" x2="19" y2="12"/><path d="M2 15a10 10 0 0 0 20 0"/></svg>',
+            umbrella: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12a10.06 10.06 1 0 0-20 0Z"/><path d="M12 12v8a2 2 0 0 0 4 0M12 2v1"/></svg>'
+        };
+
+        const normalizeSvgForMatch = (svg) => {
+            return (svg || '').replace(/[\s"']/g, '').toLowerCase();
+        };
+
+        function renderIconSelector() {
+            const container = document.getElementById('iconSelector');
+            container.innerHTML = '';
+            for (const [key, svg] of Object.entries(iconosPredefinidos)) {
+                const div = document.createElement('div');
+                div.innerHTML = svg;
+                div.style.padding = '8px';
+                div.style.border = '1px solid var(--border, #e5e5e5)';
+                div.style.borderRadius = '6px';
+                div.style.cursor = 'pointer';
+                div.style.display = 'flex';
+                div.style.alignItems = 'center';
+                div.style.justifyContent = 'center';
+                div.style.color = 'var(--foreground, #1a1a1a)';
+                div.dataset.svg = svg;
+                div.dataset.key = key;
+                
+                div.onclick = () => {
+                    document.getElementById('catIconoSvg').value = svg;
+                    actualizarIconosVisuales();
+                };
+                container.appendChild(div);
+            }
+        }
+
+        function actualizarIconosVisuales() {
+            const currentSvg = normalizeSvgForMatch(document.getElementById('catIconoSvg').value);
+            const container = document.getElementById('iconSelector');
+            let matched = false;
+            
+            Array.from(container.children).forEach(c => {
+                const cSvg = normalizeSvgForMatch(c.dataset.svg);
+                if (cSvg === currentSvg && currentSvg !== '') {
+                    c.style.borderColor = 'var(--primary, #16a34a)';
+                    c.style.background = 'var(--primary-50, #f0fdf4)';
+                    c.style.color = 'var(--primary, #16a34a)';
+                    matched = true;
+                } else {
+                    c.style.borderColor = 'var(--border, #e5e5e5)';
+                    c.style.background = 'transparent';
+                    c.style.color = 'var(--foreground, #1a1a1a)';
+                }
+            });
+            
+            // Si el SVG que viene de BD no coincide con ninguno, pero hay un value, 
+            // no estallará, simplemente no seleccionará nada. 
+            // Opcionalmente podríamos añadirlo al final de la lista.
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
             AdminApp.init();
             AdminApp.renderSidebar('tours');
             AdminApp.initModalCloseButtons();
+            
+            renderIconSelector();
             
             await cargarDatosMaestros();
             await cargarTours();
@@ -657,8 +812,8 @@
                 console.error(e);
             }
         }
-    </script>
-</body>
+
+        async function eliminarTour(id) {
             if (!confirm('¿Estás seguro de que deseas eliminar este tour? Esta acción no se puede deshacer.')) return;
             try {
                 await AdminAPI.eliminarTour(id);
@@ -666,6 +821,109 @@
                 cargarTours();
             } catch (err) {
                 AdminApp.toast(err.message, 'error');
+            }
+        }
+
+        /* --- CATEGORÍAS --- */
+        let categoriasLocales = [];
+
+        async function cargarCategoriasModal() {
+            const tbody = document.querySelector('#tablaCategorias tbody');
+            tbody.innerHTML = '<tr><td colspan="2" style="text-align:center">Cargando...</td></tr>';
+            try {
+                categoriasLocales = await AdminAPI.getCategoriasTour();
+                tbody.innerHTML = '';
+                if (categoriasLocales.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="2" style="text-align:center">No hay categorías registradas</td></tr>';
+                } else {
+                    categoriasLocales.forEach(c => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${c.nombre}</td>
+                            <td style="text-align:right">
+                                <button class="a-btn a-btn-sm a-btn-outline" onclick="editarCategoria(${c.id})">Editar</button>
+                                <button class="a-btn a-btn-sm a-btn-danger" onclick="eliminarCategoria(${c.id})">Eliminar</button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch (error) {
+                tbody.innerHTML = `<tr><td colspan="2" style="text-align:center; color:red">${error.message}</td></tr>`;
+            }
+        }
+
+        function abrirModalCategorias() {
+            AdminApp.openModal('modalCategorias');
+            cargarCategoriasModal();
+            limpiarFormCategoria();
+        }
+
+        function limpiarFormCategoria() {
+            document.getElementById('categoriaId').value = '';
+            document.getElementById('catNombre').value = '';
+            document.getElementById('catDescripcion').value = '';
+            document.getElementById('catIconoSvg').value = '';
+            actualizarIconosVisuales();
+            document.getElementById('tituloFormCategoria').textContent = 'Nueva Categoría';
+            document.getElementById('btnGuardarCat').textContent = 'Crear Categoría';
+            document.getElementById('btnCancelarEdicionCat').style.display = 'none';
+        }
+
+        function editarCategoria(id) {
+            const cat = categoriasLocales.find(c => c.id === id);
+            if (!cat) return;
+            document.getElementById('categoriaId').value = cat.id;
+            document.getElementById('catNombre').value = cat.nombre;
+            document.getElementById('catDescripcion').value = cat.descripcion || '';
+            document.getElementById('catIconoSvg').value = cat.icono_svg || '';
+            actualizarIconosVisuales();
+            document.getElementById('tituloFormCategoria').textContent = 'Editar Categoría';
+            document.getElementById('btnGuardarCat').textContent = 'Guardar Cambios';
+            document.getElementById('btnCancelarEdicionCat').style.display = 'inline-flex';
+        }
+
+        async function guardarCategoria(e) {
+            e.preventDefault();
+            const id = document.getElementById('categoriaId').value;
+            const datos = {
+                nombre: document.getElementById('catNombre').value.trim(),
+                descripcion: document.getElementById('catDescripcion').value.trim(),
+                icono_svg: document.getElementById('catIconoSvg').value.trim()
+            };
+
+            const btn = document.getElementById('btnGuardarCat');
+            btn.disabled = true;
+            btn.textContent = 'Guardando...';
+
+            try {
+                if (id) {
+                    await AdminAPI.editarCategoriaTour(id, datos);
+                    AdminApp.toast('Categoría actualizada', 'success');
+                } else {
+                    await AdminAPI.crearCategoriaTour(datos);
+                    AdminApp.toast('Categoría creada', 'success');
+                }
+                limpiarFormCategoria();
+                cargarCategoriasModal();
+                cargarTours(); // Para actualizar el select de categorias
+            } catch (error) {
+                AdminApp.toast(error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = id ? 'Guardar Cambios' : 'Crear Categoría';
+            }
+        }
+
+        async function eliminarCategoria(id) {
+            if (!confirm('¿Seguro que deseas eliminar esta categoría? No podrás si hay tours usando esta categoría.')) return;
+            try {
+                await AdminAPI.eliminarCategoriaTour(id);
+                AdminApp.toast('Categoría eliminada', 'success');
+                cargarCategoriasModal();
+                cargarTours();
+            } catch (error) {
+                AdminApp.toast(error.message, 'error');
             }
         }
     </script>

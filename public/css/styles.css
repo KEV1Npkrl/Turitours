@@ -3728,3 +3728,14 @@ input, select, textarea {
     }
 }
 
+
+/* Expandir texto de destinos al hacer hover */
+.destino-card:hover .destino-name,
+.destino-card:hover .destino-count,
+.destino-card:hover .destino-meta {
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+}
+
+.expandable-text { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; transition: max-height 0.3s ease; }
+.expandable-text.expanded { -webkit-line-clamp: unset; display: block; }

@@ -164,9 +164,13 @@
             </header>
 
             <div class="admin-content">
+                <!-- Evitar Autofill (Gestores de contraseñas intentan llenar la primera caja de texto) -->
+                <input style="display:none" type="text" name="fakeusernameremembered" autocomplete="username">
+                <input style="display:none" type="password" name="fakepasswordremembered" autocomplete="current-password">
+                
                 <!-- Toolbar -->
                 <div class="a-toolbar">
-                    <input type="text" class="a-search-input" id="searchPersonal" placeholder="Buscar por nombre, DNI o email...">
+                    <input type="search" class="a-search-input" id="searchPersonal" name="search_personal_input_xyz" placeholder="Buscar por nombre, DNI o email..." autocomplete="off" data-lpignore="true" spellcheck="false">
                     <select class="a-filter-select" id="filterRol">
                         <option value="">Todos los roles</option>
                     </select>
@@ -245,14 +249,18 @@
             </div>
             <div class="a-modal-body">
                 <form id="formNuevo">
+                    <input type="hidden" id="nuevoUsuarioId">
                     <div class="a-form-group">
                         <label class="a-form-label" for="nuevoNombre">Nombre completo <span class="required">*</span></label>
-                        <input type="text" id="nuevoNombre" class="a-form-input" placeholder="Nombres y apellidos" required>
+                        <input type="text" id="nuevoNombre" class="a-form-input" placeholder="Nombres y apellidos" required readonly>
                     </div>
                     <div class="a-form-row">
                         <div class="a-form-group">
                             <label class="a-form-label" for="nuevoDni">DNI <span class="required">*</span></label>
-                            <input type="text" id="nuevoDni" class="a-form-input" maxlength="8" pattern="[0-9]{8}" placeholder="12345678" required>
+                            <div style="display:flex; gap:0.5rem;">
+                                <input type="text" id="nuevoDni" class="a-form-input" maxlength="8" pattern="[0-9]{8}" placeholder="12345678" required>
+                                <button type="button" class="a-btn a-btn-outline" id="btnBuscarDni" style="padding: 0 1rem; flex-shrink: 0;">Buscar</button>
+                            </div>
                         </div>
                         <div class="a-form-group">
                             <label class="a-form-label" for="nuevoRol">Rol <span class="required">*</span></label>
@@ -368,30 +376,45 @@
             if (!AdminApp.init('personal')) return;
             AdminApp.initModalCloseButtons();
 
-            roles = await AdminAPI.getRoles();
-            populateRolFilter();
-            loadPersonal();
-            renderPermisos();
+            await loadPersonal();
 
             document.getElementById('searchPersonal').addEventListener('input', debounce(renderPersonal, 300));
             document.getElementById('filterRol').addEventListener('change', renderPersonal);
             document.getElementById('filterEstadoP').addEventListener('change', renderPersonal);
-            document.getElementById('btnNuevoUsuario').addEventListener('click', () => AdminApp.openModal('modalNuevo'));
+            document.getElementById('btnNuevoUsuario').addEventListener('click', () => {
+                document.getElementById('formNuevo').reset();
+                document.getElementById('nuevoUsuarioId').value = '';
+                document.getElementById('nuevoNombre').readOnly = true;
+                document.getElementById('nuevoPassword').parentElement.style.display = 'block';
+                document.querySelector('#modalNuevo .a-modal-title').textContent = 'Nuevo Colaborador';
+                AdminApp.openModal('modalNuevo');
+            });
             document.getElementById('btnGuardarUsuario').addEventListener('click', handleGuardarUsuario);
         });
 
         function populateRolFilter() {
             const select = document.getElementById('filterRol');
             const nuevoRol = document.getElementById('nuevoRol');
+            select.innerHTML = '<option value="">Todos los roles</option>';
+            nuevoRol.innerHTML = '';
             roles.forEach(r => {
                 select.insertAdjacentHTML('beforeend', `<option value="${r.id}">${r.nombre}</option>`);
                 nuevoRol.insertAdjacentHTML('beforeend', `<option value="${r.id}">${r.nombre}</option>`);
             });
         }
+        
+        var pendingAuthAction = null;
 
         async function loadPersonal() {
+            roles = await AdminAPI.getRoles();
             allUsers = await AdminAPI.getUsuarios();
+            allUsers.forEach(u => {
+                const r = roles.find(rol => rol.id === u.rol_id);
+                u.rol_nombre = r ? r.nombre : 'Sin Rol (Inactivo)';
+            });
+            populateRolFilter();
             renderPersonal();
+            renderPermisos();
         }
 
         function renderPersonal() {
@@ -438,10 +461,16 @@
                     </td>
                     <td>${AdminApp.badgeEstado(estado)}</td>
                     <td class="td-actions">
+                        <button class="a-btn a-btn-ghost a-btn-sm" title="Editar" onclick="abrirModalEditar(${u.id})">
+                            ${AdminApp.icon('edit')}
+                        </button>
                         ${u.activo && !u.bloqueado ? `<button class="a-btn a-btn-ghost a-btn-sm" title="Inhabilitar" onclick="handleInhabilitar(${u.id})">
                             ${AdminApp.icon('lock')}</button>` : ''}
                         ${(!u.activo || u.bloqueado) ? `<button class="a-btn a-btn-ghost a-btn-sm" title="Reactivar" onclick="handleReactivar(${u.id})">
                             ${AdminApp.icon('unlock')}</button>` : ''}
+                        <button class="a-btn a-btn-ghost a-btn-sm" title="Eliminar" onclick="handleEliminar(${u.id})" style="color:var(--a-danger)">
+                            ${AdminApp.icon('trash')}
+                        </button>
                     </td>
                 </tr>`;
             }).join('');
@@ -451,6 +480,21 @@
             roles = await AdminAPI.getRoles();
             populateRolFilter();
             renderPermisos();
+            
+            const btnNuevo = document.querySelector('button[onclick="abrirModalNuevo()"]');
+            if (btnNuevo) {
+                if (roles.length === 0) {
+                    btnNuevo.disabled = true;
+                    btnNuevo.style.opacity = '0.5';
+                    btnNuevo.style.cursor = 'not-allowed';
+                    btnNuevo.title = 'Debe crear al menos un rol primero';
+                } else {
+                    btnNuevo.disabled = false;
+                    btnNuevo.style.opacity = '1';
+                    btnNuevo.style.cursor = 'pointer';
+                    btnNuevo.title = '';
+                }
+            }
         }
 
         function renderPermisos() {
@@ -458,27 +502,26 @@
             const thead = document.querySelector('#rolesTable thead tr');
             thead.innerHTML = '<th>Módulo</th>';
             roles.forEach(r => {
-                const isSuper = r.id === 1;
+                const isSuper = r.nombre.toUpperCase() === 'ADMINISTRADOR';
                 const actions = isSuper ? '' : `
                     <div style="margin-top:8px; display:flex; justify-content:center; gap:8px;">
                         <button class="a-btn a-btn-ghost a-btn-sm" style="padding:2px; height:auto; color:var(--a-primary)" onclick="abrirModalRol(${r.id})" title="Editar Rol">${AdminApp.icon('edit', 14)}</button>
                         <button class="a-btn a-btn-ghost a-btn-sm" style="padding:2px; height:auto; color:#dc2626" onclick="abrirModalEliminarRol(${r.id})" title="Eliminar Rol">${AdminApp.icon('trash', 14)}</button>
                     </div>`;
                 thead.insertAdjacentHTML('beforeend', `<th class="text-center" style="min-width:140px; padding-bottom:1rem; border-left:1px solid #eef2f6; text-align:center;">
-                    ${r.nombre}
+                    ${r.nombre.toUpperCase()}
                     ${actions}
                 </th>`);
             });
 
-            const as = getAdminDb();
             const body = document.getElementById('rolesBody');
             body.innerHTML = '';
             MODULOS.forEach(mod => {
                 let row = `<td style="font-weight:600;text-transform:capitalize">${mod}</td>`;
                 roles.forEach(r => {
-                    const isSuper = r.id === 1;
-                    const perm = as.permisos.find(p => p.rol_id === r.id && p.modulo === mod) || {};
-                    const checked = perm.puede_ver ? 'checked' : '';
+                    const isSuper = r.nombre.toUpperCase() === 'ADMINISTRADOR';
+                    const perm = (r.permisos || []).find(p => p.modulo === mod) || {};
+                    const checked = (isSuper || perm.puede_ver) ? 'checked' : '';
                     const disabled = isSuper ? 'disabled' : '';
                     
                     row += `<td class="text-center" style="border-left:1px solid #eef2f6;">
@@ -511,11 +554,11 @@
             });
         }
 
-        let pendingAuthAction = null;
+        var pendingAuthAction = null;
         
         function abrirModalRol(id = null) {
-            if (id === 1) return;
             const r = id ? roles.find(x => x.id === id) : null;
+            if (r && r.nombre.toUpperCase() === 'ADMINISTRADOR') return;
             document.getElementById('rolId').value = r ? r.id : '';
             document.getElementById('rolNombre').value = r ? r.nombre : '';
             document.getElementById('tituloModalRol').textContent = r ? 'Editar Rol' : 'Nuevo Rol';
@@ -543,9 +586,45 @@
             }
         }
 
+        function getInitials(name) {
+            if (!name) return 'U';
+            return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
+        }
+
+        // ==========================================
+        // Integración API RENIEC / SUNAT
+        // ==========================================
+        // Autocompletar nombre por DNI al hacer click en el botón
+        document.getElementById('btnBuscarDni').addEventListener('click', async () => {
+            const dniInput = document.getElementById('nuevoDni');
+            const val = dniInput.value.trim();
+            const nombreInput = document.getElementById('nuevoNombre');
+            if(val.length !== 8) return;
+
+            nombreInput.placeholder = 'Consultando RENIEC...';
+            
+            try {
+                const res = await fetch(`http://localhost:3000/api/externo/dni/${val}`);
+                const data = await res.json();
+                if(res.ok && data.success) {
+                    nombreInput.value = data.nombre;
+                    nombreInput.readOnly = true;
+                    AdminApp.toast('Personal encontrado en RENIEC', 'success');
+                } else {
+                    nombreInput.value = '';
+                    nombreInput.readOnly = false;
+                    AdminApp.toast('No se encontró el DNI. Introdúcelo manualmente', 'warning');
+                }
+            } catch(e) {
+                AdminApp.toast('Error conectando a RENIEC', 'error');
+            } finally {
+                nombreInput.placeholder = 'Nombres y apellidos';
+            }
+        });
+
         function abrirModalEliminarRol(id) {
-            if (id === 1) return;
             const r = roles.find(x => x.id === id);
+            if (r && r.nombre.toUpperCase() === 'ADMINISTRADOR') return;
             const usuariosAsociados = allUsers.filter(u => u.rol_id === id);
             document.getElementById('eliminarRolId').value = id;
             document.getElementById('textoEliminarRol').textContent = `Estás a punto de eliminar el rol "${r.nombre}". Actualmente hay ${usuariosAsociados.length} usuario(s) con este rol.`;
@@ -596,6 +675,7 @@
         }
 
         async function handleGuardarUsuario() {
+            const id = document.getElementById('nuevoUsuarioId').value;
             const datos = {
                 nombre: document.getElementById('nuevoNombre').value,
                 dni: document.getElementById('nuevoDni').value,
@@ -611,12 +691,46 @@
                 AdminApp.toast('El DNI debe tener exactamente 8 digitos', 'error'); return;
             }
             try {
-                await AdminAPI.crearUsuario(datos);
+                if (id) {
+                    await AdminAPI.actualizarUsuario(id, datos);
+                    AdminApp.toast('Colaborador actualizado exitosamente');
+                } else {
+                    await AdminAPI.crearUsuario(datos);
+                    AdminApp.toast('Colaborador registrado exitosamente');
+                }
                 AdminApp.closeModal('modalNuevo');
-                AdminApp.toast('Colaborador registrado exitosamente');
                 document.getElementById('formNuevo').reset();
+                document.getElementById('nuevoUsuarioId').value = '';
+                document.getElementById('nuevoNombre').readOnly = true;
                 loadPersonal();
             } catch (err) { AdminApp.toast(err.message, 'error'); }
+        }
+
+        function abrirModalEditar(id) {
+            const u = allUsers.find(x => x.id === id);
+            if (!u) return;
+            document.getElementById('nuevoUsuarioId').value = u.id;
+            document.getElementById('nuevoNombre').value = u.nombre;
+            document.getElementById('nuevoNombre').readOnly = false;
+            document.getElementById('nuevoDni').value = u.dni;
+            document.getElementById('nuevoEmail').value = u.email;
+            document.getElementById('nuevoTelefono').value = u.telefono || '';
+            document.getElementById('nuevoRol').value = u.rol_id;
+            document.getElementById('nuevoPassword').value = '';
+            document.getElementById('nuevoPassword').parentElement.style.display = 'none'; // hide password for editing
+            document.querySelector('#modalNuevo .a-modal-title').textContent = 'Editar Colaborador';
+            AdminApp.openModal('modalNuevo');
+        }
+
+        async function handleEliminar(id) {
+            if (!confirm('¿Estás seguro de ELIMINAR este colaborador? Esta acción no se puede deshacer.')) return;
+            pedirPasswordAdmin(async () => {
+                try {
+                    await AdminAPI.eliminarUsuario(id);
+                    AdminApp.toast('Colaborador eliminado');
+                    loadPersonal();
+                } catch (err) { AdminApp.toast(err.message, 'error'); }
+            });
         }
 
         async function handleInhabilitar(id) {

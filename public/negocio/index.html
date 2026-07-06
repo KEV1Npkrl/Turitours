@@ -148,7 +148,14 @@
 </head>
 <body class="admin-body">
     <div class="admin-layout">
-        <aside class="admin-sidebar" id="adminSidebar"></aside>
+        <aside class="admin-sidebar" id="adminSidebar">
+            <nav>
+                <a href="inventario.html">Inventario</a>
+                <a href="auditoria.html">Auditoría</a>
+                <a href="perfil.html">Perfil de Empresa</a>
+                <a href="configuracion.html">Configuración</a>
+            </nav>
+        </aside>
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
         <main class="admin-main">
@@ -162,8 +169,15 @@
                         <p class="admin-header-subtitle" id="headerDate"></p>
                     </div>
                 </div>
-                <div class="admin-header-right">
+                <div class="admin-header-right" style="display:flex; align-items:center; gap:1rem;">
                     <span class="a-badge a-badge-green a-badge-dot" id="cajaIndicator" style="display:none">Caja abierta</span>
+                    <button class="btn btn-outline" style="padding: 0.5rem; position:relative;" id="btnNotificaciones" onclick="openNotificaciones()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                        </svg>
+                        <span id="notifBadge" style="display:none; position:absolute; top:-5px; right:-5px; background:var(--destructive); color:white; border-radius:50%; width:18px; height:18px; font-size:10px; display:flex; align-items:center; justify-content:center;">0</span>
+                    </button>
                 </div>
             </header>
 
@@ -173,10 +187,69 @@
         </main>
     </div>
 
+        <div id="notificacionesModal" class="a-modal">
+            <div class="a-modal-content" style="max-width: 500px;">
+                <div class="a-modal-header">
+                    <h3 class="a-modal-title">Comunicados del Sistema</h3>
+                    <button class="a-modal-close" onclick="closeNotificaciones()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div class="a-modal-body" id="notificacionesList" style="max-height: 400px; overflow-y: auto;">
+                    <p style="text-align:center; color:var(--text-muted); padding:2rem;">No hay comunicados recientes.</p>
+                </div>
+            </div>
+        </div>
+
     <script src="../js/data.js"></script>
     <script src="../js/schema.js"></script>
     <script src="../js/admin-data.js"></script>
     <script src="../js/admin-api.js"></script>
+    <script>
+        const user = JSON.parse(localStorage.getItem('admin_session'));
+        if (!user || !user.token) {
+            window.location.href = 'login.html';
+        }
+
+        async function fetchNotificaciones() {
+            try {
+                const res = await fetch('http://localhost:3000/api/agencia/comunicados', {
+                    headers: { 'Authorization': `Bearer ${user.token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    const list = document.getElementById('notificacionesList');
+                    const badge = document.getElementById('notifBadge');
+                    
+                    if (data.length > 0) {
+                        badge.style.display = 'flex';
+                        badge.textContent = data.length;
+                        
+                        list.innerHTML = data.map(c => `
+                            <div style="padding: 1rem; border-bottom: 1px solid var(--border); background: ${c.tipo === 'alerta' ? '#fef2f2' : '#f8fafc'};">
+                                <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
+                                    <strong style="color:var(--text-dark);">${c.titulo}</strong>
+                                    <small style="color:var(--text-muted);">${new Date(c.fechaEnvio).toLocaleDateString()}</small>
+                                </div>
+                                <p style="color:var(--text-regular); font-size:0.9rem; margin:0;">${c.cuerpo}</p>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        
+        window.openNotificaciones = function() {
+            document.getElementById('notificacionesModal').classList.add('open');
+        };
+        window.closeNotificaciones = function() {
+            document.getElementById('notificacionesModal').classList.remove('open');
+        };
+
+        fetchNotificaciones();
+    </script>
     <script src="../js/admin-app.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {

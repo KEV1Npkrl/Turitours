@@ -265,31 +265,44 @@
 
     <script src="../js/data.js"></script>
     <script>
-        document.getElementById('saLoginForm').addEventListener('submit', function(e) {
+        document.getElementById('saLoginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const db = getMockDb();
+            const btn = this.querySelector('button[type="submit"]');
             
-            const admin = db.super_usuarios.find(u => u.email === email && u.password === password && u.activo === 1);
-            
-            if (admin) {
-                localStorage.setItem('sa_user', JSON.stringify({id: admin.id, nombre: admin.nombre}));
-                
-                // Auditar login
-                db.auditoria_global.push({
-                    id: db.auditoria_global.length + 1,
-                    super_usuario_id: admin.id,
-                    accion: 'LOGIN',
-                    detalles: 'Inicio de sesión exitoso',
-                    ip: 'Localhost',
-                    created_at: new Date().toISOString()
+            btn.disabled = true;
+            btn.innerHTML = 'Ingresando...';
+
+            try {
+                const response = await fetch('http://localhost:3000/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
                 });
-                saveMockDb(db);
+                const data = await response.json();
                 
+                if (!response.ok) {
+                    throw new Error(data.error || 'Credenciales incorrectas');
+                }
+
+                // Asegurarse de que sea superadmin (rol_id 99 que pusimos en Java)
+                if (data.user.rol_id !== 99) {
+                    throw new Error('No tienes permisos de Superadministrador.');
+                }
+
+                localStorage.setItem('sa_user', JSON.stringify({id: data.user.id, nombre: data.user.nombre, token: data.token}));
                 window.location.href = 'index.html';
-            } else {
-                document.getElementById('loginError').style.display = 'block';
+            } catch (err) {
+                const errorEl = document.getElementById('loginError');
+                errorEl.textContent = err.message;
+                errorEl.style.display = 'block';
+                
+                btn.disabled = false;
+                btn.innerHTML = `Ingresar al Sistema
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>`;
             }
         });
     </script>

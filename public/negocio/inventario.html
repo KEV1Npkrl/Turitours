@@ -166,6 +166,7 @@
                 <div class="a-tabs">
                     <div class="a-tabs-list">
                         <button class="a-tab active" onclick="cambiarTab('equipos')" id="tab-btn-equipos">Equipos (Activos)</button>
+                        <button class="a-tab" onclick="cambiarTab('movimientos')" id="tab-btn-movimientos">Movimientos</button>
                         <button class="a-tab" onclick="cambiarTab('proveedores')" id="tab-btn-proveedores">Directorio Proveedores</button>
                     </div>
                 </div>
@@ -194,6 +195,36 @@
                             </thead>
                             <tbody>
                                 <tr><td colspan="6" style="text-align:center">Cargando equipos...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab Movimientos -->
+                <div id="tab-movimientos" class="tab-pane" style="display: none; margin-top: 1rem;">
+                    <div class="a-toolbar">
+                        <input type="text" class="a-search-input" placeholder="Buscar movimiento..." onkeyup="filtrarMovimientos(this.value)">
+                        <button class="a-btn a-btn-primary" onclick="abrirModalMovimiento()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Registrar Movimiento
+                        </button>
+                    </div>
+
+                    <div class="a-table-wrap">
+                        <table class="a-table" id="tablaMovimientos">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Fecha</th>
+                                    <th>Equipo</th>
+                                    <th>Tipo</th>
+                                    <th>Cantidad</th>
+                                    <th>Motivo / Tour</th>
+                                    <th>Usuario</th>
+                                </tr>
+                            </thead>
+                            <tbody id="movimientosBody">
+                                <tr><td colspan="7" style="text-align:center">Cargando movimientos...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -229,6 +260,47 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- Modal Registro Movimiento -->
+    <div class="a-modal-overlay" id="modalMovimiento">
+        <div class="a-modal">
+            <div class="a-modal-header">
+                <h3 class="a-modal-title">Registrar Movimiento de Inventario</h3>
+                <button class="a-modal-close" onclick="AdminApp.closeModal('modalMovimiento')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="a-modal-body">
+                <form id="formMovimiento" onsubmit="guardarMovimiento(event)">
+                    <div class="a-form-group">
+                        <label class="a-form-label">Equipo / Insumo <span class="required">*</span></label>
+                        <select class="a-form-input" id="movEquipo" required></select>
+                    </div>
+                    <div class="a-form-row">
+                        <div class="a-form-group">
+                            <label class="a-form-label">Tipo <span class="required">*</span></label>
+                            <select class="a-form-input" id="movTipo" required>
+                                <option value="salida">Salida / Préstamo</option>
+                                <option value="entrada">Entrada / Devolución</option>
+                            </select>
+                        </div>
+                        <div class="a-form-group">
+                            <label class="a-form-label">Cantidad <span class="required">*</span></label>
+                            <input type="number" class="a-form-input" id="movCantidad" required min="1">
+                        </div>
+                    </div>
+                    <div class="a-form-group">
+                        <label class="a-form-label">Motivo o Destino <span class="required">*</span></label>
+                        <input type="text" class="a-form-input" id="movMotivo" required placeholder="Ej: Tour Laguna Azul, Desgaste, Compra nueva...">
+                    </div>
+                </form>
+            </div>
+            <div class="a-modal-footer">
+                <button class="a-btn a-btn-outline" onclick="AdminApp.closeModal('modalMovimiento')">Cancelar</button>
+                <button class="a-btn a-btn-primary" onclick="document.getElementById('formMovimiento').requestSubmit()">Guardar Movimiento</button>
+            </div>
+        </div>
     </div>
 
     <!-- Modal Registro Equipo -->
@@ -359,12 +431,14 @@
     <script>
         let allEquipos = [];
         let allProveedores = [];
+        let allMovimientos = [];
 
         document.addEventListener('DOMContentLoaded', async () => {
             if (!AdminApp.init('inventario')) return;
             cargarCategorias();
             cargarEquipos();
             cargarProveedores();
+            cargarMovimientos();
         });
 
         function cambiarTab(tab) {
@@ -541,6 +615,94 @@
                 cargarEquipos();
             } catch (err) {
                 AdminApp.toast(err.message, 'error');
+            }
+        }
+
+        /* ----- MOVIMIENTOS ----- */
+        async function cargarMovimientos() {
+            try {
+                const res = await fetch('http://localhost:3000/api/inventario/movimientos', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
+                });
+                const data = await res.json();
+                allMovimientos = data.movimientos || [];
+                renderMovimientos(allMovimientos);
+            } catch(e) {
+                document.getElementById('movimientosBody').innerHTML = '<tr><td colspan="7" class="text-center text-red-500">Error cargando movimientos</td></tr>';
+            }
+        }
+
+        function renderMovimientos(lista) {
+            const tbody = document.getElementById('movimientosBody');
+            if(lista.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--a-text-muted)">No hay movimientos registrados</td></tr>';
+                return;
+            }
+            tbody.innerHTML = lista.map(m => `
+                <tr>
+                    <td>#${m.id}</td>
+                    <td>${AdminApp.formatFechaHora(m.fecha)}</td>
+                    <td class="font-medium">${m.equipo_nombre}</td>
+                    <td>${m.tipo === 'salida' ? '<span class="a-badge a-badge-red">Salida</span>' : '<span class="a-badge a-badge-green">Entrada</span>'}</td>
+                    <td>${m.cantidad}</td>
+                    <td>${m.motivo}</td>
+                    <td>${m.usuario_nombre}</td>
+                </tr>
+            `).join('');
+        }
+
+        function filtrarMovimientos(query) {
+            const q = query.toLowerCase();
+            const filt = allMovimientos.filter(x => 
+                x.equipo_nombre.toLowerCase().includes(q) || 
+                x.motivo.toLowerCase().includes(q) ||
+                x.usuario_nombre.toLowerCase().includes(q)
+            );
+            renderMovimientos(filt);
+        }
+
+        function abrirModalMovimiento() {
+            document.getElementById('formMovimiento').reset();
+            const sel = document.getElementById('movEquipo');
+            sel.innerHTML = '<option value="">-- Seleccionar Equipo --</option>' + 
+                allEquipos.map(eq => `<option value="${eq.id}">${eq.nombre} (Disp: ${eq.cantidad_disponible})</option>`).join('');
+            AdminApp.openModal('modalMovimiento');
+        }
+
+        async function guardarMovimiento(e) {
+            e.preventDefault();
+            const btn = document.getElementById('formMovimiento').closest('.a-modal').querySelector('.a-btn-primary');
+            btn.disabled = true;
+
+            const payload = {
+                equipo_id: document.getElementById('movEquipo').value,
+                tipo: document.getElementById('movTipo').value,
+                cantidad: document.getElementById('movCantidad').value,
+                motivo: document.getElementById('movMotivo').value
+            };
+
+            try {
+                const res = await fetch('http://localhost:3000/api/inventario/movimientos', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if(res.ok) {
+                    AdminApp.toast('Movimiento registrado con éxito', 'success');
+                    AdminApp.closeModal('modalMovimiento');
+                    cargarMovimientos();
+                    cargarEquipos(); // Actualizar stock visible
+                } else {
+                    AdminApp.toast(data.error || 'Error al registrar', 'error');
+                }
+            } catch(e) {
+                AdminApp.toast('Error de red', 'error');
+            } finally {
+                btn.disabled = false;
             }
         }
 

@@ -1,0 +1,9 @@
+package com.turitours.backend.repository;
+
+import com.turitours.backend.entity.Proveedor;
+import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.List;
+
+public interface ProveedorRepository extends JpaRepository<Proveedor, Integer> {
+    List<Proveedor> findByAgenciaId(Integer agenciaId);
+}

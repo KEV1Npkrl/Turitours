@@ -80,13 +80,13 @@ function renderPerfilForm(container, user) {
                         <h3>Datos personales</h3>
                         <div class="auth-form-grid">
                             <div class="form-group">
-                                <label for="nombre">Nombres <span class="label-required" aria-hidden="true">*</span></label>
-                                <input type="text" id="nombre" name="nombre" class="form-input" maxlength="60" required value="${escapeHtml(user.nombre)}">
+                                <label for="nombre">Nombres</label>
+                                <input type="text" id="nombre" name="nombre" class="form-input is-readonly" maxlength="60" required value="${escapeHtml(user.nombre)}" readonly tabindex="-1">
                                 <span class="field-error" id="nombreError" role="alert"></span>
                             </div>
                             <div class="form-group">
-                                <label for="apellidos">Apellidos <span class="label-required" aria-hidden="true">*</span></label>
-                                <input type="text" id="apellidos" name="apellidos" class="form-input" maxlength="80" required value="${escapeHtml(user.apellidos)}">
+                                <label for="apellidos">Apellidos</label>
+                                <input type="text" id="apellidos" name="apellidos" class="form-input is-readonly" maxlength="80" required value="${escapeHtml(user.apellidos)}" readonly tabindex="-1">
                                 <span class="field-error" id="apellidosError" role="alert"></span>
                             </div>
                         </div>

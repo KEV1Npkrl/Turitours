@@ -334,7 +334,7 @@
         <nav class="sa-nav">
             <a href="index.html" class="sa-nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg> Dashboard Global</a>
             <a href="agencias.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg> Agencias y Planes</a>
-            <a href="reportes.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg> Reportes Sectoriales</a>
+            
             <a href="auditoria.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg> Auditoría</a>
             <a href="soporte.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg> Soporte Técnico</a>
             <a href="maestros.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> Usuarios Maestros</a>
@@ -378,15 +378,6 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                     </div>
                 </div>
-                <div class="stat-card warning">
-                    <div class="stat-info">
-                        <h3>Ingresos Estimados</h3>
-                        <div class="value" id="valIngresos">S/ 0</div>
-                    </div>
-                    <div class="stat-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-                    </div>
-                </div>
             </div>
 
             <div class="panel-card">
@@ -414,11 +405,10 @@
         </div>
     </main>
 
-    <script src="../js/data.js"></script>
     <script>
         // Check SA session
         const saUser = JSON.parse(localStorage.getItem('sa_user'));
-        if (!saUser) {
+        if (!saUser || !saUser.token) {
             window.location.href = 'login.html';
         } else {
             document.getElementById('saUserName').textContent = saUser.nombre;
@@ -429,34 +419,22 @@
             window.location.href = 'login.html';
         });
 
-        // Load dashboard data
-        const db = getMockDb();
-        
-        // Populate stats
-        const agencias = db.agencias;
-        document.getElementById('valAgencias').textContent = agencias.filter(a => a.estado === 'activa').length;
-        
-        const reservas = db.reservas;
-        document.getElementById('valReservas').textContent = reservas.length;
-        
-        const ingresos = reservas.reduce((acc, r) => acc + r.total, 0);
-        document.getElementById('valIngresos').textContent = `S/ ${ingresos.toFixed(2)}`;
+        async function fetchDashboard() {
+            try {
+                const response = await fetch('http://localhost:3000/api/superadmin/dashboard/stats', {
+                    headers: { 'Authorization': `Bearer ${saUser.token}` }
+                });
+                if (response.ok) {
+                    const stats = await response.json();
+                    document.getElementById('valAgencias').textContent = stats.agencias_activas;
+                    document.getElementById('valReservas').textContent = stats.transacciones_mes;
+                }
+            } catch (err) {
+                console.error("Error fetching dashboard", err);
+            }
+        }
 
-        // Populate table
-        const tbody = document.getElementById('agenciasTableBody');
-        tbody.innerHTML = '';
-        agencias.slice(0, 5).forEach(ag => {
-            const plan = ag.plan_id === 1 ? 'Básico' : ag.plan_id === 2 ? 'Estándar' : 'Premium';
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><strong>${ag.nombre}</strong></td>
-                <td>${ag.ruc}</td>
-                <td>${plan}</td>
-                <td><span class="badge ${ag.estado === 'activa' ? 'active' : 'pending'}">${ag.estado.toUpperCase()}</span></td>
-                <td>${new Date(ag.fecha_alta).toLocaleDateString()}</td>
-            `;
-            tbody.appendChild(tr);
-        });
+        fetchDashboard();
     </script>
     <script src="../js/responsive.js"></script>
 </body>

@@ -178,7 +178,7 @@
         <nav class="sa-nav">
             <a href="index.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg> Dashboard Global</a>
             <a href="agencias.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg> Agencias y Planes</a>
-            <a href="reportes.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg> Reportes Sectoriales</a>
+            
             <a href="auditoria.html" class="sa-nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg> Auditoría</a>
             <a href="soporte.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg> Soporte Técnico</a>
             <a href="maestros.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> Usuarios Maestros</a>
@@ -245,26 +245,42 @@
     <script src="../js/data.js"></script>
     <script>
         const saUser = JSON.parse(localStorage.getItem('sa_user'));
-        if (!saUser) window.location.href = 'login.html';
+        if (!saUser || !saUser.token) window.location.href = 'login.html';
         document.getElementById('saUserName').textContent = saUser.nombre;
         document.getElementById('btnLogout').addEventListener('click', () => {
             localStorage.removeItem('sa_user'); window.location.href = 'login.html';
         });
 
-        const db = getMockDb();
-
-        // Cargar logs
         const auditBody = document.getElementById('auditTableBody');
-        db.auditoria_global.slice().reverse().forEach(log => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${new Date(log.created_at).toLocaleString()}</td>
-                <td><span class="badge" style="background:#e2e8f0; color:#475569">${log.accion}</span></td>
-                <td>${log.detalles}</td>
-                <td>Admin ID: ${log.super_usuario_id} | ${log.ip}</td>
-            `;
-            auditBody.appendChild(tr);
-        });
+
+        async function fetchAuditoria() {
+            try {
+                const res = await fetch('http://localhost:3000/api/superadmin/sistema/auditoria', {
+                    headers: { 'Authorization': `Bearer ${saUser.token}` }
+                });
+                if (res.ok) {
+                    const logs = await res.json();
+                    auditBody.innerHTML = '';
+                    logs.slice().reverse().forEach(log => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${log.createdAt ? new Date(log.createdAt).toLocaleString() : 'N/A'}</td>
+                            <td><span class="badge" style="background:#e2e8f0; color:#475569">${log.accion}</span></td>
+                            <td>${log.detalles}</td>
+                            <td>Admin ID: ${log.agenciaId} | ${log.ip || 'N/A'}</td>
+                        `;
+                        auditBody.appendChild(tr);
+                    });
+                }
+            } catch (err) {
+                console.error("Error cargando auditoria", err);
+                auditBody.innerHTML = '<tr><td colspan="4">Error cargando auditoría</td></tr>';
+            }
+        }
+
+        fetchAuditoria();
+
+        const db = getMockDb();
 
         // Cargar select de agencias
         const select = document.getElementById('agenciaSelect');

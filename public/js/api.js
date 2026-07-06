@@ -17,8 +17,8 @@
  */
 
 const API = (function() {
-    const BASE_URL = '/api';
-    const USE_MOCK = true;
+    const BASE_URL = 'http://localhost:3000/api';
+    const USE_MOCK = false;
     const AGENCIA_ID = Schema.AGENCIA_DEFAULT_ID;
 
     const mockDelay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -42,8 +42,9 @@ const API = (function() {
 
         const response = await fetch(url, { ...defaultOptions, ...options });
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || 'Error en la peticion');
+            let errorData;
+            try { errorData = await response.json(); } catch(e) { errorData = {}; }
+            throw new Error(errorData.message || errorData.error || 'Error en la peticion');
         }
         return response.json();
     }
@@ -489,16 +490,17 @@ const API = (function() {
     }
 
     async function getReservasUsuario(turistaId) {
+        const id = turistaId || getTuristaSessionId();
+        if (!id) return [];
+
         if (USE_MOCK) {
             await mockDelay();
             const state = db();
-            const id = turistaId || getTuristaSessionId();
-            if (!id) return [];
             return state.reservas
                 .filter((r) => r.turista_id === id)
                 .map((r) => Schema.enrichReserva(r, state));
         }
-        return request(`/public/turistas/${turistaId}/reservas`);
+        return request(`/public/turistas/${id}/reservas`);
     }
 
     async function cancelarReserva(reservaId, motivo) {
@@ -787,6 +789,7 @@ const API = (function() {
             body: JSON.stringify({ email, password })
         });
         if (response.token) setAuthToken(response.token);
+        if (response.turista) setTuristaSession(response.turista);
         return response;
     }
 

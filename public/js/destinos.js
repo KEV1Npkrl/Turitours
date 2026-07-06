@@ -127,9 +127,9 @@ function renderDestinosPage() {
             <img src="${dest.imagen}" alt="${dest.nombre}" loading="lazy">
             <div class="destino-overlay">
                 <div class="destino-info">
-                    <span class="destino-pill">${dest.tours_count} tours</span>
+                    <span class="destino-pill">${dest.tours_count || 0} tours</span>
                     <h3 class="destino-name">${dest.nombre} ${dest.bandera}</h3>
-                    <p class="destino-count">${dest.descripcion}</p>
+                    <p class="destino-count expandable-text">${dest.descripcion}</p>
                     <p class="destino-meta">Explora tours, precios y disponibilidad en esta zona.</p>
                     <div class="destino-actions">
                         <span class="btn btn-white btn-sm">Ver tours</span>

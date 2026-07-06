@@ -176,7 +176,7 @@
         <nav class="sa-nav">
             <a href="index.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg> Dashboard Global</a>
             <a href="agencias.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg> Agencias y Planes</a>
-            <a href="reportes.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg> Reportes Sectoriales</a>
+            
             <a href="auditoria.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg> Auditoría</a>
             <a href="soporte.html" class="sa-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg> Soporte Técnico</a>
             <a href="maestros.html" class="sa-nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> Usuarios Maestros</a>
@@ -227,22 +227,74 @@
             localStorage.removeItem('sa_user'); window.location.href = 'login.html';
         });
 
-        const db = getMockDb();
         const tbody = document.getElementById('maestrosTableBody');
 
-        db.agencias.forEach(ag => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><strong>${ag.nombre}</strong></td>
-                <td>${ag.email}</td>
-                <td>Hoy, 08:30 AM</td>
-                <td>
-                    <button class="btn btn-outline btn-sm" onclick="alert('Se ha enviado un correo para restablecer la contraseña a ${ag.email}')">Reset Password</button>
-                    <button class="btn btn-outline btn-sm" style="color:var(--destructive); border-color:var(--destructive)" onclick="alert('Credenciales revocadas temporalmente')">Revocar Acceso</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
+        async function fetchMaestros() {
+            try {
+                const res = await fetch('http://localhost:3000/api/superadmin/maestros', {
+                    headers: { 'Authorization': `Bearer ${saUser.token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    tbody.innerHTML = '';
+                    data.forEach(ag => {
+                        const dateStr = ag.ultimoLogin ? new Date(ag.ultimoLogin).toLocaleString() : 'Nunca';
+                        const isBlocked = ag.bloqueado === 1;
+                        const blockBtnText = isBlocked ? 'Desbloquear Acceso' : 'Revocar Acceso';
+                        const blockBtnColor = isBlocked ? '#10b981' : 'var(--destructive)';
+                        
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td><strong>${ag.nombre}</strong> <span class="badge ${ag.estado === 'activa' ? 'active' : 'suspended'}">${ag.estado.toUpperCase()}</span></td>
+                            <td>${ag.email || 'N/A'}</td>
+                            <td>${dateStr}</td>
+                            <td>
+                                ${ag.usuarioId ? `
+                                <button class="btn btn-outline btn-sm" onclick="resetPassword(${ag.usuarioId}, '${ag.email}')">Reset Password</button>
+                                <button class="btn btn-outline btn-sm" style="color:${blockBtnColor}; border-color:${blockBtnColor}" onclick="toggleBloqueo(${ag.usuarioId})">${blockBtnText}</button>
+                                ` : '<small style="color:var(--text-muted)">Sin usuarios</small>'}
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        window.resetPassword = async function(userId, email) {
+            if(!confirm(`¿Estás seguro de reiniciar la contraseña de ${email} a '123456'?`)) return;
+            try {
+                const res = await fetch(`http://localhost:3000/api/superadmin/maestros/${userId}/reset-password`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${saUser.token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    alert(data.message);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        };
+
+        window.toggleBloqueo = async function(userId) {
+            if(!confirm('¿Estás seguro de cambiar el estado de acceso de este usuario?')) return;
+            try {
+                const res = await fetch(`http://localhost:3000/api/superadmin/maestros/${userId}/toggle-bloqueo`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${saUser.token}` }
+                });
+                if (res.ok) {
+                    fetchMaestros();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        };
+
+        fetchMaestros();
     </script>
     <script src="../js/responsive.js"></script>
 </body>

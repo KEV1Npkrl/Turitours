@@ -22,6 +22,9 @@ function initLoginPage() {
             mostrarAlerta('Completa los campos obligatorios', 'warning');
             return;
         }
+        
+        const errorMsgEl = document.getElementById('loginErrorMsg');
+        if (errorMsgEl) errorMsgEl.style.display = 'none';
 
         try {
             await API.login(email, password);
@@ -39,7 +42,13 @@ function initLoginPage() {
 
             window.location.href = redirect;
         } catch (error) {
-            mostrarAlerta(error.message || 'No se pudo iniciar sesion', 'error');
+            const errorMsgEl = document.getElementById('loginErrorMsg');
+            if (errorMsgEl) {
+                errorMsgEl.textContent = error.message || 'No se pudo iniciar sesion';
+                errorMsgEl.style.display = 'block';
+            } else {
+                mostrarAlerta(error.message || 'No se pudo iniciar sesion', 'error');
+            }
         }
     });
 }

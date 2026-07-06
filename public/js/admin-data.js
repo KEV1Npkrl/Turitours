@@ -7,11 +7,7 @@
 
 const ADMIN_MOCK_DB = {
     /* ─── Roles por agencia ─── */
-    roles: [
-        { id: 1, agencia_id: 1, nombre: 'Administrador', descripcion: 'Acceso total al sistema' },
-        { id: 2, agencia_id: 1, nombre: 'Vendedor', descripcion: 'Ventas, atencion al turista y caja' },
-        { id: 3, agencia_id: 1, nombre: 'Guia', descripcion: 'Guia turistico y operaciones en campo' }
-    ],
+    roles: [],
 
     /* ─── Permisos granulares ─── */
     permisos: [
@@ -38,39 +34,22 @@ const ADMIN_MOCK_DB = {
         { id: 16, rol_id: 3, modulo: 'dashboard',    puede_ver: 1, puede_crear: 0, puede_editar: 0, puede_eliminar: 0 },
         { id: 17, rol_id: 3, modulo: 'operaciones',  puede_ver: 1, puede_crear: 1, puede_editar: 1, puede_eliminar: 0 },
         { id: 18, rol_id: 3, modulo: 'inventario',   puede_ver: 1, puede_crear: 1, puede_editar: 1, puede_eliminar: 0 },
-        { id: 19, rol_id: 3, modulo: 'tours',        puede_ver: 1, puede_crear: 0, puede_editar: 0, puede_eliminar: 0 }
+        { id: 19, rol_id: 3, modulo: 'tours',        puede_ver: 1, puede_crear: 0, puede_editar: 0, puede_eliminar: 0 },
+        // Súper Admin (Privacidad: Todo menos reportes)
+        { id: 101, rol_id: 99, modulo: 'dashboard',   puede_ver: 1, puede_crear: 1, puede_editar: 1, puede_eliminar: 1 },
+        { id: 102, rol_id: 99, modulo: 'tours',       puede_ver: 1, puede_crear: 1, puede_editar: 1, puede_eliminar: 1 },
+        { id: 103, rol_id: 99, modulo: 'reservas',    puede_ver: 1, puede_crear: 1, puede_editar: 1, puede_eliminar: 1 },
+        { id: 104, rol_id: 99, modulo: 'caja',        puede_ver: 1, puede_crear: 1, puede_editar: 1, puede_eliminar: 1 },
+        { id: 105, rol_id: 99, modulo: 'turistas',    puede_ver: 1, puede_crear: 1, puede_editar: 1, puede_eliminar: 1 },
+        { id: 106, rol_id: 99, modulo: 'operaciones', puede_ver: 1, puede_crear: 1, puede_editar: 1, puede_eliminar: 1 },
+        { id: 107, rol_id: 99, modulo: 'inventario',  puede_ver: 1, puede_crear: 1, puede_editar: 1, puede_eliminar: 1 },
+        { id: 108, rol_id: 99, modulo: 'personal',    puede_ver: 1, puede_crear: 1, puede_editar: 1, puede_eliminar: 1 },
+        { id: 109, rol_id: 99, modulo: 'auditoria',   puede_ver: 1, puede_crear: 0, puede_editar: 0, puede_eliminar: 0 },
+        { id: 110, rol_id: 99, modulo: 'facturacion', puede_ver: 1, puede_crear: 1, puede_editar: 1, puede_eliminar: 1 }
     ],
 
     /* ─── Usuarios (personal de la agencia) ─── */
-    usuarios: [
-        {
-            id: 1, agencia_id: 1, rol_id: 1,
-            nombre: 'Carlos Mendoza', dni: '70123456',
-            email: 'admin@agencia.com', telefono: '+51 942 100 001',
-            password_hash: 'admin123',
-            intentos_fallidos: 0, bloqueado: 0, activo: 1,
-            ultimo_login: '2026-05-31T18:00:00',
-            created_at: '2024-01-15T08:00:00'
-        },
-        {
-            id: 2, agencia_id: 1, rol_id: 2,
-            nombre: 'Ana Torres Rios', dni: '70234567',
-            email: 'vendedor@agencia.com', telefono: '+51 942 100 002',
-            password_hash: 'venta123',
-            intentos_fallidos: 0, bloqueado: 0, activo: 1,
-            ultimo_login: '2026-05-31T08:30:00',
-            created_at: '2024-02-01T08:00:00'
-        },
-        {
-            id: 3, agencia_id: 1, rol_id: 3,
-            nombre: 'Pedro Ramirez Silva', dni: '70456789',
-            email: 'guia@agencia.com', telefono: '+51 942 100 004',
-            password_hash: 'guia123',
-            intentos_fallidos: 0, bloqueado: 0, activo: 1,
-            ultimo_login: '2026-05-30T06:00:00',
-            created_at: '2024-03-01T08:00:00'
-        }
-    ],
+    usuarios: [],
 
     /* ─── Sesiones ─── */
     sesiones: [
@@ -79,84 +58,13 @@ const ADMIN_MOCK_DB = {
     ],
 
     /* ─── Cajas ─── */
-    cajas: [
-        {
-            id: 1, agencia_id: 1, cajero_id: 2,
-            nombre_caja: 'Caja Principal',
-            monto_apertura: 200.00,
-            monto_cierre_sistema: 1350.00,
-            monto_cierre_real: 1345.00,
-            diferencia: -5.00,
-            estado: 'cerrada',
-            abierta_at: '2026-05-30T08:00:00',
-            cerrada_at: '2026-05-30T18:00:00'
-        },
-        {
-            id: 2, agencia_id: 1, cajero_id: 2,
-            nombre_caja: 'Caja Principal',
-            monto_apertura: 200.00,
-            monto_cierre_sistema: null,
-            monto_cierre_real: null,
-            diferencia: null,
-            estado: 'abierta',
-            abierta_at: '2026-05-31T08:00:00',
-            cerrada_at: null
-        }
-    ],
+    cajas: [],
 
     /* ─── Pagos ─── */
-    pagos: [
-        {
-            id: 1, agencia_id: 1, caja_id: 2, reserva_id: 1, cajero_id: 2,
-            tipo: 'pago_completo', metodo: 'efectivo',
-            monto: 170.00, monto_recibido: 200.00, vuelto: 30.00,
-            concepto: 'Pago reserva Laguna Azul — 2 personas',
-            comprobante_ref: 'BOL-001', created_at: '2026-05-31T09:15:00'
-        },
-        {
-            id: 2, agencia_id: 1, caja_id: 2, reserva_id: 2, cajero_id: 2,
-            tipo: 'adelanto', metodo: 'yape',
-            monto: 67.50, monto_recibido: 67.50, vuelto: 0,
-            concepto: 'Adelanto reserva Cataratas Ahuashiyacu — 3 personas',
-            comprobante_ref: 'BOL-002', created_at: '2026-05-31T10:30:00'
-        },
-        {
-            id: 3, agencia_id: 1, caja_id: 2, reserva_id: null, cajero_id: 2,
-            tipo: 'egreso', metodo: 'efectivo',
-            monto: 25.00, monto_recibido: null, vuelto: null,
-            concepto: 'Compra de agua para tours',
-            comprobante_ref: null, created_at: '2026-05-31T11:00:00'
-        },
-        {
-            id: 4, agencia_id: 1, caja_id: 2, reserva_id: 3, cajero_id: 2,
-            tipo: 'pago_completo', metodo: 'transferencia',
-            monto: 70.00, monto_recibido: 70.00, vuelto: 0,
-            concepto: 'Pago reserva Mirador Tarapoto — 2 personas',
-            comprobante_ref: 'BOL-003', created_at: '2026-05-31T14:20:00'
-        }
-    ],
+    pagos: [],
 
     /* ─── Vehiculos ─── */
-    vehiculos: [
-        {
-            id: 1, agencia_id: 1, placa: 'T4R-001', modelo: 'Toyota Hiace 2023',
-            capacidad: 15, tipo: 'propio',
-            soat_vence: '2026-06-15', revision_vence: '2026-07-20',
-            activo: 1
-        },
-        {
-            id: 2, agencia_id: 1, placa: 'T4R-002', modelo: 'Hyundai H1 2022',
-            capacidad: 10, tipo: 'propio',
-            soat_vence: '2026-12-01', revision_vence: '2026-11-15',
-            activo: 1
-        },
-        {
-            id: 3, agencia_id: 1, placa: 'EXT-050', modelo: 'Sprinter 2024',
-            capacidad: 20, tipo: 'tercerizado',
-            soat_vence: '2027-01-10', revision_vence: '2027-01-10',
-            activo: 1
-        }
-    ],
+    vehiculos: [],
 
     /* ─── Mantenimientos ─── */
     mantenimientos: [
@@ -165,26 +73,12 @@ const ADMIN_MOCK_DB = {
     ],
 
     /* ─── Equipos (Inventario) ─── */
-    equipos: [
-        { id: 1, agencia_id: 1, nombre: 'Chaleco salvavidas', cantidad_total: 30, cantidad_disponible: 28, stock_minimo: 10, ubicacion: 'Almacen principal' },
-        { id: 2, agencia_id: 1, nombre: 'Botiquin primeros auxilios', cantidad_total: 5, cantidad_disponible: 4, stock_minimo: 2, ubicacion: 'Almacen principal' },
-        { id: 3, agencia_id: 1, nombre: 'Botas de caucho', cantidad_total: 20, cantidad_disponible: 3, stock_minimo: 5, ubicacion: 'Almacen secundario' },
-        { id: 4, agencia_id: 1, nombre: 'Binoculares', cantidad_total: 8, cantidad_disponible: 8, stock_minimo: 3, ubicacion: 'Almacen principal' },
-        { id: 5, agencia_id: 1, nombre: 'Casco de rafting', cantidad_total: 12, cantidad_disponible: 12, stock_minimo: 6, ubicacion: 'Almacen rafting' }
-    ],
+    equipos: [],
 
     /* ─── Proveedores ─── */
-    categorias_proveedor: [
-        { id: 1, agencia_id: 1, nombre: 'Transporte' },
-        { id: 2, agencia_id: 1, nombre: 'Alimentacion' },
-        { id: 3, agencia_id: 1, nombre: 'Equipamiento' }
-    ],
+    categorias_proveedor: [],
 
-    proveedores: [
-        { id: 1, agencia_id: 1, categoria_id: 1, razon_social: 'Transportes Selva SAC', ruc: '20456789012', contacto_nombre: 'Jorge Vasquez', telefono: '+51 942 555 001', email: 'transporte@selva.com', activo: 1 },
-        { id: 2, agencia_id: 1, categoria_id: 2, razon_social: 'Restaurant El Tambo EIRL', ruc: '20567890123', contacto_nombre: 'Marta Pinedo', telefono: '+51 942 555 002', email: 'tambo@rest.com', activo: 1 },
-        { id: 3, agencia_id: 1, categoria_id: 3, razon_social: 'Outdoor Equipos Peru', ruc: '20678901234', contacto_nombre: 'Roberto Luna', telefono: '+51 942 555 003', email: 'ventas@outdoor.pe', activo: 1 }
-    ],
+    proveedores: [],
 
     servicios_proveedor: [
         { id: 1, agencia_id: 1, proveedor_id: 1, reserva_id: 1, descripcion: 'Transporte Laguna Azul ida y vuelta', monto: 120.00, fecha_servicio: '2026-06-20', estado: 'pendiente', fecha_pago: null },
@@ -198,24 +92,13 @@ const ADMIN_MOCK_DB = {
     ],
 
     /* ─── Logs de auditoria ─── */
-    logs_auditoria: [
-        { id: 1, agencia_id: 1, usuario_id: 1, accion: 'CREATE', tabla_afectada: 'tours', registro_id: 6, valor_anterior: null, valor_nuevo: '{"nombre":"Rafting en el Rio Mayo"}', ip: '192.168.1.10', created_at: '2026-05-28T10:00:00' },
-        { id: 2, agencia_id: 1, usuario_id: 2, accion: 'CREATE', tabla_afectada: 'reservas', registro_id: 1, valor_anterior: null, valor_nuevo: '{"tour":"Laguna Azul","turista":"Kevin Sanchez","total":170}', ip: '192.168.1.15', created_at: '2026-05-10T10:00:00' },
-        { id: 3, agencia_id: 1, usuario_id: 2, accion: 'CREATE', tabla_afectada: 'pagos', registro_id: 1, valor_anterior: null, valor_nuevo: '{"monto":170,"metodo":"efectivo"}', ip: '192.168.1.20', created_at: '2026-05-31T09:15:00' },
-        { id: 4, agencia_id: 1, usuario_id: 2, accion: 'UPDATE', tabla_afectada: 'cajas', registro_id: 2, valor_anterior: '{"estado":"abierta"}', valor_nuevo: '{"ingreso":170}', ip: '192.168.1.20', created_at: '2026-05-31T09:16:00' },
-        { id: 5, agencia_id: 1, usuario_id: 1, accion: 'UPDATE', tabla_afectada: 'usuarios', registro_id: 6, valor_anterior: '{"activo":1}', valor_nuevo: '{"activo":0,"bloqueado":1}', ip: '192.168.1.10', created_at: '2026-05-15T14:00:00' },
-        { id: 6, agencia_id: 1, usuario_id: 2, accion: 'CREATE', tabla_afectada: 'reservas', registro_id: 2, valor_anterior: null, valor_nuevo: '{"tour":"Cataratas Ahuashiyacu","turista":"Kevin Sanchez","total":135}', ip: '192.168.1.15', created_at: '2026-05-28T14:30:00' },
-        { id: 7, agencia_id: 1, usuario_id: 2, accion: 'CREATE', tabla_afectada: 'pagos', registro_id: 2, valor_anterior: null, valor_nuevo: '{"monto":67.50,"metodo":"yape","tipo":"adelanto"}', ip: '192.168.1.20', created_at: '2026-05-31T10:30:00' },
-        { id: 8, agencia_id: 1, usuario_id: 3, accion: 'CREATE', tabla_afectada: 'asignaciones_tour', registro_id: 1, valor_anterior: null, valor_nuevo: '{"guia":"Pedro Ramirez","vehiculo":"T4R-001"}', ip: '192.168.1.25', created_at: '2026-05-29T09:00:00' }
-    ],
+    logs_auditoria: [],
 
     /* ─── Tokens recuperacion (mock) ─── */
     tokens_recuperacion: [],
 
     /* ─── Asignaciones de tour ─── */
-    asignaciones_tour: [
-        { id: 1, agencia_id: 1, reserva_id: 1, guia_id: 3, chofer_id: null, vehiculo_id: 1, notas: 'Recojo hotel Monte Azul 07:00', created_at: '2026-05-29T09:00:00' }
-    ],
+    asignaciones_tour: [],
 
     /* ─── Checklists ─── */
     checklists: [
@@ -249,10 +132,15 @@ function getAdminDb() {
         localStorage.removeItem('turitours_admin_mock_db');
         return JSON.parse(JSON.stringify(ADMIN_MOCK_DB));
     }
-    const stored = localStorage.getItem('turitours_admin_mock_db');
-    if (!stored) return JSON.parse(JSON.stringify(ADMIN_MOCK_DB));
-    try { return JSON.parse(stored); }
-    catch (_) { return JSON.parse(JSON.stringify(ADMIN_MOCK_DB)); }
+    
+    try {
+        const db = localStorage.getItem('turitours_admin_mock_db');
+        if (!db) return JSON.parse(JSON.stringify(ADMIN_MOCK_DB));
+        return JSON.parse(db);
+    } catch (e) {
+        localStorage.removeItem('turitours_admin_mock_db');
+        return JSON.parse(JSON.stringify(ADMIN_MOCK_DB));
+    }
 }
 
 function saveAdminDb(db) {

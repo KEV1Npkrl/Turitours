@@ -220,18 +220,21 @@
                         </div>
                         <div>
                             <label class="a-form-label">N° Documento</label>
-                            <input type="text" class="a-form-input" id="turDocumento" required>
+                            <div style="display:flex; gap:0.5rem;">
+                                <input type="text" class="a-form-input" id="turDocumento" required>
+                                <button type="button" class="a-btn a-btn-outline" id="btnBuscarTurista" style="padding: 0 1rem; flex-shrink: 0;">Buscar</button>
+                            </div>
                         </div>
                     </div>
                     
                     <div class="a-form-group a-grid-cols-2">
                         <div>
                             <label class="a-form-label">Nombres</label>
-                            <input type="text" class="a-form-input" id="turNombres" required>
+                            <input type="text" class="a-form-input" id="turNombres" required readonly>
                         </div>
                         <div>
                             <label class="a-form-label">Apellidos</label>
-                            <input type="text" class="a-form-input" id="turApellidos" required>
+                            <input type="text" class="a-form-input" id="turApellidos" required readonly>
                         </div>
                     </div>
 
@@ -438,11 +441,8 @@
                     await AdminAPI.actualizarTurista(parseInt(id), datos);
                     AdminApp.toast('Turista actualizado correctamente', 'success');
                 } else {
-                    // Si no hay crearTurista en API, podramos implementarlo o mostrar error.
-                    // await AdminAPI.crearTurista(datos);
-                    AdminApp.toast('Para crear un turista desde cero usa el mdulo Ventas o el Portal Pblico', 'info');
-                    btn.disabled = false;
-                    return;
+                    await AdminAPI.crearTurista(datos);
+                    AdminApp.toast('Turista creado correctamente', 'success');
                 }
                 AdminApp.closeModal('modalCRM');
                 cargarTuristas();
@@ -452,6 +452,72 @@
                 btn.disabled = false;
             }
         }
+
+        function descargarExcel() {
+            AdminApp.toast('Exportando a Excel...');
+        }
+
+        // ==========================================
+        // Integración API RENIEC / SUNAT
+        // ==========================================
+        document.getElementById('turTipoDoc').addEventListener('change', (e) => {
+            const val = e.target.value;
+            const isApi = (val === 'DNI' || val === 'RUC' || val === '');
+            document.getElementById('turNombres').readOnly = isApi;
+            document.getElementById('turApellidos').readOnly = isApi;
+            const btnBuscar = document.getElementById('btnBuscarTurista');
+            if (btnBuscar) btnBuscar.disabled = !isApi;
+        });
+
+        document.getElementById('btnBuscarTurista').addEventListener('click', async () => {
+            const val = document.getElementById('turDocumento').value.trim();
+            const tipoDoc = document.getElementById('turTipoDoc').value;
+            const inputNombres = document.getElementById('turNombres');
+            const inputApellidos = document.getElementById('turApellidos');
+            
+            if (!val || (val.length !== 8 && val.length !== 11)) return;
+
+            let tipo = val.length === 8 ? 'dni' : 'ruc';
+            
+            // Validar coherencia con el select
+            if (tipo === 'dni' && tipoDoc !== 'DNI') return;
+            if (tipo === 'ruc' && tipoDoc !== 'RUC') return;
+
+            inputNombres.placeholder = 'Consultando...';
+            inputApellidos.placeholder = 'Consultando...';
+            
+            try {
+                const res = await fetch(`http://localhost:3000/api/externo/${tipo}/${val}`);
+                const data = await res.json();
+                
+                if (res.ok && data.success) {
+                    if (tipo === 'dni') {
+                        inputNombres.value = data.raw.nombres;
+                        inputApellidos.value = `${data.raw.apellidoPaterno} ${data.raw.apellidoMaterno}`.trim();
+                    } else {
+                        inputNombres.value = data.raw.razonSocial;
+                        inputApellidos.value = '-';
+                    }
+                    
+                    inputNombres.readOnly = true;
+                    inputApellidos.readOnly = true;
+                    AdminApp.toast('Datos encontrados en ' + tipo.toUpperCase(), 'success');
+                } else {
+                    inputNombres.value = '';
+                    inputApellidos.value = '';
+                    inputNombres.readOnly = false;
+                    inputApellidos.readOnly = false;
+                    AdminApp.toast('No se encontró el documento en ' + tipo.toUpperCase(), 'warning');
+                }
+            } catch (err) {
+                inputNombres.readOnly = false;
+                inputApellidos.readOnly = false;
+                AdminApp.toast('Error conectando a API', 'error');
+            } finally {
+                inputNombres.placeholder = '';
+                inputApellidos.placeholder = '';
+            }
+        });
 
         async function abrirModalHistorial(id) {
             const tur = allTuristas.find(t => t.id === id);
