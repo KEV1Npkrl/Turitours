@@ -6,6 +6,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.core.ParameterizedTypeReference;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,10 +32,17 @@ public class ExternoController {
             headers.set("Authorization", "Bearer " + API_KEY);
             HttpEntity<String> entity = new HttpEntity<>("parameters", headers);
             
-            ResponseEntity<Map> responseEntity = restTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
+            ResponseEntity<Map<String, Object>> responseEntity = restTemplate.exchange(
+                url, 
+                HttpMethod.GET, 
+                entity, 
+                new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+            
             Map<String, Object> apiRes = responseEntity.getBody();
             
             if (apiRes != null && Boolean.TRUE.equals(apiRes.get("success"))) {
+                @SuppressWarnings("unchecked")
                 Map<String, Object> data = (Map<String, Object>) apiRes.get("data");
                 String nombres = (String) data.get("nombres");
                 String apellidoP = (String) data.get("apellidoPaterno");
@@ -68,10 +76,17 @@ public class ExternoController {
             headers.set("Authorization", "Bearer " + API_KEY);
             HttpEntity<String> entity = new HttpEntity<>("parameters", headers);
             
-            ResponseEntity<Map> responseEntity = restTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
+            ResponseEntity<Map<String, Object>> responseEntity = restTemplate.exchange(
+                url, 
+                HttpMethod.GET, 
+                entity, 
+                new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+            
             Map<String, Object> apiRes = responseEntity.getBody();
             
             if (apiRes != null && Boolean.TRUE.equals(apiRes.get("success"))) {
+                @SuppressWarnings("unchecked")
                 Map<String, Object> data = (Map<String, Object>) apiRes.get("data");
                 String razonSocial = (String) data.get("razonSocial");
                 

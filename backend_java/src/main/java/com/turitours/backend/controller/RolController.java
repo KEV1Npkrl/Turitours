@@ -98,7 +98,7 @@ public class RolController {
     @Transactional
     public ResponseEntity<?> desactivarYMigrarRol(@PathVariable Integer id, @RequestBody Map<String, Object> body, HttpServletRequest request) {
         Integer agenciaId = (Integer) request.getAttribute("agenciaId");
-        Integer adminId = (Integer) request.getAttribute("usuarioId");
+        Integer adminId = (Integer) request.getAttribute("userId");
         
         Optional<Rol> opt = rolRepository.findById(id);
         if (opt.isEmpty() || !opt.get().getAgenciaId().equals(agenciaId)) {

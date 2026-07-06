@@ -77,7 +77,7 @@ public class InventarioController {
     public ResponseEntity<?> registrarMovimiento(HttpServletRequest request, @RequestBody Map<String, Object> body) {
         try {
             Integer agenciaId = (Integer) request.getAttribute("agenciaId");
-            Integer usuarioId = (Integer) request.getAttribute("usuarioId");
+            Integer usuarioId = (Integer) request.getAttribute("userId");
 
             Integer equipoId = Integer.valueOf(body.get("equipo_id").toString());
             String tipo = body.get("tipo").toString();

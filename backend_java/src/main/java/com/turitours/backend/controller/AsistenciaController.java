@@ -6,7 +6,7 @@ import com.turitours.backend.entity.AsignacionTour;
 import com.turitours.backend.repository.ReservaRepository;
 import com.turitours.backend.repository.ReservaPasajeroRepository;
 import com.turitours.backend.repository.AsignacionTourRepository;
-import com.turitours.backend.repository.UsuarioRepository;
+
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -31,13 +31,12 @@ public class AsistenciaController {
     @Autowired
     private ReservaPasajeroRepository reservaPasajeroRepository;
 
-    @Autowired
-    private UsuarioRepository usuarioRepository;
+
 
     @GetMapping("/mis-tours")
     public ResponseEntity<?> getMisTours(HttpServletRequest request) {
         Integer agenciaId = (Integer) request.getAttribute("agenciaId");
-        Integer guiaId = (Integer) request.getAttribute("usuarioId");
+        Integer guiaId = (Integer) request.getAttribute("userId");
         
         List<AsignacionTour> asignaciones = asignacionTourRepository.findByAgenciaIdAndGuiaId(agenciaId, guiaId);
         
@@ -90,13 +89,21 @@ public class AsistenciaController {
     @PostMapping("/marcar")
     public ResponseEntity<?> marcarAsistencia(HttpServletRequest request, @RequestBody Map<String, Object> body) {
         try {
-            List<Integer> pasajerosIds = (List<Integer>) body.get("pasajeros_ids");
-            for (Integer pId : pasajerosIds) {
-                Optional<ReservaPasajero> pOpt = reservaPasajeroRepository.findById(pId.longValue());
-                if (pOpt.isPresent()) {
-                    ReservaPasajero p = pOpt.get();
-                    p.setAsistio(true);
-                    reservaPasajeroRepository.save(p);
+            if (body.containsKey("pasajeros_ids")) {
+                List<?> rawList = (List<?>) body.get("pasajeros_ids");
+                for (Object rawId : rawList) {
+                    Long pId;
+                    if (rawId instanceof Number) {
+                        pId = ((Number) rawId).longValue();
+                    } else {
+                        pId = Long.parseLong(rawId.toString());
+                    }
+                    Optional<ReservaPasajero> pOpt = reservaPasajeroRepository.findById(pId);
+                    if (pOpt.isPresent()) {
+                        ReservaPasajero p = pOpt.get();
+                        p.setAsistio(true);
+                        reservaPasajeroRepository.save(p);
+                    }
                 }
             }
             return ResponseEntity.ok(Map.of("success", true, "mensaje", "Asistencia registrada correctamente."));

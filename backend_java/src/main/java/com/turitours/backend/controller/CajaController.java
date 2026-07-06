@@ -171,7 +171,7 @@ public class CajaController {
         
         Caja saved = cajaRepository.save(caja);
         
-        Map<String, Object> response = new java.util.HashMap<>();
+        Map<String, Object> response = new HashMap<>();
         response.put("message", "Caja cerrada exitosamente");
         response.put("caja", saved);
         return ResponseEntity.ok(response);

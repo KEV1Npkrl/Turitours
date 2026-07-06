@@ -6,23 +6,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/dashboard")
 @CrossOrigin(origins = "*")
 public class DashboardController {
-
-    @Autowired
-    private ReservaRepository reservaRepository;
-
-    @Autowired
-    private PagoRepository pagoRepository;
 
     @Autowired
     private TourRepository tourRepository;

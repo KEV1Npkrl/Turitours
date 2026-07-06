@@ -12,6 +12,8 @@ import java.time.LocalDate;
 import java.util.Map;
 import java.util.Optional;
 import java.util.List;
+import java.util.HashMap;
+import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/api/public/auth")
@@ -103,7 +105,7 @@ public class PublicAuthController {
         // Here we just return the Turista object so the frontend can save the session.
         String token = "turista_token_" + turista.getId(); // Simple token for now, or use jwtUtils
 
-        Map<String, Object> response = new java.util.HashMap<>();
+        Map<String, Object> response = new HashMap<>();
         response.put("success", true);
         response.put("token", token);
         response.put("turista", turista);
@@ -143,6 +145,6 @@ public class PublicAuthController {
                 // Ignore and return empty
             }
         }
-        return ResponseEntity.ok(new java.util.ArrayList<>());
+        return ResponseEntity.ok(new ArrayList<>());
     }
 }
