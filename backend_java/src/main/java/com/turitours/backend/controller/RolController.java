@@ -71,9 +71,12 @@ public class RolController {
         rol.setAgenciaId(agenciaId);
         rol.setNombre(nombre);
         rol.setDescripcion(descripcion);
-        Rol saved = rolRepository.save(rol);
-        
-        return ResponseEntity.ok(Map.of("rol", saved));
+        try {
+            Rol saved = rolRepository.save(rol);
+            return ResponseEntity.ok(Map.of("rol", saved));
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Ya existe un rol con ese nombre"));
+        }
     }
 
     @PutMapping("/{id}")
@@ -91,7 +94,12 @@ public class RolController {
         if (nombre != null) rol.setNombre(nombre);
         if (descripcion != null) rol.setDescripcion(descripcion);
         
-        return ResponseEntity.ok(Map.of("rol", rolRepository.save(rol)));
+        try {
+            Rol saved = rolRepository.save(rol);
+            return ResponseEntity.ok(Map.of("rol", saved));
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Ya existe un rol con ese nombre"));
+        }
     }
 
     @PostMapping("/{id}/desactivar-migrar")
@@ -143,6 +151,9 @@ public class RolController {
             }
         }
         
+        String baseName = rolViejo.getNombre();
+        if (baseName.length() > 40) baseName = baseName.substring(0, 40);
+        rolViejo.setNombre(baseName + "_del_" + rolViejo.getId());
         rolViejo.setActivo(false);
         rolRepository.save(rolViejo);
         
@@ -165,7 +176,7 @@ public class RolController {
             return ResponseEntity.badRequest().body(Map.of("error", "Faltan permisos"));
         }
         
-        permisoRepository.deleteByRolId(id);
+        permisoRepository.borrarPorRolId(id);
         
         List<Permiso> savedPermisos = new ArrayList<>();
         for (Map<String, Object> pData : permisosData) {

@@ -88,14 +88,33 @@ const AdminAPI = (function () {
                 throw new Error(data.error || 'Credenciales incorrectas');
             }
 
-            // Registrar sesión local
-            localStorage.setItem('admin_session', JSON.stringify({
+            const sessionObj = {
                 id: data.user.id,
                 rol_id: data.user.rol_id,
                 nombre: data.user.nombre,
                 email: data.user.email,
                 token: data.token
-            }));
+            };
+
+            // Fetch roles to get role name and real permissions from database
+            try {
+                const rolesRes = await fetch('http://localhost:3000/api/roles', {
+                    headers: { 'Authorization': `Bearer ${data.token}` }
+                });
+                if (rolesRes.ok) {
+                    const rolesData = await rolesRes.json();
+                    const myRol = rolesData.roles.find(r => r.id === sessionObj.rol_id);
+                    if (myRol) {
+                        sessionObj.rol_nombre = myRol.nombre;
+                        sessionObj.permisos = myRol.permisos;
+                    }
+                }
+            } catch(e) {
+                console.error("Error fetching permissions", e);
+            }
+
+            // Registrar sesión local
+            localStorage.setItem('admin_session', JSON.stringify(sessionObj));
 
             return { success: true, usuario: data.user };
         } catch (error) {
@@ -127,14 +146,27 @@ const AdminAPI = (function () {
     /* ═══════════════════════════════════════
        PERMISOS
        ═══════════════════════════════════════ */
+    function isAdministrador(session) {
+        if (!session) return false;
+        // 99 = Superadmin, 2 = Administrador (en la BD real)
+        return session.rol_id === 99 || session.rol_id === 2;
+    }
+
     function tienePermiso(modulo, accion) {
         const session = getSession();
         if (!session) return false;
-        const state = adb();
-        const permiso = state.permisos.find(p => p.rol_id === session.rol_id && p.modulo === modulo);
+        if (isAdministrador(session)) return true;
+
+        if (!session.permisos) {
+            clearSession();
+            window.location.href = 'login.html';
+            return false;
+        }
+
+        const permiso = session.permisos.find(p => p.modulo === modulo);
         if (!permiso) return false;
-        const mapa = { ver: 'puede_ver', crear: 'puede_crear', editar: 'puede_editar', eliminar: 'puede_eliminar' };
-        return permiso[mapa[accion] || 'puede_ver'] === 1;
+        const mapa = { ver: 'puedeVer', crear: 'puedeCrear', editar: 'puedeEditar', eliminar: 'puedeEliminar' };
+        return permiso[mapa[accion] || 'puedeVer'] === 1;
     }
 
     function getPermisosRol(rolId) {
@@ -145,10 +177,18 @@ const AdminAPI = (function () {
     function getModulosPermitidos() {
         const session = getSession();
         if (!session) return [];
-        const state = adb();
-        const permisos = state.permisos || [];
-        return permisos
-            .filter(p => p.rol_id === session.rol_id && p.puede_ver === 1)
+        if (isAdministrador(session)) {
+            return ['dashboard', 'tours', 'reservas', 'caja', 'turistas', 'operaciones', 'inventario', 'personal', 'reportes', 'auditoria'];
+        }
+
+        if (!session.permisos) {
+            clearSession();
+            window.location.href = 'login.html';
+            return [];
+        }
+
+        return session.permisos
+            .filter(p => p.puedeVer === 1)
             .map(p => p.modulo);
     }
 
@@ -361,13 +401,23 @@ const AdminAPI = (function () {
     ================================================================================
     */
     async function verifyAdminPassword(password) {
-        await delay(300);
         const user = getUsuarioActualSync();
-        if (!user || user.rol_id !== 1) throw new Error('No autorizado');
-        const state = adb();
-        const dbUser = state.usuarios.find(u => u.id === user.id);
-        if (!dbUser || dbUser.password_hash !== password) throw new Error('Contraseña incorrecta');
-        return true;
+        if (!user || !isAdministrador(user)) throw new Error('No autorizado. Debes ser administrador.');
+        try {
+            // Utilizamos el endpoint real de login para verificar la contraseña del usuario actual
+            const response = await fetch('http://localhost:3000/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: user.email, password: password })
+            });
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                throw new Error(data.error || 'Contraseña incorrecta');
+            }
+            return true;
+        } catch (e) {
+            throw new Error(e.message || 'Contraseña incorrecta');
+        }
     }
 
     async function crearRol(nombre, descripcion) {
@@ -406,14 +456,22 @@ const AdminAPI = (function () {
         // Group by rolId
         const rolesMap = {};
         for(const c of cambios) {
-            if(!rolesMap[c.rolId]) rolesMap[c.rolId] = {};
-            rolesMap[c.rolId][c.modulo] = c.valor;
+            if(!rolesMap[c.rolId]) rolesMap[c.rolId] = [];
+            // Si el checkbox está marcado, le damos todos los permisos por simplicidad
+            // ya que la UI actual solo tiene 1 checkbox por módulo
+            rolesMap[c.rolId].push({
+                modulo: c.modulo,
+                puede_ver: c.valor ? 1 : 0,
+                puede_crear: c.valor ? 1 : 0,
+                puede_editar: c.valor ? 1 : 0,
+                puede_eliminar: c.valor ? 1 : 0
+            });
         }
         
-        for(const [rolId, modulos] of Object.entries(rolesMap)) {
+        for(const [rolId, permisosArray] of Object.entries(rolesMap)) {
             await fetchAPI(`/roles/${rolId}/permisos`, {
                 method: 'PUT',
-                body: JSON.stringify(modulos)
+                body: JSON.stringify({ permisos: permisosArray })
             });
         }
         return true;

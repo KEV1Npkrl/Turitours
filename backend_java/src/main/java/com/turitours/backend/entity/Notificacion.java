@@ -39,6 +39,9 @@ public class Notificacion {
     @Column(nullable = false)
     private Boolean enviado = false;
 
+    @Column(nullable = false)
+    private Boolean leida = false;
+
     @JsonProperty("enviado_at")
     @Column(name = "enviado_at")
     private LocalDateTime enviadoAt;
@@ -146,5 +149,13 @@ public class Notificacion {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Boolean getLeida() {
+        return leida;
+    }
+
+    public void setLeida(Boolean leida) {
+        this.leida = leida;
     }
 }

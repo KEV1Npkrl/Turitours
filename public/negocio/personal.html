@@ -521,7 +521,7 @@
                 roles.forEach(r => {
                     const isSuper = r.nombre.toUpperCase() === 'ADMINISTRADOR';
                     const perm = (r.permisos || []).find(p => p.modulo === mod) || {};
-                    const checked = (isSuper || perm.puede_ver) ? 'checked' : '';
+                    const checked = (isSuper || perm.puedeVer) ? 'checked' : '';
                     const disabled = isSuper ? 'disabled' : '';
                     
                     row += `<td class="text-center" style="border-left:1px solid #eef2f6;">

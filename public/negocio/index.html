@@ -176,7 +176,7 @@
                             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                             <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                         </svg>
-                        <span id="notifBadge" style="display:none; position:absolute; top:-5px; right:-5px; background:var(--destructive); color:white; border-radius:50%; width:18px; height:18px; font-size:10px; display:flex; align-items:center; justify-content:center;">0</span>
+                        <span id="notifBadge" style="display:none; position:absolute; top:-5px; right:-5px; background:var(--a-danger); color:white; border-radius:50%; width:18px; height:18px; font-size:10px; align-items:center; justify-content:center;">0</span>
                     </button>
                 </div>
             </header>
@@ -187,19 +187,28 @@
         </main>
     </div>
 
-        <div id="notificacionesModal" class="a-modal">
-            <div class="a-modal-content" style="max-width: 500px;">
-                <div class="a-modal-header">
-                    <h3 class="a-modal-title">Comunicados del Sistema</h3>
+    <div id="notificacionesModal" class="a-modal-overlay">
+        <div class="a-modal" style="max-width: 600px;">
+            <div class="a-modal-header" style="align-items: center; flex-wrap: wrap; gap: 10px;">
+                <h3 class="a-modal-title">Notificaciones</h3>
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap: wrap;">
+                    <select id="notificacionesFilter" onchange="changeNotificacionesFilter(this.value)" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; border-radius: 4px; border: 1px solid var(--border);">
+                        <option value="newest">Más recientes primero</option>
+                        <option value="oldest">Más antiguos primero</option>
+                        <option value="unread">No leídos primero</option>
+                        <option value="read">Leídos primero</option>
+                    </select>
+                    <button class="a-btn a-btn-sm" style="font-size:0.75rem; padding: 0.25rem 0.5rem;" onclick="marcarTodasLeidas()">Marcar todas leídas</button>
                     <button class="a-modal-close" onclick="closeNotificaciones()">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
                 </div>
-                <div class="a-modal-body" id="notificacionesList" style="max-height: 400px; overflow-y: auto;">
-                    <p style="text-align:center; color:var(--text-muted); padding:2rem;">No hay comunicados recientes.</p>
-                </div>
+            </div>
+            <div class="a-modal-body" id="notificacionesList" style="max-height: 400px; overflow-y: auto; padding: 0.5rem; background:#f8fafc;">
+                <p style="text-align:center; color:var(--text-muted); padding:2rem;">No hay notificaciones recientes.</p>
             </div>
         </div>
+    </div>
 
     <script src="../js/data.js"></script>
     <script src="../js/schema.js"></script>
@@ -211,36 +220,116 @@
             window.location.href = 'login.html';
         }
 
+        let notificacionesData = [];
+        let notificacionesFilter = 'newest';
+
+        function changeNotificacionesFilter(value) {
+            notificacionesFilter = value;
+            renderNotificaciones();
+        }
+
         async function fetchNotificaciones() {
             try {
-                const res = await fetch('http://localhost:3000/api/agencia/comunicados', {
+                const res = await fetch('http://localhost:3000/api/agencia/notificaciones', {
                     headers: { 'Authorization': `Bearer ${user.token}` }
                 });
                 if (res.ok) {
-                    const data = await res.json();
-                    const list = document.getElementById('notificacionesList');
-                    const badge = document.getElementById('notifBadge');
-                    
-                    if (data.length > 0) {
-                        badge.style.display = 'flex';
-                        badge.textContent = data.length;
-                        
-                        list.innerHTML = data.map(c => `
-                            <div style="padding: 1rem; border-bottom: 1px solid var(--border); background: ${c.tipo === 'alerta' ? '#fef2f2' : '#f8fafc'};">
-                                <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
-                                    <strong style="color:var(--text-dark);">${c.titulo}</strong>
-                                    <small style="color:var(--text-muted);">${new Date(c.fechaEnvio).toLocaleDateString()}</small>
-                                </div>
-                                <p style="color:var(--text-regular); font-size:0.9rem; margin:0;">${c.cuerpo}</p>
-                            </div>
-                        `).join('');
-                    }
+                    notificacionesData = await res.json();
+                    renderNotificaciones();
                 }
             } catch (e) {
                 console.error(e);
             }
         }
+
+        function renderNotificaciones() {
+            const list = document.getElementById('notificacionesList');
+            const badge = document.getElementById('notifBadge');
+            
+            const noLeidas = notificacionesData.filter(n => !n.leida).length;
+            
+            if (noLeidas > 0) {
+                badge.style.display = 'flex';
+                badge.textContent = noLeidas;
+            } else {
+                badge.style.display = 'none';
+            }
+            
+            if (notificacionesData.length > 0) {
+                let filteredData = [...notificacionesData];
+                
+                // Sorting logic
+                filteredData.sort((a, b) => {
+                    const dateA = new Date(a.created_at || a.fechaEnvio || 0).getTime();
+                    const dateB = new Date(b.created_at || b.fechaEnvio || 0).getTime();
+                    
+                    if (notificacionesFilter === 'newest') return dateB - dateA;
+                    if (notificacionesFilter === 'oldest') return dateA - dateB;
+                    
+                    if (notificacionesFilter === 'unread') {
+                        if (a.leida === b.leida) return dateB - dateA; // break ties by newest
+                        return a.leida ? 1 : -1;
+                    }
+                    if (notificacionesFilter === 'read') {
+                        if (a.leida === b.leida) return dateB - dateA; // break ties by newest
+                        return a.leida ? -1 : 1;
+                    }
+                    return 0;
+                });
+
+                list.innerHTML = filteredData.map(n => {
+                    const date = new Date(n.created_at || n.fechaEnvio || new Date());
+                    const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    return `
+                        <div onclick="marcarLeida(${n.id}, ${n.leida})" style="cursor: ${!n.leida ? 'pointer' : 'default'}; margin-bottom: 0.5rem; padding: 1rem; border-radius: 8px; border: 1px solid ${!n.leida ? 'var(--primary)' : 'var(--border)'}; background: ${!n.leida ? '#ffffff' : '#f8fafc'}; box-shadow: ${!n.leida ? '0 2px 4px rgba(0,0,0,0.05)' : 'none'}; transition: all 0.2s;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
+                                <strong style="color: ${!n.leida ? 'var(--primary)' : 'var(--text-regular)'}; font-size:0.95rem;">
+                                    ${!n.leida ? '<span style="display:inline-block; width:8px; height:8px; background:var(--primary); border-radius:50%; margin-right:6px;"></span>' : ''}
+                                    ${n.asunto || n.titulo || 'Notificación'}
+                                </strong>
+                                <small style="color:var(--text-muted); font-size:0.75rem;">${dateStr}</small>
+                            </div>
+                            <p style="color:var(--text-regular); font-size:0.875rem; margin:0; white-space: pre-wrap; line-height:1.4;">${n.cuerpo || n.mensaje}</p>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                list.innerHTML = '<p style="text-align:center; color:var(--text-muted); padding:2rem;">No hay notificaciones recientes.</p>';
+            }
+        }
         
+        async function marcarLeida(id, yaLeida) {
+            if (yaLeida) return;
+            try {
+                // Update optimistically
+                const index = notificacionesData.findIndex(n => n.id === id);
+                if (index !== -1) {
+                    notificacionesData[index].leida = true;
+                    renderNotificaciones();
+                }
+                await fetch(`http://localhost:3000/api/agencia/notificaciones/${id}/leer`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${user.token}` }
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function marcarTodasLeidas() {
+            try {
+                // Update optimistically
+                notificacionesData.forEach(n => n.leida = true);
+                renderNotificaciones();
+                await fetch(`http://localhost:3000/api/agencia/notificaciones/leer-todas`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${user.token}` }
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
         window.openNotificaciones = function() {
             document.getElementById('notificacionesModal').classList.add('open');
         };

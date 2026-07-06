@@ -310,25 +310,25 @@ export async function getTours(filters?: SearchFilters): Promise<Tour[]> {
   // const params = new URLSearchParams(filters as any);
   // return fetch(`${API_BASE_URL}/tours?${params}`).then(res => res.json());
   await delay(400);
-  
+
   let tours = [...MOCK_TOURS];
-  
+
   if (filters?.destino) {
-    tours = tours.filter((t) => 
+    tours = tours.filter((t) =>
       MOCK_DESTINOS.find((d) => d.id === t.destino_id)?.nombre
         .toLowerCase()
         .includes(filters.destino!.toLowerCase())
     );
   }
-  
+
   if (filters?.categoria_id) {
     tours = tours.filter((t) => t.categoria_id === filters.categoria_id);
   }
-  
+
   if (filters?.precio_max) {
     tours = tours.filter((t) => t.precio_nacional <= filters.precio_max!);
   }
-  
+
   return tours;
 }
 

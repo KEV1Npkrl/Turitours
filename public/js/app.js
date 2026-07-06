@@ -387,3 +387,17 @@ window.mostrarAlerta = mostrarAlerta;
 window.mostrarLoading = mostrarLoading;
 window.initAuthHeader = initAuthHeader;
 
+document.addEventListener('DOMContentLoaded', async () => {
+    const totalToursCount = document.getElementById('totalToursCount');
+    if (totalToursCount && window.API) {
+        try {
+            const tours = await window.API.getTours();
+            if (tours && Array.isArray(tours)) {
+                totalToursCount.textContent = tours.length;
+            }
+        } catch (e) {
+            console.error('Error fetching total tours:', e);
+        }
+    }
+});
+

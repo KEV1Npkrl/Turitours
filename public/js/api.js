@@ -230,7 +230,19 @@ const API = (function() {
             const cupos = Schema.getCupoDisponible(tid, fecha, state, excludeBloqueoId);
             const tour = state.tours.find((t) => t.id === tid);
             const precios = tour ? Schema.getPrecioTour(tour, fecha, state) : null;
-            return {
+        
+    async function enviarContacto(datos) {
+        if (USE_MOCK) {
+            await mockDelay(300);
+            return { success: true, message: 'Mensaje enviado mock' };
+        }
+        return request('/public/contacto', {
+            method: 'POST',
+            body: JSON.stringify(datos)
+        });
+    }
+
+    return {
                 tour_id: tid,
                 fecha_servicio: fecha,
                 cupos_disponibles: cupos,
@@ -294,7 +306,19 @@ const API = (function() {
             const descuento = cupon.tipo === 'porcentaje'
                 ? subtotal * (cupon.valor / 100)
                 : cupon.valor;
-            return {
+        
+    async function enviarContacto(datos) {
+        if (USE_MOCK) {
+            await mockDelay(300);
+            return { success: true, message: 'Mensaje enviado mock' };
+        }
+        return request('/public/contacto', {
+            method: 'POST',
+            body: JSON.stringify(datos)
+        });
+    }
+
+    return {
                 valido: true,
                 cupon_id: cupon.id,
                 codigo: cupon.codigo,
@@ -342,7 +366,19 @@ const API = (function() {
             state.bloqueos_cupo.push(bloqueo);
             persist(state);
 
-            return {
+        
+    async function enviarContacto(datos) {
+        if (USE_MOCK) {
+            await mockDelay(300);
+            return { success: true, message: 'Mensaje enviado mock' };
+        }
+        return request('/public/contacto', {
+            method: 'POST',
+            body: JSON.stringify(datos)
+        });
+    }
+
+    return {
                 bloqueo_id: bloqueo.id,
                 expira_at: bloqueo.expira_at,
                 minutos_bloqueo: minutos
@@ -362,7 +398,19 @@ const API = (function() {
                 (b) => b.id !== parseInt(bloqueoId, 10)
             );
             persist(state);
-            return { success: true };
+        
+    async function enviarContacto(datos) {
+        if (USE_MOCK) {
+            await mockDelay(300);
+            return { success: true, message: 'Mensaje enviado mock' };
+        }
+        return request('/public/contacto', {
+            method: 'POST',
+            body: JSON.stringify(datos)
+        });
+    }
+
+    return { success: true };
         }
         return request(`/public/reservas/bloqueos/${bloqueoId}`, { method: 'DELETE' });
     }
@@ -477,7 +525,19 @@ const API = (function() {
 
             persist(state);
 
-            return {
+        
+    async function enviarContacto(datos) {
+        if (USE_MOCK) {
+            await mockDelay(300);
+            return { success: true, message: 'Mensaje enviado mock' };
+        }
+        return request('/public/contacto', {
+            method: 'POST',
+            body: JSON.stringify(datos)
+        });
+    }
+
+    return {
                 success: true,
                 reserva: Schema.enrichReserva(nuevaReserva, state)
             };
@@ -525,7 +585,19 @@ const API = (function() {
                 });
             }
             persist(state);
-            return { success: true, reserva: Schema.enrichReserva(reserva, state) };
+        
+    async function enviarContacto(datos) {
+        if (USE_MOCK) {
+            await mockDelay(300);
+            return { success: true, message: 'Mensaje enviado mock' };
+        }
+        return request('/public/contacto', {
+            method: 'POST',
+            body: JSON.stringify(datos)
+        });
+    }
+
+    return { success: true, reserva: Schema.enrichReserva(reserva, state) };
         }
         return request(`/public/reservas/${reservaId}/cancelar`, {
             method: 'PUT',
@@ -574,7 +646,19 @@ const API = (function() {
             }
 
             persist(state);
-            return { success: true, reserva: Schema.enrichReserva(reserva, state) };
+        
+    async function enviarContacto(datos) {
+        if (USE_MOCK) {
+            await mockDelay(300);
+            return { success: true, message: 'Mensaje enviado mock' };
+        }
+        return request('/public/contacto', {
+            method: 'POST',
+            body: JSON.stringify(datos)
+        });
+    }
+
+    return { success: true, reserva: Schema.enrichReserva(reserva, state) };
         }
         return request(`/public/reservas/${reservaId}/solicitar-reprogramacion`, {
             method: 'POST',
@@ -614,7 +698,19 @@ const API = (function() {
             reserva.estado = 'reprogramada';
             persist(state);
 
-            return { success: true, reserva: Schema.enrichReserva(reserva, state) };
+        
+    async function enviarContacto(datos) {
+        if (USE_MOCK) {
+            await mockDelay(300);
+            return { success: true, message: 'Mensaje enviado mock' };
+        }
+        return request('/public/contacto', {
+            method: 'POST',
+            body: JSON.stringify(datos)
+        });
+    }
+
+    return { success: true, reserva: Schema.enrichReserva(reserva, state) };
         }
 
         return request(`/public/reservas/${reservaId}/reprogramar`, {
@@ -690,7 +786,19 @@ const API = (function() {
             };
             state.resenas.push(reseña);
             persist(state);
-            return { success: true, resena: reseña };
+        
+    async function enviarContacto(datos) {
+        if (USE_MOCK) {
+            await mockDelay(300);
+            return { success: true, message: 'Mensaje enviado mock' };
+        }
+        return request('/public/contacto', {
+            method: 'POST',
+            body: JSON.stringify(datos)
+        });
+    }
+
+    return { success: true, resena: reseña };
         }
         return request('/public/resenas', {
             method: 'POST',
@@ -777,7 +885,19 @@ const API = (function() {
             setAuthToken(token);
             setTuristaSession(turista);
 
-            return {
+        
+    async function enviarContacto(datos) {
+        if (USE_MOCK) {
+            await mockDelay(300);
+            return { success: true, message: 'Mensaje enviado mock' };
+        }
+        return request('/public/contacto', {
+            method: 'POST',
+            body: JSON.stringify(datos)
+        });
+    }
+
+    return {
                 success: true,
                 token,
                 turista: Schema.enrichTurista(turista, state)
@@ -860,7 +980,19 @@ const API = (function() {
             state.turistas.push(nuevoTurista);
             persist(state);
 
-            return {
+        
+    async function enviarContacto(datos) {
+        if (USE_MOCK) {
+            await mockDelay(300);
+            return { success: true, message: 'Mensaje enviado mock' };
+        }
+        return request('/public/contacto', {
+            method: 'POST',
+            body: JSON.stringify(datos)
+        });
+    }
+
+    return {
                 success: true,
                 message: 'Turista registrado exitosamente',
                 turista: Schema.enrichTurista(nuevoTurista, state)
@@ -982,7 +1114,19 @@ const API = (function() {
             state.turistas[index] = turista;
             persist(state);
 
-            return {
+        
+    async function enviarContacto(datos) {
+        if (USE_MOCK) {
+            await mockDelay(300);
+            return { success: true, message: 'Mensaje enviado mock' };
+        }
+        return request('/public/contacto', {
+            method: 'POST',
+            body: JSON.stringify(datos)
+        });
+    }
+
+    return {
                 success: true,
                 message: 'Perfil actualizado',
                 turista: Schema.enrichTurista(turista, state)
@@ -992,6 +1136,18 @@ const API = (function() {
         return request('/public/auth/perfil', {
             method: 'PUT',
             body: JSON.stringify(payload)
+        });
+    }
+
+
+    async function enviarContacto(datos) {
+        if (USE_MOCK) {
+            await mockDelay(300);
+            return { success: true, message: 'Mensaje enviado mock' };
+        }
+        return request('/public/contacto', {
+            method: 'POST',
+            body: JSON.stringify(datos)
         });
     }
 
@@ -1007,6 +1163,7 @@ const API = (function() {
         getToursByCategoria,
         getDisponibilidad,
         validarCupon,
+        enviarContacto,
         bloquearCupo,
         liberarBloqueo,
         crearReserva,

@@ -67,6 +67,33 @@ const AdminApp = (function () {
             window.location.href = 'login.html';
             return false;
         }
+
+        if (pagina && pagina !== 'perfil') {
+            const modulos = AdminAPI.getModulosPermitidos();
+            const isSuper = AdminAPI.getSession()?.rol_id === 99;
+            
+            if (!isSuper && !modulos.includes(pagina)) {
+                if (modulos.length > 0) {
+                    const urls = {
+                        'dashboard': 'index.html',
+                        'tours': 'tours.html',
+                        'reservas': 'reservas.html',
+                        'caja': 'caja.html',
+                        'turistas': 'turistas.html',
+                        'operaciones': 'operaciones.html',
+                        'inventario': 'inventario.html',
+                        'personal': 'personal.html',
+                        'auditoria': 'auditoria.html'
+                    };
+                    window.location.href = urls[modulos[0]] || 'index.html';
+                    return false;
+                } else {
+                    document.body.innerHTML = '<div style="padding:50px;text-align:center;font-family:sans-serif;"><h2>Acceso Denegado</h2><p>No tienes permisos asignados. Contacta al administrador.</p><button onclick="AdminAPI.logout()" style="padding:10px 20px;background:#1a5f7a;color:#fff;border:none;border-radius:4px;cursor:pointer;">Cerrar Sesión</button></div>';
+                    return false;
+                }
+            }
+        }
+
         renderSidebar(pagina);
         initMobileToggle();
         initToastContainer();
@@ -90,6 +117,8 @@ const AdminApp = (function () {
         let rolNombre = 'Usuario';
         if (session && session.rol_id === 99) {
             rolNombre = 'SUPERADMINISTRADOR';
+        } else if (session && session.rol_nombre) {
+            rolNombre = session.rol_nombre;
         } else if (rol) {
             rolNombre = rol.nombre;
         }
